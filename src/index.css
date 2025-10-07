@@ -1,0 +1,239 @@
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 0 0% 100%;
+    --foreground: 222.2 84% 4.9%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 84% 4.9%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 84% 4.9%;
+
+    --primary: 220 100% 50%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 210 40% 96.1%;
+    --accent-foreground: 222.2 47.4% 11.2%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 220 100% 50%;
+
+    --radius: 0.75rem;
+
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
+    --sidebar-primary: 240 5.9% 10%;
+    --sidebar-primary-foreground: 0 0% 98%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .dark {
+    --background: 222.2 84% 4.9%;
+    --foreground: 210 40% 98%;
+
+    --card: 222.2 84% 4.9%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222.2 84% 4.9%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 220 100% 60%;
+    --primary-foreground: 222.2 47.4% 11.2%;
+
+    --secondary: 217.2 32.6% 17.5%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 20.2% 65.1%;
+
+    --accent: 217.2 32.6% 17.5%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 62.8% 30.6%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217.2 32.6% 17.5%;
+    --input: 217.2 32.6% 17.5%;
+    --ring: 220 100% 60%;
+    
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
+    --sidebar-primary: 224.3 76.3% 48%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
+    --sidebar-border: 240 3.7% 15.9%;
+    --sidebar-ring: 217.2 91.2% 59.8%;
+  }
+
+  .high-contrast {
+    --background: 0 0% 100%;
+    --foreground: 0 0% 0%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 0%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 0%;
+
+    --primary: 0 0% 0%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 90%;
+    --secondary-foreground: 0 0% 0%;
+
+    --muted: 0 0% 90%;
+    --muted-foreground: 0 0% 20%;
+
+    --accent: 0 0% 80%;
+    --accent-foreground: 0 0% 0%;
+
+    --destructive: 0 100% 40%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 0 0% 60%;
+    --input: 0 0% 80%;
+    --ring: 0 0% 0%;
+
+    --radius: 0.5rem;
+  }
+
+  /* Touch-friendly sizing */
+  .touch-friendly {
+    --touch-target: 48px;
+  }
+  
+  .large {
+    --large-text: 1.125rem;
+    --large-spacing: 1.5rem;
+  }
+
+  /* Base styles */
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: 'Inter', 'Segoe UI', 'Roboto', sans-serif;
+  }
+
+  /* Ensure proper backgrounds for overlays */
+  [data-radix-popper-content-wrapper] {
+    z-index: 50;
+  }
+}
+
+@layer components {
+  /* Touch-friendly components */
+  .touch-friendly .btn,
+  .touch-friendly button {
+    min-height: var(--touch-target);
+    min-width: var(--touch-target);
+    @apply text-base px-6 py-3;
+  }
+
+  .touch-friendly .input,
+  .touch-friendly input {
+    min-height: var(--touch-target);
+    @apply text-base px-4 py-3;
+  }
+
+  .large .text-sm {
+    font-size: var(--large-text);
+  }
+
+  .large .space-y-4 > * + * {
+    margin-top: var(--large-spacing);
+  }
+
+  /* Ensure dialog backgrounds are solid */
+  .dialog-overlay {
+    @apply bg-black/50 backdrop-blur-sm;
+  }
+
+  .dialog-content {
+    @apply bg-background border border-border shadow-2xl;
+  }
+
+  /* Mobile-optimized components */
+  @media (max-width: 768px) {
+    .mobile-stack {
+      @apply flex-col space-y-2 space-x-0;
+    }
+    
+    .mobile-full {
+      @apply w-full;
+    }
+
+    .mobile-text-lg {
+      @apply text-lg;
+    }
+  }
+
+  /* High contrast mode adjustments */
+  .high-contrast .shadow-sm,
+  .high-contrast .shadow,
+  .high-contrast .shadow-lg {
+    @apply shadow-none border-2;
+  }
+
+  /* Fix for high contrast accent styling - removed circular dependency */
+  .high-contrast [class*="bg-accent"] {
+    background-color: hsl(var(--accent));
+    border: 1px solid hsl(var(--foreground));
+  }
+}
+
+@layer utilities {
+  /* Animation utilities */
+  .animate-fade-in {
+    @apply animate-in fade-in-0 duration-300;
+  }
+
+  .animate-slide-up {
+    @apply animate-in slide-in-from-bottom-2 duration-300;
+  }
+
+  .animate-scale-in {
+    @apply animate-in zoom-in-95 duration-200;
+  }
+
+  /* Responsive utilities */
+  .mobile-hidden {
+    @apply hidden md:block;
+  }
+
+  .mobile-only {
+    @apply block md:hidden;
+  }
+
+  /* Touch target utilities */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .large-touch-target {
+    min-height: 48px;
+    min-width: 48px;
+  }
+}

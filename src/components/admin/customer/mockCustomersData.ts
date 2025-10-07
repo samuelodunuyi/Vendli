@@ -1,0 +1,66 @@
+
+export const mockCustomers = [
+  {
+    id: "1",
+    firstName: "Adebayo",
+    lastName: "Ogundimu", 
+    email: "adebayo@company.com",
+    phone: "+234 901 234 5678",
+    classification: "corporate",
+    industryClass: "Banking & Finance",
+    companyName: "First Bank Nigeria",
+    preferredStore: "Victoria Island Store",
+    loyaltyTier: "gold",
+    loyaltyPoints: 2500,
+    totalSpent: 2500000,
+    lastTransaction: "2024-01-20",
+    kycStatus: "verified",
+    status: "active"
+  },
+  {
+    id: "2",
+    firstName: "Fatima",
+    lastName: "Ahmed",
+    email: "fatima.ahmed@email.com", 
+    phone: "+234 902 345 6789",
+    classification: "vip",
+    industryClass: "Oil & Gas",
+    preferredStore: "Ikeja Store",
+    loyaltyTier: "platinum",
+    loyaltyPoints: 5000,
+    totalSpent: 1850000,
+    lastTransaction: "2024-01-19",
+    kycStatus: "verified",
+    status: "active"
+  },
+  {
+    id: "3",
+    firstName: "Chidi",
+    lastName: "Okwu",
+    email: "chidi.okwu@gmail.com",
+    phone: "+234 903 456 7890", 
+    classification: "regular",
+    preferredStore: "Lekki Store",
+    loyaltyTier: "silver",
+    loyaltyPoints: 750,
+    totalSpent: 450000,
+    lastTransaction: "2024-01-18",
+    kycStatus: "verified",
+    status: "active"
+  },
+  {
+    id: "4",
+    firstName: "Blessing",
+    lastName: "Nwosu",
+    email: "blessing.nwosu@yahoo.com",
+    phone: "+234 904 567 8901",
+    classification: "walk-in", 
+    preferredStore: "Ajah Store",
+    loyaltyTier: "bronze",
+    loyaltyPoints: 150,
+    totalSpent: 125000,
+    lastTransaction: "2024-01-17",
+    kycStatus: "pending",
+    status: "active"
+  }
+];
