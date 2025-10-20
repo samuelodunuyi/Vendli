@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Scan, Camera, Keyboard } from "lucide-react";
-import { barcodeScanner } from "@/services/barcodeScanner";
+import { barcodeScanner } from "@/redux/services/barcodeScanner";
 import { toast } from "@/components/ui/sonner";
 
 interface BarcodeScannerProps {

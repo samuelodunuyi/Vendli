@@ -7,7 +7,7 @@ import { CreditCard, Receipt, Printer } from "lucide-react";
 import { PaymentMethod } from "@/types";
 import { paymentMethods } from "@/data/pos";
 import { PaymentDeviceManager } from "@/components/PaymentDeviceManager";
-import { receiptPrinter } from "@/services/receiptPrinter";
+import { receiptPrinter } from "@/redux/services/receiptPrinter";
 import { toast } from "@/components/ui/sonner";
 
 interface PaymentMethodsProps {

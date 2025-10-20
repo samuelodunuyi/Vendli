@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { RefreshCw, CheckCircle, XCircle, Clock, AlertCircle, Settings, Database } from "lucide-react";
 import { BusinessCentralConfig, SyncStatus, SyncSettings } from "@/types/businessCentral";
-import { businessCentralService } from "@/services/businessCentralService";
+import { businessCentralService } from "@/redux/services/businessCentralService";
 import { toast } from "@/components/ui/sonner";
 
 export function BusinessCentralIntegration() {

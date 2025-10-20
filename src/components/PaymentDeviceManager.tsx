@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { CreditCard, Wifi, WifiOff, Loader2 } from "lucide-react";
-import { paymentDevice, PaymentResult } from "@/services/paymentDevice";
+import { paymentDevice, PaymentResult } from "@/redux/services/paymentDevice";
 import { PaymentMethod } from "@/types";
 import { toast } from "@/components/ui/sonner";
 
