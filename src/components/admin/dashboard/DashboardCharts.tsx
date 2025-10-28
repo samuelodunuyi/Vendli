@@ -3,34 +3,18 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
-const salesData = [
-  { month: "Jan", sales: 65 },
-  { month: "Feb", sales: 45 },
-  { month: "Mar", sales: 85 },
-  { month: "Apr", sales: 70 },
-  { month: "May", sales: 75 },
-  { month: "Jun", sales: 72 },
-  { month: "Jul", sales: 78 },
-  { month: "Aug", sales: 95 },
-  { month: "Sep", sales: 88 },
-  { month: "Oct", sales: 60 },
-  { month: "Nov", sales: 82 },
-  { month: "Dec", sales: 90 }
-];
-
-const retentionData = [
-  { name: "New Customers", value: 40, color: "#10B981" },
-  { name: "Returning Customers", value: 60, color: "#8B5CF6" }
-];
-
 const chartConfig = {
   sales: {
     label: "Sales",
     color: "#EF4444",
   },
 };
+interface DashboardChartsProps {
+  salesData: { labels: string; values: number }[];
+  retentionData: { name: string; value: number; color: string }[];
+}
 
-export function DashboardCharts() {
+export function DashboardCharts({ salesData, retentionData }: DashboardChartsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       {/* Sales Chart */}

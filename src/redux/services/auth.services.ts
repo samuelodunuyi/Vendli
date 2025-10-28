@@ -70,7 +70,7 @@ export const authApi = createApi({
     // Register
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: (body) => ({
-        url: 'api/Auth/register',
+        url: 'Auth/register',
         method: 'POST',
         body,
       }),
@@ -80,7 +80,7 @@ export const authApi = createApi({
     // Login
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (body) => ({
-        url: 'api/Auth/login',
+        url: 'Auth/login',
         method: 'POST',
         body,
       }),
@@ -90,7 +90,7 @@ export const authApi = createApi({
     // Refresh Token
     refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
       query: (body) => ({
-        url: 'api/Auth/refresh-token',
+        url: 'Auth/refresh-token',
         method: 'POST',
         body,
       }),
@@ -99,7 +99,7 @@ export const authApi = createApi({
 
        changePassword: builder.mutation<ChangePasswordResponse, ChangePasswordRequest>({
       query: (body) => ({
-        url: 'api/Auth/change-password',
+        url: 'Auth/change-password',
         method: 'POST',
         body,
       }),
@@ -109,7 +109,7 @@ export const authApi = createApi({
     // Logout
     logout: builder.mutation<LogoutResponse, LogoutRequest>({
       query: (body) => ({
-        url: 'api/Auth/logout',
+        url: 'Auth/logout',
         method: 'POST',
         body,
       }),

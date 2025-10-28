@@ -30,7 +30,6 @@ export default function Auth() {
   const handleSignIn = async (email: string, password: string) => {
     setIsLoading(true);
     try {
-      // ✅ many backends expect 'username', not 'email'
       const response = await signInMutation({ email: email, password }).unwrap();
 
       // ✅ Save to localStorage
@@ -43,7 +42,8 @@ export default function Auth() {
           accessToken: response.accessToken,
           refreshToken: response.refreshToken,
           user: {
-            username: response.username,
+            firstName: response.firstName,
+            lastName: response.lastName,
             email: response.email,
             role: response.role,
           },
