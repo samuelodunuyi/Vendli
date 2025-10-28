@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,9 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { UserPlus } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
+import { useAppSelector } from '@/redux/store';
+import { useAssignStoreAdminMutation } from '@/redux/services/user.services';
 
 export function RoleUpgradeDialog() {
   const [isOpen, setIsOpen] = useState(false);
@@ -23,55 +23,33 @@ export function RoleUpgradeDialog() {
   const [role, setRole] = useState('store_manager');
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
-  const { hasRole } = useAuth();
 
-  // Only show this to super admins
-  if (!hasRole('super_admin')) {
-    return null;
-  }
+  const userRole = useAppSelector((state) => state.auth.user.role); 
+  const [assignStoreAdmin] = useAssignStoreAdminMutation();
+
+  // Only show to super admins
+  if (userRole !== 1) return null; // assuming role 1 = super_admin
 
   const handleUpgradeRole = async () => {
     if (!email.trim()) {
       toast({
-        title: "Error",
-        description: "Please enter an email address",
-        variant: "destructive",
+        title: 'Error',
+        description: 'Please enter an email address',
+        variant: 'destructive',
       });
       return;
     }
 
     setIsLoading(true);
     try {
-      // First get the user by email
-      const { data: userData, error: userError } = await supabase.auth.admin.listUsers();
-      
-      if (userError) throw userError;
-
-      const user = userData.users.find((u: any) => u.email === email);
-      
-      if (!user) {
-        toast({
-          title: "User not found",
-          description: "No user found with this email address",
-          variant: "destructive",
-        });
-        return;
-      }
-
-      // Update or insert user role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .upsert({ 
-          user_id: user.id, 
-          role: role as any 
-        }, { 
-          onConflict: 'user_id,role' 
-        });
-
-      if (roleError) throw roleError;
+      // Call RTK mutation
+      await assignStoreAdmin({
+        userEmail: email,
+        storeId: role.includes('store_') ? 'storeId-placeholder' : '', // replace with real storeId
+      }).unwrap();
 
       toast({
-        title: "Role updated successfully",
+        title: 'Role updated successfully',
         description: `User ${email} has been assigned the ${role} role`,
       });
 
@@ -81,9 +59,9 @@ export function RoleUpgradeDialog() {
     } catch (error: any) {
       console.error('Role upgrade error:', error);
       toast({
-        title: "Error",
-        description: error.message || "Failed to update user role",
-        variant: "destructive",
+        title: 'Error',
+        description: error.data?.message || error.message || 'Failed to update user role',
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -101,9 +79,7 @@ export function RoleUpgradeDialog() {
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Upgrade User Role</DialogTitle>
-          <DialogDescription>
-            Assign admin or staff roles to existing users.
-          </DialogDescription>
+          <DialogDescription>Assign admin or staff roles to existing users.</DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
           <div>
@@ -133,18 +109,10 @@ export function RoleUpgradeDialog() {
             </Select>
           </div>
           <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setIsOpen(false)}
-              className="flex-1"
-            >
+            <Button variant="outline" onClick={() => setIsOpen(false)} className="flex-1">
               Cancel
             </Button>
-            <Button
-              onClick={handleUpgradeRole}
-              disabled={isLoading}
-              className="flex-1"
-            >
+            <Button onClick={handleUpgradeRole} disabled={isLoading} className="flex-1">
               {isLoading ? 'Updating...' : 'Update Role'}
             </Button>
           </div>

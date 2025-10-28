@@ -6,8 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
-import { User, Store, EditUserForm } from "./types";
+import {Store, EditUserForm } from "./types";
 
 interface EditUserDialogProps {
   isOpen: boolean;
@@ -49,57 +48,6 @@ export function EditUserDialog({ isOpen, onOpenChange, user, stores, onUserUpdat
     
     if (!user) return;
 
-    try {
-      setLoading(true);
-
-      // Update profile
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .update({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
-          phone: formData.phone
-        })
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
-
-      // Update user role - first delete existing roles, then add new one
-      const { error: deleteRoleError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (deleteRoleError) throw deleteRoleError;
-
-      // Add the new role
-      const { error: roleError } = await supabase
-        .from('user_roles')
-        .insert({
-          user_id: user.id,
-          role: formData.role as ValidRole,
-          store_id: formData.storeId || null
-        });
-
-      if (roleError) throw roleError;
-
-      toast({
-        title: "Success",
-        description: "User updated successfully",
-      });
-
-      onOpenChange(false);
-      onUserUpdated();
-    } catch (error: any) {
-      console.error('Error updating user:', error);
-      toast({
-        title: "Error",
-        description: error.message || "Failed to update user",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
   };
 
   if (!user) return null;

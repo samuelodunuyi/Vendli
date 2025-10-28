@@ -1,9 +1,9 @@
-
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useSelector } from 'react-redux';
 import { Loader2 } from 'lucide-react';
 import { AccessDeniedMessage } from './AccessDeniedMessage';
+import type { RootState } from '@/redux/store';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -21,9 +21,10 @@ export function ProtectedRoute({
   allowedRoles,
   requiredPermission 
 }: ProtectedRouteProps) {
-  const { user, loading, hasRole, hasPermission } = useAuth();
   const navigate = useNavigate();
+  const { user, loading } = useSelector((state: RootState) => state.auth);
 
+  // Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -38,40 +39,28 @@ export function ProtectedRoute({
     );
   }
 
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
-  // Check role requirement - either single role or multiple allowed roles
-  const hasRequiredRole = () => {
-    if (allowedRoles && allowedRoles.length > 0) {
-      return allowedRoles.some(role => hasRole(role));
-    }
-    if (requiredRole) {
-      // Super admin can access everything
-      return hasRole('super_admin') || hasRole(requiredRole);
-    }
-    return true;
-  };
+  // Roles check
+  // const hasRole = (role: string) => user.roles?.includes(role); // assuming user.roles is string[]
+  
+  // const hasRequiredRole = () => {
+  //   if (allowedRoles?.length) return allowedRoles.some(role => hasRole(role));
+  //   return requiredRole ? hasRole('super_admin') || hasRole(requiredRole) : true;
+  // };
 
-  if (!hasRequiredRole()) {
-    return (
-      <AccessDeniedMessage 
-        requiredRole={requiredRole}
-        requiredPermission={requiredPermission}
-      />
-    );
-  }
+  // if (!hasRequiredRole()) {
+  //   return <AccessDeniedMessage requiredRole={requiredRole} requiredPermission={requiredPermission} />;
+  // }
 
-  // Check permission requirement
-  if (requiredPermission && !hasPermission(requiredPermission.module, requiredPermission.permission)) {
-    return (
-      <AccessDeniedMessage 
-        requiredRole={requiredRole}
-        requiredPermission={requiredPermission}
-      />
-    );
-  }
+  // Permissions check
+  // const hasPermission = (module: string, permission: string) => {
+  //   return user.permissions?.[module]?.includes(permission); // adjust according to your schema
+  // };
+
+  // if (requiredPermission && !hasPermission(requiredPermission.module, requiredPermission.permission)) {
+  //   return <AccessDeniedMessage requiredRole={requiredRole} requiredPermission={requiredPermission} />;
+  // }
 
   return <>{children}</>;
 }

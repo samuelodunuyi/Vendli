@@ -25,9 +25,21 @@ export interface SetUserStatusRequest {
   isActive: boolean;
 }
 
+export interface GetUsersRequest {
+  role?: string; // optional query parameter
+}
+
 // Response type
 export interface MessageResponse {
   message: string;
+}
+
+export interface User {
+  id: string;
+  username: string;
+  email: string;
+  role: string;
+  isActive: boolean;
 }
 
 // Users API
@@ -36,7 +48,7 @@ export const usersApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).app.auth.accessToken;
+      const token = (getState() as RootState).auth.accessToken;
       if (token) headers.set('Authorization', `Bearer ${token}`);
       headers.set('Content-Type', 'application/json');
       return headers;
@@ -87,6 +99,15 @@ export const usersApi = createApi({
         params: { storeId, userEmail },
       }),
     }),
+
+    // GET users (optionally filter by role)
+    getUsers: builder.query<User[], GetUsersRequest>({
+      query: ({ role } = {}) => ({
+        url: '/UserManagement/get-users',
+        method: 'GET',
+        params: role ? { role } : undefined,
+      }),
+    }),
   }),
 });
 
@@ -96,4 +117,5 @@ export const {
   useSetUserStatusMutation,
   useAssignStoreAdminMutation,
   useAssignEmployeeMutation,
+  useGetUsersQuery,
 } = usersApi;

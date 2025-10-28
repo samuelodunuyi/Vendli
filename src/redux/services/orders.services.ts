@@ -98,7 +98,7 @@ export const orderApi = createApi({
   baseQuery: fetchBaseQuery({
     baseUrl,
     prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).app.auth.accessToken;
+      const token = (getState() as RootState).auth.accessToken;
       if (token) headers.set('Authorization', `Bearer ${token}`);
       headers.set('Content-Type', 'application/json');
       return headers;

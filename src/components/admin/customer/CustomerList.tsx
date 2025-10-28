@@ -9,7 +9,23 @@ import { CustomerFilters } from "./CustomerFilters";
 import { CustomerTableRow } from "./CustomerTableRow";
 import { mockCustomers } from "./mockCustomersData";
 import { toast } from "@/components/ui/sonner";
-
+interface Customer {
+  id: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  classification: string;
+  industryClass?: string;
+  companyName?: string;
+  preferredStore: string;
+  loyaltyTier: string;
+  loyaltyPoints: number;
+  totalSpent: number;
+  lastTransaction: string;
+  kycStatus: string;
+  status: string;
+}
 export function CustomerList() {
   const [searchTerm, setSearchTerm] = useState("");
   const [classificationFilter, setClassificationFilter] = useState("all");
@@ -17,7 +33,7 @@ export function CustomerList() {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer>(null);
   const [customers, setCustomers] = useState(mockCustomers);
 
   const filteredCustomers = customers.filter(customer => {
@@ -30,12 +46,12 @@ export function CustomerList() {
     return matchesSearch && matchesClassification && matchesStore;
   });
 
-  const handleViewCustomer = (customer: any) => {
+  const handleViewCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowDetailsDialog(true);
   };
 
-  const handleEditCustomer = (customer: any) => {
+  const handleEditCustomer = (customer: Customer) => {
     setSelectedCustomer(customer);
     setShowEditDialog(true);
   };

@@ -1,14 +1,13 @@
-
 import { useState } from "react";
 import { Shield, Users } from "lucide-react";
-import { useUserManagement } from "./user-management/useUserManagement";
+import { useGetUsersQuery, User } from "@/redux/services/user.services";
 import { UserSummaryCards } from "./user-management/UserSummaryCards";
 import { UserSearchBar } from "./user-management/UserSearchBar";
 import { AddUserDialog } from "./user-management/AddUserDialog";
 import { EditUserDialog } from "./user-management/EditUserDialog";
 import { DeleteUserDialog } from "./user-management/DeleteUserDialog";
 import { UsersTable } from "./user-management/UsersTable";
-import { User } from "./user-management/types";
+import { useAuth } from "@/context/AuthContext";
 
 export function UserManagement() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -16,7 +15,9 @@ export function UserManagement() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
 
-  const { users, stores, loading, fetchUsers, hasRole } = useUserManagement();
+  const { user, hasRole } = useAuth(); // assuming your AuthContext has hasRole function
+
+  const { data: userList = [], isLoading, refetch } = useGetUsersQuery({}); // optional: pass { role: 'store_manager' }
 
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
@@ -28,14 +29,13 @@ export function UserManagement() {
     setIsDeleteDialogOpen(true);
   };
 
-  const filteredUsers = users.filter(user =>
-    (user.first_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (user.last_name?.toLowerCase().includes(searchQuery.toLowerCase())) ||
+  const filteredUsers = userList.filter(user =>
+    (user.username?.toLowerCase().includes(searchQuery.toLowerCase())) ||
     (user.email?.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   // Only show this component to super admins
-  if (!hasRole('super_admin')) {
+  if (!hasRole(0)) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -47,7 +47,7 @@ export function UserManagement() {
     );
   }
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
         <div className="text-center">
@@ -60,7 +60,7 @@ export function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <UserSummaryCards users={users} />
+      <UserSummaryCards users={userList} />
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <UserSearchBar 
@@ -68,9 +68,9 @@ export function UserManagement() {
           onSearchChange={setSearchQuery} 
         />
         
-        <AddUserDialog 
-          stores={stores} 
-          onUserAdded={fetchUsers} 
+        <AddUserDialog
+          stores={[]}
+          onUserAdded={refetch} 
         />
       </div>
 
@@ -82,17 +82,17 @@ export function UserManagement() {
 
       <EditUserDialog
         isOpen={isEditUserOpen}
+        stores={[]}
         onOpenChange={setIsEditUserOpen}
         user={selectedUser}
-        stores={stores}
-        onUserUpdated={fetchUsers}
+        onUserUpdated={refetch} 
       />
 
       <DeleteUserDialog
         isOpen={isDeleteDialogOpen}
         onOpenChange={setIsDeleteDialogOpen}
         user={selectedUser}
-        onUserDeleted={fetchUsers}
+        onUserDeleted={refetch} 
       />
     </div>
   );

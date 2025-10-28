@@ -8,19 +8,34 @@ import type { RootState } from '../store';
 // ---------- AUTH ----------
 export interface RegisterRequest {
   username: string;
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
 }
 
 export interface LoginRequest {
-  username: string;
+  email: string;
   password: string;
+}
+
+export interface ChangePasswordRequest {
+  oldPassword: string;
+  newPassword: string;
+}
+
+export interface ChangePasswordResponse {
+  message: string;
 }
 
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
+  username: string;
+  email: string;
+  role: number;
 }
+
 
 export interface RefreshTokenRequest {
   accessToken: string;
@@ -55,7 +70,7 @@ export const authApi = createApi({
     // Register
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: (body) => ({
-        url: 'api/v1/Auth/register',
+        url: 'api/Auth/register',
         method: 'POST',
         body,
       }),
@@ -65,7 +80,7 @@ export const authApi = createApi({
     // Login
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (body) => ({
-        url: 'api/v1/Auth/login',
+        url: 'api/Auth/login',
         method: 'POST',
         body,
       }),
@@ -75,7 +90,16 @@ export const authApi = createApi({
     // Refresh Token
     refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
       query: (body) => ({
-        url: 'api/v1/Auth/refresh-token',
+        url: 'api/Auth/refresh-token',
+        method: 'POST',
+        body,
+      }),
+      invalidatesTags: ['Auth'],
+    }),
+
+       changePassword: builder.mutation<ChangePasswordResponse, ChangePasswordRequest>({
+      query: (body) => ({
+        url: 'api/Auth/change-password',
         method: 'POST',
         body,
       }),
@@ -85,7 +109,7 @@ export const authApi = createApi({
     // Logout
     logout: builder.mutation<LogoutResponse, LogoutRequest>({
       query: (body) => ({
-        url: 'api/v1/Auth/logout',
+        url: 'api/Auth/logout',
         method: 'POST',
         body,
       }),
@@ -101,4 +125,5 @@ export const {
   useLoginMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
+  useChangePasswordMutation
 } = authApi;

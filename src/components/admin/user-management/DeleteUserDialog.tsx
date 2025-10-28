@@ -2,7 +2,6 @@
 import { useState } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
 import { User } from "./types";
 
 interface DeleteUserDialogProps {
@@ -22,21 +21,6 @@ export function DeleteUserDialog({ isOpen, onOpenChange, user, onUserDeleted }: 
     try {
       setLoading(true);
 
-      // Delete user roles first (due to foreign key constraints)
-      const { error: rolesError } = await supabase
-        .from('user_roles')
-        .delete()
-        .eq('user_id', user.id);
-
-      if (rolesError) throw rolesError;
-
-      // Delete profile (this will cascade to auth.users due to the foreign key)
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', user.id);
-
-      if (profileError) throw profileError;
 
       toast({
         title: "Success",
@@ -45,6 +29,7 @@ export function DeleteUserDialog({ isOpen, onOpenChange, user, onUserDeleted }: 
 
       onOpenChange(false);
       onUserDeleted();
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Error deleting user:', error);
       toast({

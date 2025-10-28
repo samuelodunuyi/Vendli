@@ -1,20 +1,9 @@
 
 export interface UserRole {
+  id: number;
   role: string;
   store_id: string | null;
   store_name: string | null;
-}
-
-export interface User {
-  id: string;
-  email: string;
-  first_name: string | null;
-  last_name: string | null;
-  phone: string | null;
-  avatar_url: string | null;
-  created_at: string;
-  status: 'active' | 'inactive';
-  roles: UserRole[];
 }
 
 export interface Store {
@@ -53,7 +42,7 @@ export interface ProfileData {
 
 export interface UserRoleData {
   user_id: string;
-  role: string;
+  role: number;
   store_id: string | null;
   stores: {
     name: string;

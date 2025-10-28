@@ -1,7 +1,8 @@
-
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
+import { useAppDispatch, useAppSelector } from '@/redux/store';
+import { useRegisterMutation, useLoginMutation } from '@/redux/services/auth.services';
+import { setTokens } from '@/redux/slices/authSlice';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AuthHeader } from '@/components/auth/AuthHeader';
@@ -10,12 +11,16 @@ import { SignUpForm } from '@/components/auth/SignUpForm';
 import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
 
 export default function Auth() {
-  const { signIn, signUp, user } = useAuth();
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
-  // Redirect if already authenticated
+  const user = useAppSelector((state) => state.auth.user);
+  const [signInMutation] = useLoginMutation();
+  const [signUpMutation] = useRegisterMutation();
+
+  // 👇 redirect after successful login
   useEffect(() => {
     if (user) {
       navigate('/admin');
@@ -24,9 +29,28 @@ export default function Auth() {
 
   const handleSignIn = async (email: string, password: string) => {
     setIsLoading(true);
-    
     try {
-      await signIn(email, password);
+      // ✅ many backends expect 'username', not 'email'
+      const response = await signInMutation({ email: email, password }).unwrap();
+
+      // ✅ Save to localStorage
+      localStorage.setItem('accessToken', response.accessToken);
+      localStorage.setItem('refreshToken', response.refreshToken);
+
+      // ✅ Update Redux
+      dispatch(
+        setTokens({
+          accessToken: response.accessToken,
+          refreshToken: response.refreshToken,
+          user: {
+            username: response.username,
+            email: response.email,
+            role: response.role,
+          },
+        })
+      );
+
+      // ✅ Navigate (redundant but safe)
       navigate('/admin');
     } catch (error) {
       console.error('Sign in failed:', error);
@@ -35,21 +59,22 @@ export default function Auth() {
     }
   };
 
-  const handleSignUp = async (email: string, password: string, firstName: string, lastName: string) => {
+  const handleSignUp = async (
+    email: string,
+    password: string,
+    firstName: string,
+    lastName: string,
+    username: string
+  ) => {
     setIsLoading(true);
-    
     try {
-      await signUp(email, password, firstName, lastName);
-      // Success message handled in context
+      await signUpMutation({ email, password, firstName, lastName, username }).unwrap();
+      console.log('Sign-up successful');
     } catch (error) {
       console.error('Sign up failed:', error);
     } finally {
       setIsLoading(false);
     }
-  };
-
-  const handleForgotPassword = () => {
-    setShowForgotPassword(true);
   };
 
   return (
@@ -67,29 +92,26 @@ export default function Auth() {
                 <TabsTrigger value="signin">Sign In</TabsTrigger>
                 <TabsTrigger value="signup">Sign Up</TabsTrigger>
               </TabsList>
-              
+
               <TabsContent value="signin">
                 <SignInForm
                   onSubmit={handleSignIn}
-                  onForgotPassword={handleForgotPassword}
+                  onForgotPassword={() => setShowForgotPassword(true)}
                   isLoading={isLoading}
                 />
               </TabsContent>
-              
+
               <TabsContent value="signup">
-                <SignUpForm
-                  onSubmit={handleSignUp}
-                  isLoading={isLoading}
-                />
+                <SignUpForm onSubmit={handleSignUp} isLoading={isLoading} />
               </TabsContent>
             </Tabs>
           </CardContent>
         </Card>
       </div>
 
-      <ForgotPasswordDialog 
-        open={showForgotPassword} 
-        onOpenChange={setShowForgotPassword} 
+      <ForgotPasswordDialog
+        open={showForgotPassword}
+        onOpenChange={setShowForgotPassword}
       />
     </div>
   );

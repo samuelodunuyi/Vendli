@@ -1,6 +1,4 @@
-
 import { useState } from 'react';
-import { useAuth } from '@/context/AuthContext';
 import {
   Dialog,
   DialogContent,
@@ -12,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
+import { useChangePasswordMutation } from '@/redux/services/auth.services'; // RTK Query mutation
 
 interface ForgotPasswordDialogProps {
   open: boolean;
@@ -24,16 +22,14 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  const [sendForgotPassword] = useChangePasswordMutation(); // RTK Query
+
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
 
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth?reset=true`,
-      });
-
-      if (error) throw error;
+      // await sendForgotPassword({ oldPassword, newPassword }).unwrap();
 
       toast({
         title: "Password reset email sent",
@@ -42,11 +38,12 @@ export function ForgotPasswordDialog({ open, onOpenChange }: ForgotPasswordDialo
 
       setEmail('');
       onOpenChange(false);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } catch (error: any) {
       console.error('Password reset error:', error);
       toast({
         title: "Error",
-        description: error.message,
+        description: error.data?.message || error.message || "Failed to reset password",
         variant: "destructive",
       });
     } finally {

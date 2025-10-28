@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Eye, EyeOff } from 'lucide-react';
 
 interface SignUpFormProps {
-  onSubmit: (email: string, password: string, firstName: string, lastName: string) => Promise<void>;
+  onSubmit: (email: string, password: string, firstName: string, lastName: string, username: string) => Promise<void>;
   isLoading: boolean;
 }
 
@@ -18,6 +18,7 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
     confirmPassword: '',
     firstName: '',
     lastName: '',
+    username: ''
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -28,7 +29,7 @@ export function SignUpForm({ onSubmit, isLoading }: SignUpFormProps) {
       return;
     }
 
-    await onSubmit(formData.email, formData.password, formData.firstName, formData.lastName);
+    await onSubmit(formData.email, formData.password, formData.firstName, formData.lastName, formData.username);
   };
 
   return (
