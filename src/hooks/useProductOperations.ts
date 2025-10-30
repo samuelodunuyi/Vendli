@@ -1,96 +1,143 @@
-
 import { useState } from "react";
-import { Product } from "@/types";
 import { toast } from "@/components/ui/sonner";
+import { Product } from "@/redux/services/products.services";
+
+// Form type for new product
+export interface NewProductForm {
+  productName: string;
+  description: string;
+  sku: string;
+  barcode: string;
+  categoryId: number | null;
+  basePrice: number;
+  costPrice: number;
+  currentStock: number;
+  minimumStockLevel: number;
+  maximumStockLevel: number;
+  unitOfMeasure: string;
+  isActive: boolean;
+}
 
 export function useProductOperations(initialProducts: Product[]) {
   const [productList, setProductList] = useState(initialProducts);
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
-  
+
   // Mock data for products with transaction history
   const productsWithTransactions = ["1", "2", "4"];
-  
-  const [newProduct, setNewProduct] = useState({
-    name: "",
+
+  // Form state for new product
+  const [newProduct, setNewProduct] = useState<Product>({
+    productName: "",
     description: "",
-    price: "",
-    category: "",
+    sku: "",
     barcode: "",
-    discountPrice: "",
-    lowStockAlert: "",
-    status: "Active"
+    categoryId: null,
+    basePrice: null,
+    costPrice: null,
+    minimumStockLevel: null,
+    maximumStockLevel: null,
+    unitOfMeasure: "pcs",
+    isActive: true,
+    additionalImages: [],
+    currentStock: null,
+    imageUrl: "",
+    productId: null,
+    showInPOS: true,
+    showInWeb: true,
+    storeId: null
   });
 
+  const generateBarcode = () => {
+    setNewProduct(prev => ({
+      ...prev,
+      barcode: Math.random().toString(36).substring(2, 10).toUpperCase()
+    }));
+  };
+
   const handleAddProduct = () => {
-    if (!newProduct.name || !newProduct.price || !newProduct.category) {
+    if (!newProduct.productName || !newProduct.basePrice || !newProduct.categoryId) {
       toast.error("Please fill in all required fields");
       return;
     }
 
     const product: Product = {
-      id: Date.now().toString(),
-      name: newProduct.name,
+      productId: Date.now(), // placeholder ID
+      productName: newProduct.productName,
       description: newProduct.description,
-      price: parseFloat(newProduct.price),
-      category: newProduct.category,
-      stock: 0,
-      barcode: newProduct.barcode || Date.now().toString(),
+      sku: newProduct.sku,
+      barcode: newProduct.barcode || newProduct.sku,
+      categoryId: newProduct.categoryId,
+      storeId: 1, // default store
+      basePrice: Number(newProduct.basePrice),
+      costPrice: newProduct.costPrice ? Number(newProduct.costPrice) : Number(newProduct.basePrice),
+      currentStock: 0,
+      minimumStockLevel: Number(newProduct.minimumStockLevel),
+      maximumStockLevel: Number(newProduct.maximumStockLevel),
+      unitOfMeasure: newProduct.unitOfMeasure,
       imageUrl: "/placeholder.svg",
-      status: newProduct.status as 'Active' | 'Inactive',
-      createdAt: new Date().toISOString().split('T')[0],
-      discountPrice: newProduct.discountPrice ? parseFloat(newProduct.discountPrice) : undefined,
-      lowStockAlert: newProduct.lowStockAlert ? parseInt(newProduct.lowStockAlert) : 10
+      additionalImages: [],
+      showInWeb: true,
+      showInPOS: true,
+      isActive: newProduct.isActive
     };
 
     setProductList([...productList, product]);
-    setNewProduct({ 
-      name: "", 
-      description: "", 
-      price: "", 
-      category: "", 
-      barcode: "", 
-      discountPrice: "", 
-      lowStockAlert: "", 
-      status: "Active" 
+
+    // Reset form
+    setNewProduct({
+    productName: "",
+    description: "",
+    sku: "",
+    barcode: "",
+    categoryId: null,
+    basePrice: null,
+    costPrice: null,
+    minimumStockLevel: null,
+    maximumStockLevel: null,
+    unitOfMeasure: "pcs",
+    isActive: true,
+    additionalImages: [],
+    currentStock: null,
+    imageUrl: "",
+    productId: null,
+    showInPOS: true,
+    showInWeb: true,
+    storeId: null
     });
+
     setIsAddProductOpen(false);
     toast.success("Product added successfully");
   };
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-  };
+  const handleEditProduct = (product: Product) => setEditingProduct(product);
 
   const handleUpdateProduct = () => {
     if (!editingProduct) return;
 
-    setProductList(productList.map(p => 
-      p.id === editingProduct.id ? editingProduct : p
-    ));
+    setProductList(productList?.map(p => p.productId === editingProduct.productId ? editingProduct : p));
     setEditingProduct(null);
     toast.success("Product updated successfully");
   };
 
-  const handleDeleteProduct = (productId: string) => {
-    if (productsWithTransactions.includes(productId)) {
+  const handleDeleteProduct = (productId: number) => {
+    if (productsWithTransactions.includes(String(productId))) {
       toast.error("Cannot delete product with inventory transaction records");
       return;
     }
-
-    setProductList(productList.filter(p => p.id !== productId));
+    setProductList(productList?.filter(p => p.productId !== productId));
     toast.success("Product deleted successfully");
   };
 
   const handleExportData = (filteredProducts: Product[]) => {
     const csvContent = [
-      ["Product Name", "Category", "Price", "Stock", "Status", "Barcode"],
+      ["Product Name", "Category ID", "Price", "Stock", "Status", "Barcode"],
       ...filteredProducts.map(p => [
-        p.name,
-        p.category,
-        p.price.toString(),
-        p.stock.toString(),
-        p.status,
+        p.productName,
+        p.categoryId,
+        p.basePrice.toString(),
+        p.currentStock.toString(),
+        p.isActive ? "Active" : "Inactive",
         p.barcode || ""
       ])
     ].map(row => row.join(",")).join("\n");
@@ -106,19 +153,19 @@ export function useProductOperations(initialProducts: Product[]) {
   };
 
   const handleViewStockByStore = (product: Product) => {
-    toast.info(`Viewing stock availability for ${product.name} across all stores`);
+    toast.info(`Viewing stock availability for ${product.productName} across all stores`);
   };
 
   const handleAdjustStock = (product: Product) => {
-    toast.info(`Opening stock adjustment for ${product.name}`);
+    toast.info(`Opening stock adjustment for ${product.productName}`);
   };
 
   const handleViewTransactionHistory = (product: Product) => {
-    toast.info(`Viewing transaction history for ${product.name}`);
+    toast.info(`Viewing transaction history for ${product.productName}`);
   };
 
   const handleViewRecentOrders = (product: Product) => {
-    toast.info(`Viewing recent orders for ${product.name}`);
+    toast.info(`Viewing recent orders for ${product.productName}`);
   };
 
   return {
@@ -130,6 +177,7 @@ export function useProductOperations(initialProducts: Product[]) {
     newProduct,
     setNewProduct,
     productsWithTransactions,
+    generateBarcode,
     handleAddProduct,
     handleEditProduct,
     handleUpdateProduct,

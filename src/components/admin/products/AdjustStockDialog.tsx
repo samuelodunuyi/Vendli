@@ -4,9 +4,9 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Product } from "@/types";
 import { TrendingUp } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import {Product} from "@/redux/services/products.services"
 
 interface AdjustStockDialogProps {
   open: boolean;
@@ -40,7 +40,7 @@ export function AdjustStockDialog({ open, onOpenChange, product }: AdjustStockDi
   const handleSubmit = () => {
     const totalAdjustment = locations.reduce((sum, loc) => sum + loc.qtyToAdjust, 0);
     if (totalAdjustment !== 0) {
-      toast.success(`Stock adjusted by ${totalAdjustment} units for ${product.name}`);
+      toast.success(`Stock adjusted by ${totalAdjustment} units for ${product.productName}`);
     }
     onOpenChange(false);
   };
@@ -51,7 +51,7 @@ export function AdjustStockDialog({ open, onOpenChange, product }: AdjustStockDi
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
-            Adjust Inventory - {product.barcode} - {product.name}
+            Adjust Inventory - {product.barcode} - {product.productName}
           </DialogTitle>
         </DialogHeader>
         

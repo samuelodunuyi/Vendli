@@ -3,12 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Store as StoreIcon, MapPin, Phone, Mail, Edit, TrendingUp, Users } from "lucide-react";
-import { Store } from "@/types/store";
+import { Store } from "@/redux/services/stores.services";
 
 interface ActiveStoreDetailsProps {
   store: Store;
-  onEditStore: (storeId: string) => void;
-  onViewAnalytics: (storeId: string) => void;
+  onEditStore: (storeId: number) => void;
+  onViewAnalytics: (storeId: number) => void;
   onManageStaff: () => void;
 }
 
@@ -24,7 +24,7 @@ export function ActiveStoreDetails({
         <div className="flex justify-between items-start">
           <div className="flex items-center gap-2">
             <StoreIcon className="h-6 w-6 text-blue-600" />
-            <CardTitle className="text-xl">{store.name}</CardTitle>
+            <CardTitle className="text-xl">{store.storeName}</CardTitle>
           </div>
           <Badge variant={store.status === 'active' ? 'default' : 'secondary'}>
             {store.status}
@@ -36,32 +36,26 @@ export function ActiveStoreDetails({
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <MapPin className="h-4 w-4" />
-              {store.location}
+              {store.storeAddress}
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Phone className="h-4 w-4" />
-              {store.phone}
+              {store.storePhoneNumber}
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Mail className="h-4 w-4" />
-              {store.email}
+              {store.storeEmailAddress}
             </div>
             <div className="border-t pt-3">
               <div className="text-sm text-gray-600 mb-1">Manager</div>
               <div className="font-medium flex items-center gap-2">
                 <Users className="h-4 w-4" />
-                {store.manager}
+                {store.storeAdmin}
               </div>
             </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="text-center p-4 bg-green-50 rounded-lg">
-              <div className="text-2xl font-bold text-green-600">
-                ₦{store.monthlyRevenue.toLocaleString()}
-              </div>
-              <div className="text-sm text-green-700">Monthly Revenue</div>
-            </div>
             <div className="text-center p-4 bg-blue-50 rounded-lg">
               <div className="text-2xl font-bold text-blue-600">
                 ₦{store.totalSales.toLocaleString()}
@@ -76,7 +70,7 @@ export function ActiveStoreDetails({
             variant="outline" 
             size="sm" 
             className="flex-1"
-            onClick={() => onEditStore(store.id)}
+            onClick={() => onEditStore(store.storeId)}
           >
             <Edit className="h-4 w-4 mr-1" />
             Edit Store
@@ -85,7 +79,7 @@ export function ActiveStoreDetails({
             variant="outline" 
             size="sm" 
             className="flex-1"
-            onClick={() => onViewAnalytics(store.id)}
+            onClick={() => onViewAnalytics(store.storeId)}
           >
             <TrendingUp className="h-4 w-4 mr-1" />
             View Analytics

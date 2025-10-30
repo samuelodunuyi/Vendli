@@ -1,69 +1,120 @@
-
 import { useState, useEffect } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
-import { Store, MapPin, User, Phone, Mail, Calendar, ToggleLeft, ToggleRight } from "lucide-react";
+import {
+  StoreIcon,
+  MapPin,
+  User,
+  Phone,
+  Mail,
+  ToggleLeft,
+  ToggleRight,
+} from "lucide-react";
+import { Store } from "@/redux/services/stores.services";
 
 interface EditStoreDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storeId?: string;
+  store: Store;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  onEditStore: (updatedData: any) => void;
+  getUserData: {
+    id: number;
+    username: string;
+    email: string;
+    firstName: string;
+    lastName: string;
+    role: string;
+  }[];
 }
 
-export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialogProps) {
+export function EditStoreDialog({
+  open,
+  onOpenChange,
+  store,
+  onEditStore,
+  getUserData,
+}: EditStoreDialogProps) {
   const [formData, setFormData] = useState({
-    name: "",
-    location: "",
-    manager: "",
-    phone: "",
-    email: "",
-    openingDate: "",
-    status: "active" as "active" | "inactive"
+    storeId: null,
+    storeName: "",
+    storePhoneNumber: "",
+    storeEmailAddress: "",
+    storeAddress: "",
+    storeType: "",
+    storeAdmin: "",
+    userId: null,
+    isActive: null,
   });
 
-  // Load store data when dialog opens
   useEffect(() => {
-    if (open && storeId) {
-      // Simulate loading store data
+    if (open && store) {
+      const selectedUser = getUserData?.find(
+        (u) => `${u.firstName} ${u.lastName}` === store.storeAdmin
+      );
+
       setFormData({
-        name: "Victoria Island Store",
-        location: "1004 Victoria Island, Lagos",
-        manager: "Adebayo Ogundimu",
-        phone: "+234 901 234 5678",
-        email: "vi.store@company.com",
-        openingDate: "2020-01-15",
-        status: "active"
+        storeId: store.storeId,
+        storeName: store.storeName || "",
+        storePhoneNumber: store.storePhoneNumber || "",
+        storeEmailAddress: store.storeEmailAddress || "",
+        storeAddress: store.storeAddress || "",
+        storeType: store.storeType || "",
+        storeAdmin: store.storeAdmin || "",
+        userId: selectedUser ? selectedUser.id.toString() : "",
+        isActive: store.isActive || null,
       });
     }
-  }, [open, storeId]);
+  }, [open, store, getUserData]);
+
+  const handleInputChange = (field: string, value: string) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const toggleStatus = () => {
+    setFormData((prev) => ({
+      ...prev,
+      isActive: prev.isActive === "active" ? "inactive" : "active",
+    }));
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Validate required fields
-    if (!formData.name || !formData.location || !formData.manager) {
+
+    if (!formData.storeName || !formData.storeAddress || !formData.storeAdmin) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    // Simulate API call
-    toast.success(`Store "${formData.name}" updated successfully!`);
+    const selectedUser = getUserData.find(
+      (u) => u.id === Number(formData.userId)
+    );
+
+    const updatedStore = {
+      storeId: formData.storeId,
+      storeName: formData.storeName,
+      storeAddress: formData.storeAddress,
+      storeAdmin: selectedUser
+        ? `${selectedUser.firstName} ${selectedUser.lastName}`
+        : "",
+      userId: selectedUser ? selectedUser.id : 0,
+      storePhoneNumber: formData.storePhoneNumber,
+      storeEmailAddress: formData.storeEmailAddress,
+      isActive: formData.isActive,
+    };
+
+    onEditStore(updatedStore);
+    toast.success(`Store "${formData.storeName}" updated successfully!`);
     onOpenChange(false);
-  };
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const toggleStatus = () => {
-    setFormData(prev => ({
-      ...prev,
-      status: prev.status === "active" ? "inactive" : "active"
-    }));
   };
 
   return (
@@ -71,20 +122,25 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <Store className="h-5 w-5" />
+            <StoreIcon className="h-5 w-5" />
             Edit Store Information
           </DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Status Toggle */}
           <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
             <div>
               <p className="font-medium">Store Status</p>
-              <p className="text-sm text-gray-600">Toggle store operational status</p>
+              <p className="text-sm text-gray-600">
+                Toggle store operational status
+              </p>
             </div>
             <div className="flex items-center gap-2">
-              <Badge variant={formData.status === "active" ? "default" : "secondary"}>
-                {formData.status}
+              <Badge
+                variant={formData.isActive === "active" ? "default" : "secondary"}
+              >
+                {formData.isActive}
               </Badge>
               <Button
                 type="button"
@@ -93,7 +149,7 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
                 onClick={toggleStatus}
                 className="p-1"
               >
-                {formData.status === "active" ? (
+                {formData.isActive === "active" ? (
                   <ToggleRight className="h-6 w-6 text-green-600" />
                 ) : (
                   <ToggleLeft className="h-6 w-6 text-gray-400" />
@@ -102,17 +158,19 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
             </div>
           </div>
 
+          {/* Store Name */}
           <div className="space-y-2">
             <Label htmlFor="storeName">Store Name *</Label>
             <Input
               id="storeName"
               placeholder="Enter store name"
-              value={formData.name}
-              onChange={(e) => handleInputChange("name", e.target.value)}
+              value={formData.storeName}
+              onChange={(e) => handleInputChange("storeName", e.target.value)}
               required
             />
           </div>
 
+          {/* Location */}
           <div className="space-y-2">
             <Label htmlFor="location">Location *</Label>
             <div className="relative">
@@ -121,28 +179,36 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
                 id="location"
                 placeholder="Enter store address"
                 className="pl-10"
-                value={formData.location}
-                onChange={(e) => handleInputChange("location", e.target.value)}
+                value={formData.storeAddress}
+                onChange={(e) => handleInputChange("storeAddress", e.target.value)}
                 required
               />
             </div>
           </div>
 
+          {/* Manager Dropdown */}
           <div className="space-y-2">
             <Label htmlFor="manager">Store Manager *</Label>
             <div className="relative">
               <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
+              <select
                 id="manager"
-                placeholder="Enter manager name"
-                className="pl-10"
-                value={formData.manager}
-                onChange={(e) => handleInputChange("manager", e.target.value)}
+                className="pl-10 w-full border rounded-md h-10 text-sm focus:outline-none"
+                value={formData.userId}
+                onChange={(e) => handleInputChange("userId", e.target.value)}
                 required
-              />
+              >
+                <option value="">Select a manager</option>
+                {getUserData?.map((user) => (
+                  <option key={user.id} value={user.id}>
+                    {user.firstName} {user.lastName}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
+          {/* Contact Info */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="phone">Phone Number</Label>
@@ -152,8 +218,8 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
                   id="phone"
                   placeholder="+234 XXX XXX XXXX"
                   className="pl-10"
-                  value={formData.phone}
-                  onChange={(e) => handleInputChange("phone", e.target.value)}
+                  value={formData.storePhoneNumber}
+                  onChange={(e) => handleInputChange("storePhoneNumber", e.target.value)}
                 />
               </div>
             </div>
@@ -167,27 +233,14 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
                   type="email"
                   placeholder="store@company.com"
                   className="pl-10"
-                  value={formData.email}
-                  onChange={(e) => handleInputChange("email", e.target.value)}
+                  value={formData.storeEmailAddress}
+                  onChange={(e) => handleInputChange("storeEmailAddress", e.target.value)}
                 />
               </div>
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="openingDate">Opening Date</Label>
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <Input
-                id="openingDate"
-                type="date"
-                className="pl-10"
-                value={formData.openingDate}
-                onChange={(e) => handleInputChange("openingDate", e.target.value)}
-              />
-            </div>
-          </div>
-
+          {/* Buttons */}
           <div className="flex justify-end gap-3 pt-4">
             <Button
               type="button"
@@ -196,9 +249,7 @@ export function EditStoreDialog({ open, onOpenChange, storeId }: EditStoreDialog
             >
               Cancel
             </Button>
-            <Button type="submit">
-              Update Store
-            </Button>
+            <Button type="submit">Update Store</Button>
           </div>
         </form>
       </DialogContent>

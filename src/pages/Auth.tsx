@@ -20,7 +20,6 @@ export default function Auth() {
   const [signInMutation] = useLoginMutation();
   const [signUpMutation] = useRegisterMutation();
 
-  // 👇 redirect after successful login
   useEffect(() => {
     if (user) {
       navigate('/admin');
@@ -32,11 +31,9 @@ export default function Auth() {
     try {
       const response = await signInMutation({ email: email, password }).unwrap();
 
-      // ✅ Save to localStorage
       localStorage.setItem('accessToken', response.accessToken);
       localStorage.setItem('refreshToken', response.refreshToken);
 
-      // ✅ Update Redux
       dispatch(
         setTokens({
           accessToken: response.accessToken,
@@ -46,11 +43,11 @@ export default function Auth() {
             lastName: response.lastName,
             email: response.email,
             role: response.role,
+            username: response.username
           },
         })
       );
 
-      // ✅ Navigate (redundant but safe)
       navigate('/admin');
     } catch (error) {
       console.error('Sign in failed:', error);

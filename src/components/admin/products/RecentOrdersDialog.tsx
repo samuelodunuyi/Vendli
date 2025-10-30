@@ -2,8 +2,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Product } from "@/types";
 import { ShoppingCart } from "lucide-react";
+import { Product } from "@/redux/services/products.services";
 
 interface RecentOrdersDialogProps {
   open: boolean;
@@ -91,7 +91,7 @@ export function RecentOrdersDialog({ open, onOpenChange, product }: RecentOrders
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Recent Orders - {product.name}
+            Recent Orders - {product.productName}
           </DialogTitle>
         </DialogHeader>
         

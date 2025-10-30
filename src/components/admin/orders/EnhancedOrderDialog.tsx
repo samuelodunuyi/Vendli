@@ -94,7 +94,6 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
             <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="receipt">Digital Receipt</TabsTrigger>
-            <TabsTrigger value="engagement">Engagement</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-4">
@@ -150,23 +149,6 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
                 </div>
               </div>
               
-              <div className="space-y-4">
-                <h3 className="font-medium">Engagement Actions</h3>
-                <div className="space-y-2">
-                  <button className="w-full text-left p-3 border rounded-lg hover:bg-gray-50 text-sm">
-                    🎁 Send personalized thank you message
-                  </button>
-                  <button className="w-full text-left p-3 border rounded-lg hover:bg-gray-50 text-sm">
-                    📧 Schedule follow-up email
-                  </button>
-                  <button className="w-full text-left p-3 border rounded-lg hover:bg-gray-50 text-sm">
-                    ⭐ Request product review
-                  </button>
-                  <button className="w-full text-left p-3 border rounded-lg hover:bg-gray-50 text-sm">
-                    🔄 Suggest related products
-                  </button>
-                </div>
-              </div>
             </div>
           </TabsContent>
         </Tabs>

@@ -1,6 +1,6 @@
 
+import { Product } from "@/redux/services/products.services";
 import { useState } from "react";
-import { Product } from "@/types";
 
 export function useProductDialogs() {
   const [stockByStoreProduct, setStockByStoreProduct] = useState<Product | null>(null);

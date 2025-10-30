@@ -1,16 +1,16 @@
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Store } from "@/redux/services/stores.services";
 import { Eye } from "lucide-react";
-import { Store } from "@/types/store";
 
 interface StoreSelectionBarProps {
   stores: Store[];
-  activeStoreId: string;
+  activeStoreId: number;
   compareMode: boolean;
-  selectedStoresForComparison: string[];
-  onStoreSwitch: (storeId: string) => void;
-  onStoreSelect: (storeId: string) => void;
+  selectedStoresForComparison: number[];
+  onStoreSwitch: (storeId: number) => void;
+  onStoreSelect: (storeId: number) => void;
 }
 
 export function StoreSelectionBar({
@@ -30,16 +30,16 @@ export function StoreSelectionBar({
         <div className="flex flex-wrap gap-2">
           {stores.map((store) => (
             <Button
-              key={store.id}
-              variant={activeStoreId === store.id ? "default" : "outline"}
+              key={store.storeId}
+              variant={activeStoreId === store.storeId ? "default" : "outline"}
               size="sm"
-              onClick={() => compareMode ? onStoreSelect(store.id) : onStoreSwitch(store.id)}
-              className={`${compareMode && selectedStoresForComparison.includes(store.id) ? 'ring-2 ring-blue-500' : ''}`}
+              onClick={() => compareMode ? onStoreSelect(store.storeId) : onStoreSwitch(store.storeId)}
+              className={`${compareMode && selectedStoresForComparison.includes(store.storeId) ? 'ring-2 ring-blue-500' : ''}`}
             >
-              {compareMode && selectedStoresForComparison.includes(store.id) && (
+              {compareMode && selectedStoresForComparison.includes(store.storeId) && (
                 <Eye className="h-3 w-3 mr-1" />
               )}
-              {store.name}
+              {store.storeName}
             </Button>
           ))}
         </div>

@@ -7,14 +7,14 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Users, Clock, TrendingUp, Award, Calendar } from "lucide-react";
-import { Store } from "@/types/store";
 import { toast } from "@/components/ui/sonner";
+import { Store } from "@/redux/services/stores.services";
 
 interface StaffMember {
   id: string;
   name: string;
   position: string;
-  storeId: string;
+  storeId: number;
   storeName: string;
   performance: number;
   attendance: number;
@@ -33,7 +33,7 @@ const mockStaffData: StaffMember[] = [
     id: "1",
     name: "Adebayo Ogundimu",
     position: "Store Manager",
-    storeId: "store1",
+    storeId: 1,
     storeName: "Victoria Island Store",
     performance: 95,
     attendance: 98,
@@ -46,7 +46,7 @@ const mockStaffData: StaffMember[] = [
     id: "2",
     name: "Fatima Ahmed",
     position: "Sales Associate",
-    storeId: "store1",
+    storeId: 1,
     storeName: "Victoria Island Store",
     performance: 88,
     attendance: 94,
@@ -59,7 +59,7 @@ const mockStaffData: StaffMember[] = [
     id: "3",
     name: "Chidi Okwu",
     position: "Store Manager",
-    storeId: "store3",
+    storeId: 3,
     storeName: "Lekki Store",
     performance: 92,
     attendance: 96,
@@ -72,7 +72,7 @@ const mockStaffData: StaffMember[] = [
     id: "4",
     name: "Blessing Nwosu",
     position: "Sales Associate",
-    storeId: "store4",
+    storeId: 4,
     storeName: "Ajah Store",
     performance: 85,
     attendance: 92,
@@ -91,11 +91,11 @@ const scheduleData = [
 ];
 
 export function EnhancedStaffManagement({ stores }: EnhancedStaffManagementProps) {
-  const [selectedStore, setSelectedStore] = useState<string>("all");
+  const [selectedStore, setSelectedStore] = useState<number>(null);
   const [staffFilter, setStaffFilter] = useState<string>("all");
 
   const filteredStaff = mockStaffData.filter(staff => {
-    if (selectedStore !== "all" && staff.storeId !== selectedStore) return false;
+    if (selectedStore !== null && staff.storeId !== selectedStore) return false;
     if (staffFilter !== "all" && staff.position !== staffFilter) return false;
     return true;
   });
@@ -128,19 +128,20 @@ export function EnhancedStaffManagement({ stores }: EnhancedStaffManagementProps
           <TabsContent value="performance" className="space-y-6">
             {/* Filters */}
             <div className="flex gap-4">
-              <Select value={selectedStore} onValueChange={setSelectedStore}>
-                <SelectTrigger className="w-48">
-                  <SelectValue placeholder="Select Store" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All Stores</SelectItem>
-                  {stores.map((store) => (
-                    <SelectItem key={store.id} value={store.id}>
-                      {store.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+<Select value={selectedStore?.toString()} onValueChange={(val) => setSelectedStore(Number(val))}>
+  <SelectTrigger className="w-48">
+    <SelectValue placeholder="Select Store" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All Stores</SelectItem>
+    {stores.map((store) => (
+      <SelectItem key={store.storeId} value={store.storeId.toString()}>
+        {store.storeName}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
 
               <Select value={staffFilter} onValueChange={setStaffFilter}>
                 <SelectTrigger className="w-48">

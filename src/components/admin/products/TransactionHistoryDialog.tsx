@@ -2,8 +2,8 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
-import { Product } from "@/types";
 import { History } from "lucide-react";
+import { Product } from "@/redux/services/products.services";
 
 interface TransactionHistoryDialogProps {
   open: boolean;
@@ -85,7 +85,7 @@ export function TransactionHistoryDialog({ open, onOpenChange, product }: Transa
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <History className="h-5 w-5" />
-            Transaction History - {product.name}
+            Transaction History - {product.productName}
           </DialogTitle>
         </DialogHeader>
         
@@ -98,16 +98,16 @@ export function TransactionHistoryDialog({ open, onOpenChange, product }: Transa
               </div>
               <div>
                 <span className="text-gray-600">Current Stock:</span>
-                <div className="font-medium">{product.stock} units</div>
+                <div className="font-medium">{product.currentStock} units</div>
               </div>
               <div>
                 <span className="text-gray-600">Category:</span>
-                <div className="font-medium">{product.category}</div>
+                <div className="font-medium">{product.categoryId}</div>
               </div>
               <div>
                 <span className="text-gray-600">Status:</span>
-                <Badge variant={product.status === 'Active' ? 'default' : 'secondary'}>
-                  {product.status}
+                <Badge variant={product.isActive === true ? 'default' : 'secondary'}>
+                  {product.isActive}
                 </Badge>
               </div>
             </div>

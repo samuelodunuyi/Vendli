@@ -15,7 +15,7 @@ interface StorePerformance {
 }
 
 interface StoreComparisonProps {
-  selectedStores: string[];
+  selectedStores: number[];
   onClose: () => void;
 }
 

@@ -8,7 +8,7 @@ import { OrdersStats } from "./orders/OrdersStats";
 import { OrdersFilters } from "./orders/OrdersFilters";
 import { OrdersTable } from "./orders/OrdersTable";
 import { mockOrdersData } from "./orders/mockOrdersData";
-import { Order } from "@/types/order";
+import { Order, useGetOrdersQuery } from "@/redux/services/orders.services";
 
 export function OrdersManagement() {
   const [searchQuery, setSearchQuery] = useState("");
@@ -17,8 +17,8 @@ export function OrdersManagement() {
   const [showEnhancedDialog, setShowEnhancedDialog] = useState(false);
   const [showOrderDetails, setShowOrderDetails] = useState(false);
   const [showDeliveryTracking, setShowDeliveryTracking] = useState(false);
-
-  const [orders] = useState<Order[]>(mockOrdersData);
+const {data: ordersData, isLoading} = useGetOrdersQuery()
+  const [orders] = useState<Order[]>(ordersData);
 
   const filteredOrders = orders.filter(order => {
     const matchesSearch = order.id.toLowerCase().includes(searchQuery.toLowerCase()) ||

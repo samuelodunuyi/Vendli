@@ -1,14 +1,15 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Product } from "@/types";
+import { Category, Product } from "@/redux/services/products.services";
 
 interface ProductsSummaryCardsProps {
   productList: Product[];
   lowStockProducts: Product[];
-  categories: string[];
+  categories: Category[];
 }
 
 export function ProductsSummaryCards({ productList, lowStockProducts, categories }: ProductsSummaryCardsProps) {
+  console.log(productList)
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
       <Card>
@@ -16,7 +17,7 @@ export function ProductsSummaryCards({ productList, lowStockProducts, categories
           <CardTitle className="text-sm font-medium text-gray-600">Total Products</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{productList.length}</div>
+          <div className="text-2xl font-bold">{productList?.length}</div>
         </CardContent>
       </Card>
       
@@ -25,7 +26,7 @@ export function ProductsSummaryCards({ productList, lowStockProducts, categories
           <CardTitle className="text-sm font-medium text-gray-600">Low Stock Items</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold text-red-600">{lowStockProducts.length}</div>
+          <div className="text-2xl font-bold text-red-600">{lowStockProducts?.length}</div>
         </CardContent>
       </Card>
       
@@ -35,7 +36,7 @@ export function ProductsSummaryCards({ productList, lowStockProducts, categories
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ₦{productList.reduce((sum, p) => sum + (p.price * p.stock), 0).toLocaleString()}
+            ₦{productList?.reduce((sum, p) => sum + (p.basePrice * p.currentStock), 0).toLocaleString()}
           </div>
         </CardContent>
       </Card>
@@ -45,7 +46,7 @@ export function ProductsSummaryCards({ productList, lowStockProducts, categories
           <CardTitle className="text-sm font-medium text-gray-600">Categories</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-2xl font-bold">{categories.length}</div>
+          <div className="text-2xl font-bold">{productList?.length}</div>
         </CardContent>
       </Card>
     </div>

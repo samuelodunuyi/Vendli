@@ -5,18 +5,18 @@ import { StoreGrid } from "./StoreGrid";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Truck, DollarSign, Clock, TrendingUp, Package } from "lucide-react";
-import { Store } from "@/types/store";
+import { Store } from "@/redux/services/stores.services";
 
 interface StoreOverviewTabProps {
   stores: Store[];
   activeStore: Store | undefined;
-  activeStoreId: string;
+  activeStoreId: number;
   compareMode: boolean;
-  selectedStoresForComparison: string[];
-  onStoreSwitch: (storeId: string) => void;
-  onStoreSelect: (storeId: string) => void;
-  onEditStore: (storeId: string) => void;
-  onViewAnalytics: (storeId: string) => void;
+  selectedStoresForComparison: number[];
+  onStoreSwitch: (storeId: number) => void;
+  onStoreSelect: (storeId: number) => void;
+  onEditStore: (storeId: number) => void;
+  onViewAnalytics: (storeId: number) => void;
   onManageStaff: () => void;
 }
 

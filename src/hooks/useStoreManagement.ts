@@ -1,5 +1,4 @@
 import { useState } from "react";
-import { Store } from "@/types/store";
 import { toast } from "@/components/ui/sonner";
 
 export interface StoreTransfer {
@@ -17,7 +16,7 @@ export interface StoreTransfer {
 
 export interface StoreAlert {
   id: string;
-  storeId: string;
+  storeId: number;
   type: 'low-stock' | 'high-sales' | 'staff-shortage' | 'maintenance';
   severity: 'low' | 'medium' | 'high' | 'critical';
   message: string;
@@ -26,15 +25,15 @@ export interface StoreAlert {
 }
 
 export function useStoreManagement() {
-  const [activeStoreId, setActiveStoreId] = useState<string>("store1");
+  const [activeStoreId, setActiveStoreId] = useState<number | null>(null);
   const [compareMode, setCompareMode] = useState(false);
-  const [selectedStoresForComparison, setSelectedStoresForComparison] = useState<string[]>([]);
+  const [selectedStoresForComparison, setSelectedStoresForComparison] = useState<number[]>([]);
   const [showTransferDialog, setShowTransferDialog] = useState(false);
   const [showStaffDialog, setShowStaffDialog] = useState(false);
   const [showAddStoreDialog, setShowAddStoreDialog] = useState(false);
   const [showEditStoreDialog, setShowEditStoreDialog] = useState(false);
   const [showAnalyticsDialog, setShowAnalyticsDialog] = useState(false);
-  const [selectedStoreForEdit, setSelectedStoreForEdit] = useState<string | undefined>();
+  const [selectedStoreForEdit, setSelectedStoreForEdit] = useState<number | null>(null);
 
   const mockTransfers: StoreTransfer[] = [
     {
@@ -64,7 +63,7 @@ export function useStoreManagement() {
   const mockAlerts: StoreAlert[] = [
     {
       id: "a1",
-      storeId: "store3",
+      storeId: 3,
       type: "low-stock",
       severity: "high",
       message: "iPhone 15 Pro stock below 5 units",
@@ -73,7 +72,7 @@ export function useStoreManagement() {
     },
     {
       id: "a2",
-      storeId: "store2",
+      storeId: 2,
       type: "high-sales",
       severity: "medium",
       message: "Samsung Galaxy S23 selling 50% above average",
@@ -82,56 +81,61 @@ export function useStoreManagement() {
     }
   ];
 
-  const handleStoreSwitch = (storeId: string) => {
+  const handleStoreSwitch = (storeId: number) => {
     setActiveStoreId(storeId);
     toast.success(`Switched to ${getStoreName(storeId)}`);
   };
 
   const toggleCompareMode = () => {
-    setCompareMode(!compareMode);
+    setCompareMode((prev) => !prev);
     if (compareMode) {
       setSelectedStoresForComparison([]);
     }
   };
 
-  const handleStoreSelect = (storeId: string) => {
-    if (selectedStoresForComparison.includes(storeId)) {
-      setSelectedStoresForComparison(prev => prev.filter(id => id !== storeId));
-    } else if (selectedStoresForComparison.length < 3) {
-      setSelectedStoresForComparison(prev => [...prev, storeId]);
-    } else {
-      toast.error("You can compare up to 3 stores at once");
-    }
+  const handleStoreSelect = (storeId: number) => {
+    setSelectedStoresForComparison((prev) => {
+      if (prev.includes(storeId)) {
+        return prev.filter(id => id !== storeId);
+      }
+      if (prev.length >= 3) {
+        toast.error("You can compare up to 3 stores at once");
+        return prev;
+      }
+      return [...prev, storeId];
+    });
   };
 
-  const initiateTransfer = (transfer: Omit<StoreTransfer, 'id' | 'status' | 'requestDate'>) => {
+  const initiateTransfer = (
+    transfer: Omit<StoreTransfer, "id" | "status" | "requestDate">
+  ) => {
     const newTransfer: StoreTransfer = {
       ...transfer,
       id: Date.now().toString(),
-      status: 'pending',
-      requestDate: new Date().toISOString().split('T')[0]
+      status: "pending",
+      requestDate: new Date().toISOString().split("T")[0],
     };
-    toast.success(`Transfer request initiated: ${transfer.quantity} units of ${transfer.productName}`);
+    toast.success(`Transfer initiated: ${transfer.quantity} units of ${transfer.productName}`);
     return newTransfer;
   };
 
-  const handleEditStore = (storeId: string) => {
+  const handleEditStore = (storeId: number) => {
     setSelectedStoreForEdit(storeId);
     setShowEditStoreDialog(true);
   };
 
-  const handleViewAnalytics = (storeId: string) => {
+  const handleViewAnalytics = (storeId: number) => {
     setActiveStoreId(storeId);
     setShowAnalyticsDialog(true);
   };
 
-  const getStoreName = (storeId: string): string => {
-    const storeNames: Record<string, string> = {
-      "store1": "Victoria Island Store",
-      "store2": "Ikeja Store",
-      "store3": "Lekki Store",
-      "store4": "Ajah Store",
-      "store5": "Egbeda Store"
+  const getStoreName = (storeId: number): string => {
+    const storeNames: Record<number, string> = {
+      1: "Victoria Island Store",
+      2: "Ikeja Store",
+      3: "Lekki Store",
+      4: "Ajah Store",
+      5: "Egbeda Store"
     };
     return storeNames[storeId] || "Unknown Store";
   };

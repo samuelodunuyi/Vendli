@@ -2,14 +2,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertTriangle } from "lucide-react";
-import { Product } from "@/types";
+import { Product } from "@/redux/services/products.services";
 
 interface ProductsLowStockAlertProps {
   lowStockProducts: Product[];
 }
 
 export function ProductsLowStockAlert({ lowStockProducts }: ProductsLowStockAlertProps) {
-  if (lowStockProducts.length === 0) return null;
+  if (lowStockProducts?.length === 0) return null;
 
   return (
     <Card className="border-red-200 bg-red-50">
@@ -21,13 +21,13 @@ export function ProductsLowStockAlert({ lowStockProducts }: ProductsLowStockAler
       </CardHeader>
       <CardContent>
         <div className="space-y-2">
-          {lowStockProducts.slice(0, 3).map(product => (
-            <div key={product.id} className="flex justify-between items-center">
-              <span className="text-red-700">{product.name}</span>
-              <Badge variant="destructive">{product.stock} left</Badge>
+          {lowStockProducts?.slice(0, 3).map(product => (
+            <div key={product.productId} className="flex justify-between items-center">
+              <span className="text-red-700">{product.productName}</span>
+              <Badge variant="destructive">{product.currentStock} left</Badge>
             </div>
           ))}
-          {lowStockProducts.length > 3 && (
+          {lowStockProducts?.length > 3 && (
             <p className="text-red-600 text-sm">
               +{lowStockProducts.length - 3} more items need restocking
             </p>

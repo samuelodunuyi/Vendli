@@ -31,9 +31,11 @@ export interface ChangePasswordResponse {
 export interface AuthResponse {
   accessToken: string;
   refreshToken: string;
-  username: string;
+  firstName: string;
+  lastName: string;
   email: string;
   role: number;
+  username: string;
 }
 
 

@@ -1,17 +1,5 @@
-export interface Product {
-  id: string;
-  name: string;
-  description: string;
-  price: number;
-  imageUrl: string;
-  barcode?: string;
-  category: string;
-  stock: number;
-  status: 'Active' | 'Inactive';
-  createdAt: string;
-  discountPrice?: number;
-  lowStockAlert?: number;
-}
+import { Product } from "@/redux/services/products.services";
+
 
 export interface CartItem {
   product: Product;

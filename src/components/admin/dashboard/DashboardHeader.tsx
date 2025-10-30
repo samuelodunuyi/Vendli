@@ -2,7 +2,7 @@
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomDatePicker } from "../CustomDatePicker";
-
+import {useGetStoresQuery} from "@/redux/services/stores.services"
 interface DateRange {
   from: Date | undefined;
   to: Date | undefined;
@@ -55,6 +55,14 @@ export function DashboardHeader({
   customDateRange,
   onCustomDateRangeChange
 }: DashboardHeaderProps) {
+  const {data: storesData, isLoading} = useGetStoresQuery()
+  console.log(storesData)
+
+  if (isLoading) {
+  return <p>Loading stores...</p>; // or a spinner
+}
+
+
   return (
     <div className="space-y-4">
       {/* Header with Time Period Tabs and Store Filter */}
@@ -66,9 +74,9 @@ export function DashboardHeader({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {stores.map((store) => (
-                <SelectItem key={store} value={store}>
-                  {store}
+              {storesData?.map((store) => (
+                <SelectItem key={store.storeId} value={store.storeName}>
+                  {store.storeName}
                 </SelectItem>
               ))}
             </SelectContent>

@@ -20,7 +20,7 @@ import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, R
 interface StoreAnalyticsDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storeId?: string;
+  storeId?: number;
   storeName?: string;
 }
 

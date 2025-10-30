@@ -1,7 +1,7 @@
 
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Product } from "@/types";
+import { Product } from "@/redux/services/products.services";
 import { MapPin } from "lucide-react";
 
 interface StockByStoreDialogProps {
@@ -32,7 +32,7 @@ export function StockByStoreDialog({ open, onOpenChange, product }: StockByStore
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <MapPin className="h-5 w-5" />
-            Stock Distribution - {product.name}
+            Stock Distribution - {product.productName}
           </DialogTitle>
         </DialogHeader>
         

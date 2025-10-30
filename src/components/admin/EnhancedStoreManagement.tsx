@@ -8,11 +8,7 @@ import {
   Truck,
   BarChart3,
   Bell,
-  Users,
-  TrendingUp,
-  Package
 } from "lucide-react";
-import { Store } from "@/types/store";
 import { useStoreManagement } from "@/hooks/useStoreManagement";
 import { StoreComparison } from "./store/StoreComparison";
 import { InventoryTransfer } from "./store/InventoryTransfer";
@@ -22,8 +18,6 @@ import { EditStoreDialog } from "./store/EditStoreDialog";
 import { ManageStaffDialog } from "./store/ManageStaffDialog";
 import { StoreAnalyticsDialog } from "./store/StoreAnalyticsDialog";
 import { StoreOverviewTab } from "./store/StoreOverviewTab";
-import { StoreNetworkStats } from "./store/StoreNetworkStats";
-import { StoreTransfersTab } from "./store/StoreTransfersTab";
 import { BulkOperations } from "./store/BulkOperations";
 import { AdvancedReporting } from "./store/AdvancedReporting";
 import { RealTimeNotifications } from "./store/RealTimeNotifications";
@@ -31,71 +25,15 @@ import { CustomerAnalytics } from "./store/CustomerAnalytics";
 import { EnhancedStaffManagement } from "./store/EnhancedStaffManagement";
 import { WorkflowGuide } from "@/components/WorkflowGuide";
 import { inventoryAdjustmentSteps } from "@/data/workflows";
-
-const mockStores: Store[] = [
-  {
-    id: "store1",
-    name: "Victoria Island Store",
-    location: "1004 Victoria Island, Lagos",
-    manager: "Adebayo Ogundimu",
-    phone: "+234 901 234 5678",
-    email: "vi.store@company.com",
-    status: "active",
-    openingDate: "2020-01-15",
-    totalSales: 45000000,
-    monthlyRevenue: 3750000,
-  },
-  {
-    id: "store2",
-    name: "Ikeja Store",
-    location: "Allen Avenue, Ikeja, Lagos",
-    manager: "Fatima Ahmed",
-    phone: "+234 902 345 6789",
-    email: "ikeja.store@company.com",
-    status: "active",
-    openingDate: "2021-03-20",
-    totalSales: 32000000,
-    monthlyRevenue: 2800000,
-  },
-  {
-    id: "store3",
-    name: "Lekki Store",
-    location: "Phase 1, Lekki, Lagos",
-    manager: "Chidi Okwu",
-    phone: "+234 903 456 7890",
-    email: "lekki.store@company.com",
-    status: "active",
-    openingDate: "2022-06-10",
-    totalSales: 28000000,
-    monthlyRevenue: 2400000,
-  },
-  {
-    id: "store4",
-    name: "Ajah Store",
-    location: "Ajah, Lagos",
-    manager: "Blessing Nwosu",
-    phone: "+234 904 567 8901",
-    email: "ajah.store@company.com",
-    status: "active",
-    openingDate: "2022-08-15",
-    totalSales: 25000000,
-    monthlyRevenue: 2100000,
-  },
-  {
-    id: "store5",
-    name: "Egbeda Store",
-    location: "Egbeda, Lagos",
-    manager: "Ibrahim Lawal",
-    phone: "+234 905 678 9012",
-    email: "egbeda.store@company.com",
-    status: "active",
-    openingDate: "2023-01-10",
-    totalSales: 18000000,
-    monthlyRevenue: 1500000,
-  }
-];
+import { useGetStoresQuery, useCreateStoreMutation, useUpdateStoreMutation, Store, StoreCreateRequest, StoreEditRequest} from "@/redux/services/stores.services";
+import { useGetUsersQuery, User} from "@/redux/services/user.services";
+import { toast } from "sonner";
 
 export function EnhancedStoreManagement() {
+      const { data, isLoading, isError } = useGetStoresQuery();
+      const { data: getUserData } = useGetUsersQuery({});
+      const [createStore, { isLoading: isCreating }] = useCreateStoreMutation();
+      const [updateStore, { isLoading: isUpdating }] = useUpdateStoreMutation();
   const {
     activeStoreId,
     compareMode,
@@ -117,13 +55,62 @@ export function EnhancedStoreManagement() {
     toggleCompareMode,
     handleStoreSelect,
     initiateTransfer,
-    handleEditStore,
     handleViewAnalytics,
+    handleEditStore,
     getStoreName
   } = useStoreManagement();
 
   const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
-  const activeStore = mockStores.find(store => store.id === activeStoreId);
+  const activeStore = data?.find(store => store.storeId === activeStoreId);
+
+
+const handleAddStore = async (formData: StoreCreateRequest) => {
+  try {
+    // Find selected user based on selected manager ID
+    const selectedUser = getUserData?.find((u: User) => u.id === Number(formData.userId));
+
+    const storePayload = {
+      storeName: formData.storeName,
+      storePhoneNumber: formData.storePhoneNumber,
+      storeEmailAddress: formData.storeEmailAddress,
+      storeAddress: formData.storeAddress,
+      storeAdmin: selectedUser ? `${selectedUser.firstName} ${selectedUser.lastName}` : "",
+      userId: selectedUser ? selectedUser.id : 0,
+      storeType: "Retail",
+    };
+
+    await createStore(storePayload).unwrap();
+    toast.success("Store added successfully!");
+    setShowAddStoreDialog(false);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to add store");
+  }
+};
+
+const handleUpdateStore = async (updatedData: StoreEditRequest) => {
+  console.log(updatedData)
+  try {
+    const storePayload = {
+      storeId: updatedData.storeId,
+      storeName: updatedData.storeName,
+      storePhoneNumber: updatedData.storePhoneNumber,
+      storeEmailAddress: updatedData.storeEmailAddress,
+      storeAddress: updatedData.storeAddress,
+      storeAdmin: updatedData.storeAdmin, 
+      userId: updatedData.userId,
+      storeType: "Retail",
+      isActive: updatedData.isActive,
+    };
+
+    await updateStore(storePayload).unwrap();
+    toast.success("Store updated successfully!");
+    setShowEditStoreDialog(false);
+  } catch (err) {
+    console.error(err);
+    toast.error("Failed to update store");
+  }
+};
 
   return (
     <div className="space-y-6">
@@ -194,7 +181,7 @@ export function EnhancedStoreManagement() {
 
         <TabsContent value="overview" className="space-y-6">
           <StoreOverviewTab
-            stores={mockStores}
+            stores={data}
             activeStore={activeStore}
             activeStoreId={activeStoreId}
             compareMode={compareMode}
@@ -212,11 +199,11 @@ export function EnhancedStoreManagement() {
         </TabsContent>
 
         <TabsContent value="bulk">
-          <BulkOperations stores={mockStores} />
+          <BulkOperations stores={data} />
         </TabsContent>
 
         <TabsContent value="reporting">
-          <AdvancedReporting stores={mockStores} />
+          <AdvancedReporting stores={data} />
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -224,28 +211,30 @@ export function EnhancedStoreManagement() {
         </TabsContent>
 
         <TabsContent value="customers">
-          <CustomerAnalytics stores={mockStores} />
+          <CustomerAnalytics stores={data} />
         </TabsContent>
 
         <TabsContent value="staff">
-          <EnhancedStaffManagement stores={mockStores} />
+          <EnhancedStaffManagement stores={data} />
         </TabsContent>
 
-        <TabsContent value="analytics">
-          <StoreNetworkStats stores={mockStores} />
-        </TabsContent>
       </Tabs>
 
       {/* All Dialog Components */}
       <AddStoreDialog
         open={showAddStoreDialog}
+        isCreating= {isCreating}
         onOpenChange={setShowAddStoreDialog}
+        onAddStore={handleAddStore}
+        getUserData= {getUserData}
       />
 
       <EditStoreDialog
         open={showEditStoreDialog}
         onOpenChange={setShowEditStoreDialog}
-        storeId={selectedStoreForEdit}
+        store={activeStore}
+        onEditStore={handleUpdateStore}
+        getUserData= {getUserData}
       />
 
       <ManageStaffDialog

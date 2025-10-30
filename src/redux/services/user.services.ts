@@ -2,16 +2,22 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { baseUrl } from '../baseUrl';
 import type { RootState } from '../store';
+import { baseQueryWithReauth } from './baseQueryWithReauth';
 
 // Request types
 export interface CreateUserRequest {
   username: string;
   email: string;
   password: string;
+  roleId: number;
+  storeId: number;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
 }
 
 export interface AssignStoreAdminRequest {
-  storeId: string; // API expects string for storeId
+  storeId: string; 
   userEmail: string;
 }
 
@@ -35,25 +41,19 @@ export interface MessageResponse {
 }
 
 export interface User {
-  id: string;
-  username: string;
+  id: number;
   email: string;
+  firstName: string;
+  lastName: string;
+  phoneNumber: string;
   role: string;
-  isActive: boolean;
+  username: string;
 }
 
 // Users API
 export const usersApi = createApi({
   reducerPath: 'usersApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).auth.accessToken;
-      if (token) headers.set('Authorization', `Bearer ${token}`);
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     // Create store admin
     createStoreAdmin: builder.mutation<MessageResponse, CreateUserRequest>({

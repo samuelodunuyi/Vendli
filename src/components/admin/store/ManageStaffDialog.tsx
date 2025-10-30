@@ -22,7 +22,7 @@ interface Staff {
 interface ManageStaffDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  storeId?: string;
+  storeId?: number;
   storeName?: string;
 }
 

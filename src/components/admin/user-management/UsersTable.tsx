@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Edit, Trash2, MoreHorizontal, Shield, UserPlus, User as UserIcon } from "lucide-react";
-import { User } from "./types";
+import { User } from "@/redux/services/user.services";
 
 interface UsersTableProps {
   users: User[];
@@ -15,6 +15,7 @@ interface UsersTableProps {
 }
 
 export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps) {
+  console.log(users)
   const getRoleIcon = (role: string) => {
     switch (role) {
       case "super_admin":
@@ -59,11 +60,11 @@ export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps)
           </TableHeader>
           <TableBody>
             {users.map(user => {
-              const displayName = user.first_name && user.last_name 
-                ? `${user.first_name} ${user.last_name}` 
+              const displayName = user.firstName && user.lastName 
+                ? `${user.firstName} ${user.lastName}` 
                 : 'No name set';
-              const initials = user.first_name && user.last_name
-                ? `${user.first_name[0]}${user.last_name[0]}`.toUpperCase()
+              const initials = user.firstName && user.lastName
+                ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
                 : 'U';
 
               return (
@@ -76,27 +77,15 @@ export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps)
                       <div>
                         <div className="font-medium">{displayName}</div>
                         <div className="text-sm text-gray-500">{user.email}</div>
-                        {user.phone && (
-                          <div className="text-sm text-gray-500">{user.phone}</div>
+                        {user.phoneNumber && (
+                          <div className="text-sm text-gray-500">{user.phoneNumber}</div>
                         )}
                       </div>
                     </div>
                   </TableCell>
                   <TableCell>
                     <div className="flex gap-1 flex-wrap">
-                      {user.roles.length > 0 ? (
-                        user.roles.map((userRole, index) => (
-                          <Badge key={index} variant={getRoleBadgeVariant(userRole.role) as any} className="flex items-center gap-1">
-                            {getRoleIcon(userRole.role)}
-                            {formatRoleName(userRole.role)}
-                            {userRole.store_name && (
-                              <span className="text-xs">@ {userRole.store_name}</span>
-                            )}
-                          </Badge>
-                        ))
-                      ) : (
-                        <Badge variant="outline">Customer</Badge>
-                      )}
+                        <Badge variant="outline">{user?.role}</Badge>
                     </div>
                   </TableCell>
                   <TableCell>

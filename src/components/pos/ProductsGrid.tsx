@@ -3,7 +3,7 @@ import { Search } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ProductCard } from "@/components/ProductCard";
-import { Product } from "@/types";
+import { Product } from "@/redux/services/products.services";
 
 interface ProductsGridProps {
   products: Product[];
@@ -30,7 +30,7 @@ export function ProductsGrid({ products }: ProductsGridProps) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 max-h-[calc(100vh-320px)] overflow-y-auto">
             {products.map((product) => (
-              <ProductCard key={product.id} product={product} isPOS={true} />
+              <ProductCard key={product.productId} product={product} isPOS={true} />
             ))}
           </div>
         )}

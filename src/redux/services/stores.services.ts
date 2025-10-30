@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { baseUrl } from '../baseUrl';
 import type { RootState } from '../store';
+import { baseQueryWithReauth } from './baseQueryWithReauth';
 
 // ================== TYPES ==================
 
@@ -10,11 +11,13 @@ export interface Store {
   storePhoneNumber: string;
   storeEmailAddress: string;
   storeAddress: string;
-  storeType: string;
   storeAdmin: string;
   userId: string;
+  storeType: string;
+  isActive: boolean;
   createdAt: string;
   updatedAt: string;
+  totalSales: number;
 }
 
 export interface StoreCreateRequest {
@@ -24,9 +27,20 @@ export interface StoreCreateRequest {
   storeAddress: string;
   storeType: string;
   storeAdmin: string;
-  userId: string;
+  userId: number;
 }
 
+export interface StoreEditRequest {
+    storeId: number;
+  storeName: string;
+  storePhoneNumber: string;
+  storeEmailAddress: string;
+  storeAddress: string;
+  storeType: string;
+  storeAdmin: string;
+  userId: number;
+  isActive: boolean;
+}
 // ================== STATISTICS TYPES ==================
 
 export interface TopCategory {
@@ -35,7 +49,14 @@ export interface TopCategory {
   totalSales: number;
   totalAmount: number;
 }
-
+export interface TopPerforming {
+  storeId: number;
+  storeName: string;
+  totalOrders: number;
+  totalSales: number;
+  productsSold: number;
+  activeCustomers: number;
+}
 export interface TopProduct {
   productId: number;
   productName: string;
@@ -64,6 +85,13 @@ export interface Statistics {
   returnedOrders: number;
   deliveredOrders: number;
   totalOfflineOrders: number;
+  activeStores: number;
+  cancelledOrders: number;
+  activeCustomers: number;
+  productsSold: number;
+  pendingOrders: number;
+  delayedOrders: number;
+  topPerformingStores: TopCategory[];
   totalSales: number;
   totalSalesPrevious: number;
   totalProducts: number;
@@ -79,15 +107,7 @@ export interface Statistics {
 
 export const storeApi = createApi({
   reducerPath: 'storeApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl,
-    prepareHeaders: (headers, { getState }) => {
-      const { accessToken } = (getState() as RootState).auth;
-      if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   tagTypes: ['Store', 'Statistics'],
   endpoints: (builder) => ({
     // GET all stores
@@ -113,7 +133,7 @@ export const storeApi = createApi({
     }),
 
     // PUT update store
-    updateStore: builder.mutation<Store, Store>({
+    updateStore: builder.mutation<Store, StoreEditRequest>({
       query: ({ storeId, ...body }) => ({
         url: `/Store/${storeId}`,
         method: 'PUT',
@@ -145,7 +165,7 @@ getStatistics: builder.query<Statistics, {
     if (filters.startDate) searchParams.append('startDate', filters.startDate);
     if (filters.endDate) searchParams.append('endDate', filters.endDate);
 
-    return `Statistics`;
+    return `/Statistics?${searchParams.toString()}`;
   },
   providesTags: ['Statistics'],
 }),

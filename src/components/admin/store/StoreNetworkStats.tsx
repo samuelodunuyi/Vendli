@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Store } from "@/types/store";
+import { Store } from "@/redux/services/stores.services";
 
 interface StoreNetworkStatsProps {
   stores: Store[];

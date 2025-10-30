@@ -2,6 +2,7 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
 import { baseUrl } from '../baseUrl';
 import type { RootState } from '../store';
+import { baseQueryWithReauth } from './baseQueryWithReauth';
 
 // -------------------- Types --------------------
 
@@ -93,15 +94,7 @@ export interface RecipeRequest {
 // -------------------- API --------------------
 export const restaurantApi = createApi({
   reducerPath: 'restaurantApi',
-  baseQuery: fetchBaseQuery({
-    baseUrl,
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as RootState).app.auth.accessToken;
-      if (token) headers.set('Authorization', `Bearer ${token}`);
-      headers.set('Content-Type', 'application/json');
-      return headers;
-    },
-  }),
+  baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     // Restaurant Products
     getRestaurantProducts: builder.query<RestaurantProduct[], void>({

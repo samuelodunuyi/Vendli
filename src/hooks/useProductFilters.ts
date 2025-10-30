@@ -1,10 +1,9 @@
-
+import { Product} from "@/redux/services/products.services";
 import { useState } from "react";
-import { Product } from "@/types";
 
 export interface FilterState {
-  category: string;
-  status: string;
+  category: string;  // changed from string
+  status: string;   // status isActive is boolean
   priceMin: string;
   priceMax: string;
   stockMin: string;
@@ -15,7 +14,7 @@ export function useProductFilters(productList: Product[]) {
   const [filters, setFilters] = useState<FilterState>({
     category: "all",
     status: "all",
-    priceMin: "",
+    priceMin: "", 
     priceMax: "",
     stockMin: "",
     stockMax: ""
@@ -24,25 +23,30 @@ export function useProductFilters(productList: Product[]) {
   const [searchQuery, setSearchQuery] = useState("");
 
   const applyFilters = (productList: Product[]) => {
-    return productList.filter(product => {
+    return productList?.filter(product => {
       // Text search
-      const matchesSearch = product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      const matchesSearch =
+        product.productName.toLowerCase().includes(searchQuery.toLowerCase()) ||
         product.barcode?.includes(searchQuery) ||
-        product.category.toLowerCase().includes(searchQuery.toLowerCase());
+        product.categoryId.toString().includes(searchQuery);
 
       // Category filter
-      const matchesCategory = filters.category === "all" || product.category === filters.category;
+      const matchesCategory =
+        filters.category === "all" ;
 
       // Status filter
-      const matchesStatus = filters.status === "all" || product.status === filters.status;
+      const matchesStatus =
+        filters.status === "all"
 
       // Price range filter
-      const matchesPrice = (!filters.priceMin || product.price >= parseFloat(filters.priceMin)) &&
-        (!filters.priceMax || product.price <= parseFloat(filters.priceMax));
+      const matchesPrice =
+        (!filters.priceMin || product.basePrice >= parseFloat(filters.priceMin)) &&
+        (!filters.priceMax || product.costPrice <= parseFloat(filters.priceMax));
 
       // Stock range filter
-      const matchesStock = (!filters.stockMin || product.stock >= parseInt(filters.stockMin)) &&
-        (!filters.stockMax || product.stock <= parseInt(filters.stockMax));
+      const matchesStock =
+        (!filters.stockMin || product.currentStock >= parseInt(filters.stockMin)) &&
+        (!filters.stockMax || product.currentStock <= parseInt(filters.stockMax));
 
       return matchesSearch && matchesCategory && matchesStatus && matchesPrice && matchesStock;
     });
@@ -64,8 +68,11 @@ export function useProductFilters(productList: Product[]) {
   };
 
   const filteredProducts = applyFilters(productList);
-  const lowStockProducts = productList.filter(product => product.stock <= (product.lowStockAlert || 10));
-  const categories = Array.from(new Set(productList.map(p => p.category)));
+  const lowStockProducts = productList?.filter(
+    product => product.currentStock <= (product.minimumStockLevel || 10)
+  );
+
+  const categories = Array.from(new Set(productList?.map(p => p.categoryId)));
 
   return {
     searchQuery,

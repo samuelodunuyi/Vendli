@@ -4,30 +4,23 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { User, Mail, Phone, MapPin, Shield, Clock, LogOut } from "lucide-react";
+import { useAppSelector } from "@/redux/store";
 
 export function UserProfilePanel() {
-  const user = {
-    name: "John Adebayo",
-    email: "john.adebayo@cwretail.com",
-    phone: "+234 801 234 5678",
-    role: "Store Manager",
-    location: "Victoria Island Store",
-    lastLogin: "Today at 9:15 AM",
-    avatar: "/placeholder.svg"
-  };
+  const user = useAppSelector((state) => state.auth.user);
 
   return (
     <div className="space-y-6 py-4">
       {/* User Info */}
       <div className="flex items-center space-x-4">
         <Avatar className="h-16 w-16">
-          <AvatarImage src={user.avatar} alt={user.name} />
+          <AvatarImage src={user.avatar} alt={user.firstName} />
           <AvatarFallback className="bg-blue-600 text-white text-lg">
-            {user.name.split(' ').map(n => n[0]).join('')}
+            {user.firstName + '' + user.lastName}
           </AvatarFallback>
         </Avatar>
         <div className="flex-1">
-          <h3 className="font-semibold text-lg">{user.name}</h3>
+          <h3 className="font-semibold text-lg">{user.firstName}</h3>
           <p className="text-sm text-gray-600">{user.email}</p>
           <Badge variant="secondary" className="mt-1">
             <Shield className="h-3 w-3 mr-1" />

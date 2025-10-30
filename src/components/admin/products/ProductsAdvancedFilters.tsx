@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Badge } from "@/components/ui/badge";
 import { X, Filter } from "lucide-react";
 import { useState } from "react";
+import { Category } from "@/redux/services/products.services";
 
 interface FilterState {
   category: string;
@@ -18,7 +19,7 @@ interface FilterState {
 }
 
 interface ProductsAdvancedFiltersProps {
-  categories: string[];
+  categories: Category[];
   onApplyFilters: (filters: FilterState) => void;
   activeFilters: FilterState;
   onClearFilters: () => void;
@@ -87,7 +88,7 @@ export function ProductsAdvancedFilters({
                   <SelectContent>
                     <SelectItem value="all">All Categories</SelectItem>
                     {categories.map(cat => (
-                      <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                      <SelectItem key={cat.categoryId} value={String(cat.categoryId)}>{cat.categoryName}</SelectItem>
                     ))}
                   </SelectContent>
                 </Select>

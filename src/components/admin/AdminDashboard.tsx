@@ -75,18 +75,18 @@ export function AdminDashboard() {
 
       <DashboardMetrics
         metrics={{
-          totalCustomers: data.topCustomers.length,
-          pendingOrders: data.confirmedOrders,
-          delayedOrders: data.failedOrders,
-          cancelledOrders: data.returnedOrders,
+          totalCustomers: data.activeCustomers,
+          pendingOrders: data.pendingOrders,
+          delayedOrders: data.delayedOrders,
+          cancelledOrders: data.cancelledOrders,
           offlineOrders: data.totalOfflineOrders,
-          confirmedOrders: 0,
-          deliveredOrders: 0,
-          returnedOrders:0,
-          totalOrders: 0,
-          totalProducts: 0,
-          totalSales: 0,
-          totalStores: 0
+          confirmedOrders: data.confirmedOrders,
+          deliveredOrders: data.deliveredOrders,
+          returnedOrders:data.returnedOrders,
+          totalOrders: data.totalOrders,
+          totalProducts: data.totalProducts,
+          totalSales: data.totalSales,
+          totalStores: data.totalStores
         }}
       />
 

@@ -4,7 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Users, TrendingUp, ShoppingCart, MapPin, Heart } from "lucide-react";
-import { Store } from "@/types/store";
+import { Store } from "@/redux/services/stores.services";
 
 interface CustomerAnalyticsProps {
   stores: Store[];

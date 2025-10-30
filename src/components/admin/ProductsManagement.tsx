@@ -11,9 +11,16 @@ import { Input } from "@/components/ui/input";
 import { Download, Search, Plus } from "lucide-react";
 import { useProductFilters } from "@/hooks/useProductFilters";
 import { useProductOperations } from "@/hooks/useProductOperations";
+import { useGetProductsQuery, useCreateProductMutation, useGetCategoriesQuery, useDeleteProductMutation, useUpdateProductMutation} from "@/redux/services/products.services";
+import { toast } from "sonner";
 
 export function ProductsManagement() {
-  const productOperations = useProductOperations(products);
+    const { data, isLoading, isError } = useGetProductsQuery({});
+    const { data: categoryData } = useGetCategoriesQuery({});
+      const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
+      const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
+  const productOperations = useProductOperations(data);
+
   const {
     searchQuery,
     setSearchQuery,
@@ -25,12 +32,83 @@ export function ProductsManagement() {
     handleClearFilters
   } = useProductFilters(productOperations.productList);
 
+    const handleAddProduct = async () => {
+    try {
+      const productPayload = {
+        productName: productOperations.newProduct.productName,
+        description: productOperations.newProduct.description,
+        sku: productOperations.newProduct.barcode,
+        barcode: productOperations.newProduct.barcode,
+        categoryId: 1, 
+        storeId: 1, 
+        basePrice: productOperations.newProduct.basePrice,
+        costPrice: productOperations.newProduct.costPrice || 0,
+        currentStock: productOperations.newProduct.currentStock,
+        minimumStockLevel: productOperations.newProduct.minimumStockLevel || 5,
+        maximumStockLevel: productOperations.newProduct.maximumStockLevel || 5,
+        unitOfMeasure: "pcs",
+        imageUrl: "",
+        additionalImages: [],
+        showInWeb: true,
+        showInPOS: true,
+        isActive: productOperations.newProduct.isActive,
+      };
+
+      await createProduct(productPayload).unwrap();
+      toast.success("Product added successfully!");
+      productOperations.setIsAddProductOpen(false);
+    } catch (err) {
+      console.error(err);
+      toast.error("Failed to add product");
+    }
+  };
+
+const handleUpdateProduct = async () => {
+  if (!productOperations.editingProduct) return;
+
+  const p = productOperations.editingProduct;
+
+  // Build the payload explicitly like in create
+  const updatePayload = {
+    productName: p.productName,
+    description: p.description,
+    sku: p.sku,
+    barcode: p.barcode,
+    categoryId: Number(p.categoryId),
+    storeId: Number(p.storeId),
+    basePrice: Number(p.basePrice),
+    costPrice: Number(p.costPrice),
+    currentStock: Number(p.currentStock),
+    minimumStockLevel: Number(p.minimumStockLevel),
+    maximumStockLevel: 0,
+    unitOfMeasure: p.unitOfMeasure,
+    imageUrl: p.imageUrl || "",
+    additionalImages: p.additionalImages || [],
+    showInWeb: Boolean(p.showInWeb),
+    showInPOS: Boolean(p.showInPOS),
+    isActive: Boolean(p.isActive),
+  };
+
+  try {
+    await updateProduct({
+      id: p.productId,
+      body: updatePayload,
+    }).unwrap();
+
+    toast.success("Product updated successfully!");
+    productOperations.setEditingProduct(null);
+  } catch (error) {
+    console.error(error);
+    toast.error("Failed to update product");
+  }
+};
+
   return (
     <div className="space-y-6">
       <ProductsSummaryCards 
-        productList={productOperations.productList}
+        productList={data}
         lowStockProducts={lowStockProducts}
-        categories={categories}
+        categories={categoryData}
       />
 
       {/* Combined Actions Bar */}
@@ -47,7 +125,7 @@ export function ProductsManagement() {
         
         <div className="flex items-center gap-2">
           <ProductsAdvancedFilters
-            categories={categories}
+            categories={categoryData}
             onApplyFilters={handleApplyFilters}
             activeFilters={filters}
             onClearFilters={handleClearFilters}
@@ -77,15 +155,16 @@ export function ProductsManagement() {
         onOpenChange={productOperations.setIsAddProductOpen}
         newProduct={productOperations.newProduct}
         setNewProduct={productOperations.setNewProduct}
-        categories={categories}
-        onAddProduct={productOperations.handleAddProduct}
+        categories={categoryData}
+        isCreating = {isCreating}
+        onAddProduct={handleAddProduct}
         onCancel={() => productOperations.setIsAddProductOpen(false)}
       />
 
       <ProductsLowStockAlert lowStockProducts={lowStockProducts} />
 
       <ProductsTable 
-        filteredProducts={filteredProducts}
+        filteredProducts={data}
         productsWithTransactions={productOperations.productsWithTransactions}
         onEditProduct={productOperations.handleEditProduct}
         onDeleteProduct={productOperations.handleDeleteProduct}
@@ -98,8 +177,9 @@ export function ProductsManagement() {
       <EditProductDialog
         editingProduct={productOperations.editingProduct}
         setEditingProduct={productOperations.setEditingProduct}
-        categories={categories}
-        onUpdateProduct={productOperations.handleUpdateProduct}
+        categories={categoryData}
+        isUpdating ={isUpdating}
+        onUpdateProduct={handleUpdateProduct}
       />
     </div>
   );

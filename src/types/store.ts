@@ -6,7 +6,7 @@ export interface Store {
   manager: string;
   phone: string;
   email: string;
-  status: 'active' | 'inactive';
+  status: boolean;
   openingDate: string;
   totalSales: number;
   monthlyRevenue: number;

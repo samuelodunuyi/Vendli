@@ -7,9 +7,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Store } from "@/types/store";
 import { Package, DollarSign, Users, Calendar } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
+import { Store } from "@/redux/services/stores.services";
 
 interface BulkOperationsProps {
   stores: Store[];
@@ -67,14 +67,14 @@ export function BulkOperations({ stores }: BulkOperationsProps) {
           <Label className="text-base font-medium">Select Stores</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
             {stores.map((store) => (
-              <div key={store.id} className="flex items-center space-x-2">
+              <div key={store.storeId} className="flex items-center space-x-2">
                 <Checkbox
-                  id={store.id}
-                  checked={selectedStores.includes(store.id)}
-                  onCheckedChange={(checked) => handleStoreSelection(store.id, checked as boolean)}
+                  id={store.storeName}
+                  checked={selectedStores.includes(store.storeName)}
+                  onCheckedChange={(checked) => handleStoreSelection(store.storeName, checked as boolean)}
                 />
-                <Label htmlFor={store.id} className="text-sm font-normal">
-                  {store.name}
+                <Label htmlFor={store.storeName} className="text-sm font-normal">
+                  {store.storeName}
                 </Label>
               </div>
             ))}
