@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Category } from "@/redux/services/products.services";
 
 interface FilterState {
-  category: string;
+  categoryId: number;
   status: string;
   priceMin: string;
   priceMax: string;

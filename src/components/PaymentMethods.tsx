@@ -1,11 +1,9 @@
-
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { CreditCard, Receipt, Printer } from "lucide-react";
-import { PaymentMethod } from "@/types";
-import { paymentMethods } from "@/data/pos";
+import { CreditCard, Receipt, Printer, DollarSign } from "lucide-react";
+import { PaymentMethod as PaymentMethodEnum } from "@/types";
 import { PaymentDeviceManager } from "@/components/PaymentDeviceManager";
 import { receiptPrinter } from "@/redux/services/receiptPrinter";
 import { toast } from "@/components/ui/sonner";
@@ -14,43 +12,52 @@ interface PaymentMethodsProps {
   total: number;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  onPaymentComplete: (method: PaymentMethod, amount: number) => void;
+  onPaymentComplete: (method: PaymentMethodEnum, amount: number) => void;
 }
 
+const paymentMethodOptions: { label: string; value: PaymentMethodEnum; icon: JSX.Element }[] = [
+  { label: "Cash", value: PaymentMethodEnum.PAYMENT_CASH, icon: <DollarSign className="h-6 w-6" /> },
+  { label: "Card Payment", value: PaymentMethodEnum.PAYMENT_CARD, icon: <CreditCard className="h-6 w-6" /> },
+  { label: "Bank Transfer", value: PaymentMethodEnum.PAYMENT_BANK_TRANSFER, icon: <Receipt className="h-6 w-6" /> },
+];
+
 export function PaymentMethods({ total, open, onOpenChange, onPaymentComplete }: PaymentMethodsProps) {
-  const [selectedMethod, setSelectedMethod] = useState<PaymentMethod | null>(null);
+  const [selectedMethod, setSelectedMethod] = useState<PaymentMethodEnum | null>(null);
   const [cashAmount, setCashAmount] = useState("");
   const [showPaymentDevice, setShowPaymentDevice] = useState(false);
 
   const handlePayment = () => {
-    if (!selectedMethod) return;
+    if (selectedMethod === null) return;
 
-    // For card payments, use payment device
-    if (selectedMethod.type === 'card') {
+    if (selectedMethod === PaymentMethodEnum.PAYMENT_CARD) {
       setShowPaymentDevice(true);
       return;
     }
 
-    if (selectedMethod.type === 'cash') {
+    if (selectedMethod === PaymentMethodEnum.PAYMENT_CASH) {
       const amount = parseFloat(cashAmount);
       if (amount < total) {
         toast.error("Cash amount is insufficient");
         return;
       }
       if (amount > total) {
-        const change = amount - total;
-        toast.success(`Payment successful. Change: ₦${change.toLocaleString()}`);
+        toast.success(`Payment successful. Change: ₦${(amount - total).toLocaleString()}`);
       }
+      onPaymentComplete(selectedMethod, amount);
+      onOpenChange(false);
+      setSelectedMethod(null);
+      setCashAmount("");
+      return;
     }
 
-    onPaymentComplete(selectedMethod, selectedMethod.type === 'cash' ? parseFloat(cashAmount) : total);
+    onPaymentComplete(selectedMethod, total);
     onOpenChange(false);
     setSelectedMethod(null);
     setCashAmount("");
   };
 
-  const handlePaymentDeviceComplete = (result: any) => {
-    if (selectedMethod) {
+  const handlePaymentDeviceComplete = () => {
+    if (selectedMethod !== null) {
       onPaymentComplete(selectedMethod, total);
       setShowPaymentDevice(false);
       setSelectedMethod(null);
@@ -61,19 +68,8 @@ export function PaymentMethods({ total, open, onOpenChange, onPaymentComplete }:
     try {
       await receiptPrinter.printTest();
       toast.success("Test receipt sent to printer");
-    } catch (error) {
+    } catch {
       toast.error("Failed to print test receipt");
-    }
-  };
-
-  const getIcon = (iconName: string) => {
-    switch (iconName) {
-      case 'credit-card':
-        return <CreditCard className="h-6 w-6" />;
-      case 'receipt':
-        return <Receipt className="h-6 w-6" />;
-      default:
-        return <CreditCard className="h-6 w-6" />;
     }
   };
 
@@ -84,7 +80,7 @@ export function PaymentMethods({ total, open, onOpenChange, onPaymentComplete }:
           <DialogHeader>
             <DialogTitle>Select Payment Method</DialogTitle>
           </DialogHeader>
-          
+
           <div className="space-y-4">
             <div className="text-center p-4 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-600">Total Amount</p>
@@ -92,21 +88,23 @@ export function PaymentMethods({ total, open, onOpenChange, onPaymentComplete }:
             </div>
 
             <div className="grid gap-3">
-              {paymentMethods.map((method) => (
+              {paymentMethodOptions.map((method) => (
                 <Button
-                  key={method.id}
-                  variant={selectedMethod?.id === method.id ? "default" : "outline"}
+                  key={method.value}
+                  variant={selectedMethod === method.value ? "default" : "outline"}
                   className="h-12 justify-start"
-                  onClick={() => setSelectedMethod(method)}
+                  onClick={() => setSelectedMethod(method.value)}
                 >
-                  {getIcon(method.icon)}
-                  <span className="ml-3">{method.name}</span>
-                  {method.type === 'card' && <span className="ml-auto text-xs text-gray-500">POS Device</span>}
+                  {method.icon}
+                  <span className="ml-3">{method.label}</span>
+                  {method.value === PaymentMethodEnum.PAYMENT_CARD && (
+                    <span className="ml-auto text-xs text-gray-500">POS Device</span>
+                  )}
                 </Button>
               ))}
             </div>
 
-            {selectedMethod?.type === 'cash' && (
+            {selectedMethod === PaymentMethodEnum.PAYMENT_CASH && (
               <div className="space-y-2">
                 <label className="text-sm font-medium">Cash Amount Received</label>
                 <Input
@@ -139,20 +137,21 @@ export function PaymentMethods({ total, open, onOpenChange, onPaymentComplete }:
               <Button variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
                 Cancel
               </Button>
-              <Button 
-                onClick={handlePayment} 
-                disabled={!selectedMethod || (selectedMethod.type === 'cash' && !cashAmount)}
+              <Button
+                onClick={handlePayment}
+                disabled={
+                  selectedMethod === null || (selectedMethod === PaymentMethodEnum.PAYMENT_CASH && !cashAmount)
+                }
                 className="flex-1 font-bold bg-blue-600 hover:bg-blue-700 text-white"
               >
-                {selectedMethod?.type === 'card' ? 'Use Card Reader' : 'Process Payment'}
+                {selectedMethod === PaymentMethodEnum.PAYMENT_CARD ? "Use Card Reader" : "Process Payment"}
               </Button>
             </div>
           </div>
         </DialogContent>
       </Dialog>
 
-      {/* Payment Device Dialog */}
-      {selectedMethod && (
+      {selectedMethod !== null && (
         <PaymentDeviceManager
           amount={total}
           paymentMethod={selectedMethod}

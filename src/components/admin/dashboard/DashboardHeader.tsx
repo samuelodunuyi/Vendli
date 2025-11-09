@@ -74,7 +74,7 @@ export function DashboardHeader({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              {storesData?.map((store) => (
+              {storesData?.stores.map((store) => (
                 <SelectItem key={store.storeId} value={store.storeName}>
                   {store.storeName}
                 </SelectItem>

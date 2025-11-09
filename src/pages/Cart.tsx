@@ -28,7 +28,7 @@ const Cart = () => {
       
       <footer className="bg-white border-t border-gray-200 py-6">
         <div className="max-w-7xl mx-auto px-4 text-center">
-          <p>© 2025 EasyShop POS. All rights reserved.</p>
+          <p>© 2025 CW Retail POS. All rights reserved.</p>
         </div>
       </footer>
     </div>

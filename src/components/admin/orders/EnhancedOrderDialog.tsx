@@ -8,7 +8,7 @@ import { PersonalizedPromotions } from "./PersonalizedPromotions";
 import { DigitalReceiptManager } from "./DigitalReceiptManager";
 import { EnhancedOrderDetails } from "./EnhancedOrderDetails";
 import { toast } from "@/components/ui/sonner";
-import { Order } from "@/types/order";
+import { Order } from "@/redux/services/orders.services";
 
 interface EnhancedOrderDialogProps {
   open: boolean;
@@ -76,6 +76,7 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
     toast.success(`Applied personalized promotion to order`);
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const handleSendReceipt = (method: "email" | "sms", details: any) => {
     console.log(`Sending receipt via ${method}:`, details);
     toast.success(`Digital receipt sent successfully via ${method.toUpperCase()}`);
@@ -109,8 +110,8 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
 
           <TabsContent value="promotions" className="mt-4">
             <PersonalizedPromotions
-              customerId={order.customerId || "CUST001"}
-              customerName={order.customerName}
+              customerId={order.customer.id}
+              customerName={order.customer.firstName + " " + order.customer.lastName}
               purchaseHistory={mockPurchaseHistory}
               onApplyPromotion={handleApplyPromotion}
             />
@@ -119,8 +120,8 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
           <TabsContent value="receipt" className="mt-4">
             <DigitalReceiptManager
               orderId={order.id}
-              customerEmail={order.customerEmail}
-              customerPhone={order.customerPhone}
+              customerEmail={order.customer.email}
+              customerPhone={order.customer.phoneNumber}
               onSendReceipt={handleSendReceipt}
             />
           </TabsContent>
@@ -135,16 +136,12 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
                     <span className="font-medium">{order.loyaltyPoints || 0} points</span>
                   </div>
                   <div className="flex justify-between">
-                    <span>Membership Level:</span>
-                    <Badge className="bg-yellow-500 text-white">{order.customerLevel || "Bronze"}</Badge>
-                  </div>
-                  <div className="flex justify-between">
                     <span>Available Promotions:</span>
                     <span className="font-medium">{order.hasActivePromotions ? "Active offers" : "None"}</span>
                   </div>
                   <div className="flex justify-between">
                     <span>Last Feedback:</span>
-                    <span className="font-medium">{order.feedbackRating ? `${order.feedbackRating}/5 stars` : "None"}</span>
+                    <span className="font-medium">{order.rating ? `${order.rating}/5 stars` : "None"}</span>
                   </div>
                 </div>
               </div>

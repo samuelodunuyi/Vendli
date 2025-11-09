@@ -6,39 +6,43 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
-import {Store, EditUserForm } from "./types";
+import { UpdateUserRequest, User } from "@/redux/services/user.services";
+import { Store } from "@/redux/services/stores.services";
 
 interface EditUserDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
   stores: Store[];
-  onUserUpdated: () => void;
 }
 
-type ValidRole = "customer" | "store_sales_associate" | "store_cashier" | "store_inventory_clerk" | "store_manager" | "sales_manager" | "super_admin";
-
-export function EditUserDialog({ isOpen, onOpenChange, user, stores, onUserUpdated }: EditUserDialogProps) {
+export function EditUserDialog({ isOpen, onOpenChange, user, stores }: EditUserDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
   
-  const [formData, setFormData] = useState<EditUserForm>({
+  const [formData, setFormData] = useState<UpdateUserRequest>({
     firstName: "",
     lastName: "",
-    phone: "",
-    role: "customer",
-    storeId: ""
+    phoneNumber: "",
+    roleId: null,
+    storeId: null,
+    email: "",
+    id: null,
+    username: ""
   });
 
   useEffect(() => {
     if (user) {
-      const primaryRole = user.roles[0] || { role: 'customer', store_id: null };
+      console.log(user)
       setFormData({
-        firstName: user.first_name || "",
-        lastName: user.last_name || "",
-        phone: user.phone || "",
-        role: primaryRole.role,
-        storeId: primaryRole.store_id || ""
+        firstName: user.firstName || "",
+        lastName: user.lastName || "",
+        phoneNumber: user.phoneNumber || "",
+        roleId: user.roleId,
+        email: user.email,
+        id: user.id,
+        username: user.username,
+        storeId: user.storeId,
       });
     }
   }, [user]);
@@ -62,6 +66,11 @@ export function EditUserDialog({ isOpen, onOpenChange, user, stores, onUserUpdat
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
+                    <div>
+                      <Label htmlFor="email">Email *</Label>
+                      <Input id="email" type="email" value={formData.email} onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))} required />
+                    </div>
+          
           <div>
             <Label htmlFor="firstName">First Name</Label>
             <Input
@@ -84,46 +93,37 @@ export function EditUserDialog({ isOpen, onOpenChange, user, stores, onUserUpdat
             <Label htmlFor="phone">Phone</Label>
             <Input
               id="phone"
-              value={formData.phone}
+              value={formData.phoneNumber}
               onChange={(e) => setFormData(prev => ({ ...prev, phone: e.target.value }))}
             />
           </div>
           
           <div>
             <Label htmlFor="role">Role</Label>
-            <Select value={formData.role} onValueChange={(value: ValidRole) => setFormData(prev => ({ ...prev, role: value }))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
+            <Select value={formData?.roleId?.toString() || ""} onValueChange={value => setFormData(prev => ({ ...prev, roleId: Number(value) }))}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="customer">Customer</SelectItem>
-                <SelectItem value="store_sales_associate">Store Sales Associate</SelectItem>
-                <SelectItem value="store_cashier">Store Cashier</SelectItem>
-                <SelectItem value="store_inventory_clerk">Store Inventory Clerk</SelectItem>
-                <SelectItem value="store_manager">Store Manager</SelectItem>
-                <SelectItem value="sales_manager">Sales Manager</SelectItem>
-                <SelectItem value="super_admin">Super Admin</SelectItem>
+                <SelectItem value="3">Customer</SelectItem>
+                <SelectItem value="2">Employee</SelectItem>
+                <SelectItem value="1">Store Admin</SelectItem>
+                <SelectItem value="0">Super Admin</SelectItem>
               </SelectContent>
             </Select>
           </div>
           
-          {formData.role.includes('store_') && (
-            <div>
-              <Label htmlFor="store">Store</Label>
-              <Select value={formData.storeId} onValueChange={(value) => setFormData(prev => ({ ...prev, storeId: value }))}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select store" />
-                </SelectTrigger>
-                <SelectContent>
-                  {stores.map(store => (
-                    <SelectItem key={store.id} value={store.id}>
-                      {store.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
+          <div>
+            <Label htmlFor="store">Store</Label>
+            <Select value={formData?.storeId?.toString() || ""} onValueChange={value => setFormData(prev => ({ ...prev, storeId: Number(value) }))}>
+              <SelectTrigger><SelectValue placeholder="Select store" /></SelectTrigger>
+              <SelectContent>
+                {stores.map(store => (
+                  <SelectItem key={store.storeId} value={store.storeId.toString()}>
+                    {store.storeName}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
           
           <div className="flex gap-2">
             <Button

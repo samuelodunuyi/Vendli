@@ -16,7 +16,7 @@ export function ProductCard({ product, isPOS = false }: ProductCardProps) {
     style: "currency",
     currency: "NGN",
     minimumFractionDigits: 0
-  }).format(product.costPrice);
+  }).format(product.basePrice);
 
   return (
     <Card className="overflow-hidden transition-shadow duration-200 hover:shadow-md">

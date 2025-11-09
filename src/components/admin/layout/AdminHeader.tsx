@@ -93,7 +93,7 @@ export function AdminHeader() {
                 )}
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 p-0">
+            <SheetContent side="right">
               <SheetHeader className="p-4 border-b">
                 <SheetTitle>Notifications</SheetTitle>
               </SheetHeader>
@@ -112,7 +112,7 @@ export function AdminHeader() {
                 <Settings className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 p-0">
+            <SheetContent side="right">
               <SheetHeader className="p-4 border-b">
                 <SheetTitle>Settings</SheetTitle>
               </SheetHeader>
@@ -131,7 +131,7 @@ export function AdminHeader() {
                 <HelpCircle className="h-5 w-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 p-0">
+            <SheetContent side="right">
               <SheetHeader className="p-4 border-b">
                 <SheetTitle>Help & Support</SheetTitle>
               </SheetHeader>

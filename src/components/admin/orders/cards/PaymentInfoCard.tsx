@@ -1,8 +1,7 @@
-
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Order } from "@/types/order";
+import { Order } from "@/redux/services/orders.services";
 import { CreditCard } from "lucide-react";
 
 interface PaymentInfoCardProps {
@@ -10,16 +9,45 @@ interface PaymentInfoCardProps {
 }
 
 export function PaymentInfoCard({ order }: PaymentInfoCardProps) {
-  const getPaymentStatusColor = (status: string) => {
+  const getPaymentStatusColor = (status: number) => {
     switch (status) {
-      case "paid": return "default";
-      case "pending": return "secondary";
-      case "failed": return "destructive";
-      case "refunded": return "destructive";
-      case "partial": return "secondary";
-      default: return "secondary";
+      case 1:
+        return "default"; // Paid
+      case 0:
+        return "secondary"; // Pending
+      case 2:
+        return "destructive"; // Failed
+      case 3:
+        return "destructive"; // Refunded
+      case 4:
+        return "secondary"; // Partially Paid
+      default:
+        return "secondary";
     }
   };
+
+  const getPaymentStatusLabel = (status: number) => {
+    switch (status) {
+      case 0:
+        return "Pending";
+      case 1:
+        return "Paid";
+      case 2:
+        return "Failed";
+      case 3:
+        return "Refunded";
+      case 4:
+        return "Partially Paid";
+      default:
+        return "Unknown";
+    }
+  };
+
+  // ✅ Calculate total amount by summing all item prices
+  const totalAmount = order.orderItems.reduce(
+    (sum, item) => sum + item.priceAtOrder * item.quantity,
+    0
+  );
 
   return (
     <Card>
@@ -29,36 +57,52 @@ export function PaymentInfoCard({ order }: PaymentInfoCardProps) {
           Payment Information
         </CardTitle>
       </CardHeader>
+
       <CardContent className="space-y-3">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Payment Method</span>
-          <span className="text-sm">{order.paymentMethod}</span>
+          <span className="text-sm">{order.paymentOption}</span>
         </div>
+
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Payment Status</span>
           <Badge variant={getPaymentStatusColor(order.paymentStatus)}>
-            {order.paymentStatus.charAt(0).toUpperCase() + order.paymentStatus.slice(1)}
+            {getPaymentStatusLabel(order.paymentStatus)}
           </Badge>
         </div>
+
         <Separator />
+
+        {/* ✅ Total amount from all order items */}
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Total Amount</span>
-          <span className="text-sm font-medium">₦{order.total.toLocaleString()}</span>
+          <span className="text-sm font-medium">
+            ₦{totalAmount.toLocaleString()}
+          </span>
         </div>
-        {order.paymentStatus === 'partial' && (
+
+        {/* ✅ Partially paid */}
+        {order.paymentStatus === 4 && (
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">Amount Paid</span>
-            <span className="text-sm text-green-600">₦{(order.total * 0.5).toLocaleString()}</span>
+            <span className="text-sm text-green-600">
+              ₦{(totalAmount * 0.5).toLocaleString()}
+            </span>
           </div>
         )}
-        {order.paymentStatus === 'refunded' && (
+
+        {/* ✅ Refunded */}
+        {order.paymentStatus === 3 && (
           <div className="flex justify-between items-center">
             <span className="text-sm font-medium">Refund Amount</span>
-            <span className="text-sm text-red-600">₦{order.total.toLocaleString()}</span>
+            <span className="text-sm text-red-600">
+              ₦{totalAmount.toLocaleString()}
+            </span>
           </div>
         )}
+
         <div className="text-xs text-gray-500 pt-2">
-          Transaction processed via {order.paymentMethod}
+          Transaction processed via {order.paymentOption}
         </div>
       </CardContent>
     </Card>

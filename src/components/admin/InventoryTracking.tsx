@@ -435,8 +435,6 @@ export function InventoryTracking() {
                   <th className="text-left p-3">Product</th>
                   <th className="text-left p-3">Type</th>
                   <th className="text-left p-3">Quantity</th>
-                  <th className="text-left p-3">Reason</th>
-                  <th className="text-left p-3">Reference</th>
                   <th className="text-left p-3">Date</th>
                   <th className="text-left p-3">User</th>
                 </tr>
@@ -473,10 +471,6 @@ export function InventoryTracking() {
                         {Math.abs(transaction.quantity)}
                       </span>
                     </td>
-                    <td className="p-3 max-w-xs truncate" title={transaction.reason}>
-                      {transaction.reason}
-                    </td>
-                    <td className="p-3">{transaction.reference}</td>
                     <td className="p-3 text-sm">{formatDate(transaction.date)}</td>
                     <td className="p-3">{transaction.user}</td>
                   </tr>

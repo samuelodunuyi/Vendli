@@ -12,7 +12,7 @@ import { Mail, MessageSquare, Star, Send, Eye, BarChart3 } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 
 interface DigitalReceiptManagerProps {
-  orderId: string;
+  orderId: number;
   customerEmail?: string;
   customerPhone?: string;
   onSendReceipt: (method: "email" | "sms", details: any) => void;

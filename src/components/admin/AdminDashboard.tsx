@@ -52,8 +52,8 @@ export function AdminDashboard() {
     sold: prod.totalSales,
   }));
 
-  const mappedTopStores = data.totalStores // Not available? Assume topStores comes from API differently
-    ? [] // or map if you have API field
+  const mappedTopStores = data.totalStores 
+    ? []
     : [];
 
   const mappedTopCustomers = data.topCustomers.map((cust) => ({

@@ -1,7 +1,13 @@
 import React, { createContext, useContext, useState } from "react";
-import { CartItem, Tax, PaymentMethod, Transaction, Discount } from "@/types";
+import { CartItem, Tax, Transaction, Discount } from "@/types";
 import { mockTransactions } from "@/data/mockTransactions";
 import { Product } from "@/redux/services/products.services";
+
+enum PaymentMethod {
+  PAYMENT_CASH = 0,
+  PAYMENT_CARD = 1,
+  PAYMENT_BANK_TRANSFER = 2,
+}
 
 interface DeliveryProvider {
   id: string;
@@ -26,7 +32,11 @@ interface CartContextProps {
   clearCart: () => void;
   applyDiscount: (productId: number, discount: Discount) => void;
   setDeliveryProvider: (provider: DeliveryProvider | null) => void;
-  completeTransaction: (paymentMethod: PaymentMethod, customerName?: string, customerPhone?: string) => Transaction;
+  completeTransaction: (
+    paymentMethod: PaymentMethod,
+    customerName?: string,
+    customerPhone?: string
+  ) => Transaction;
   voidTransaction: (transactionId: string, reason: string, approver: string) => void;
   returnTransaction: (transactionId: string, reason: string, approver: string) => void;
 }
@@ -40,12 +50,15 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
   const [selectedDeliveryProvider, setSelectedDeliveryProvider] = useState<DeliveryProvider | null>(null);
 
   const [taxes] = useState<Tax[]>([
-    { id: "vat", name: "VAT", rate: 0.075, description: "Value Added Tax (7.5%)" }
+    { id: "vat", name: "VAT", rate: 0.075, description: "Value Added Tax (7.5%)" },
   ]);
 
   const itemCount = items.reduce((sum, item) => sum + item.quantity, 0);
   const subtotal = items.reduce((sum, item) => sum + item.product.basePrice * item.quantity, 0);
-  const totalDiscount = items.reduce((sum, item) => sum + ((item.product.basePrice * item.quantity) * (item.discount?.value || 0) / 100), 0);
+  const totalDiscount = items.reduce(
+    (sum, item) => sum + ((item.product.basePrice * item.quantity) * (item.discount?.value || 0) / 100),
+    0
+  );
   const totalTax = subtotal * taxes[0].rate;
   const deliveryCost = selectedDeliveryProvider?.estimatedCost || 0;
   const total = subtotal - totalDiscount + totalTax + deliveryCost;
@@ -105,11 +118,13 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       customerPhone,
       cashierName: "Current User",
       timestamp: new Date().toISOString(),
-      status: "completed"
+      status: "completed",
     };
+
     setTransactions(prev => [newTransaction, ...prev]);
     setItems([]);
     setSelectedDeliveryProvider(null);
+
     return newTransaction;
   };
 
@@ -149,7 +164,7 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         setDeliveryProvider,
         completeTransaction,
         voidTransaction,
-        returnTransaction
+        returnTransaction,
       }}
     >
       {children}

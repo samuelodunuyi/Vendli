@@ -8,10 +8,9 @@ interface DeleteUserDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   user: User | null;
-  onUserDeleted: () => void;
 }
 
-export function DeleteUserDialog({ isOpen, onOpenChange, user, onUserDeleted }: DeleteUserDialogProps) {
+export function DeleteUserDialog({ isOpen, onOpenChange, user }: DeleteUserDialogProps) {
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
 

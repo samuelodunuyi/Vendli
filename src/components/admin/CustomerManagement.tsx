@@ -1,6 +1,4 @@
-
 import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Plus, Users, TrendingUp, Star, AlertCircle } from "lucide-react";
@@ -9,15 +7,35 @@ import { CustomerList } from "./customer/CustomerList";
 import { CustomerAnalytics } from "./customer/CustomerAnalytics";
 import { ComplaintsManagement } from "./customer/ComplaintsManagement";
 import { AddCustomerDialog } from "./customer/AddCustomerDialog";
-import { toast } from "@/components/ui/sonner";
+import { toast } from "sonner";
+import { useGetCustomersQuery } from "@/redux/services/customer.services";
 
 export function CustomerManagement() {
   const [activeTab, setActiveTab] = useState("overview");
   const [showAddDialog, setShowAddDialog] = useState(false);
 
+  // Pagination & filters
+  const [page, setPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [classification, setClassification] = useState<number | undefined>(undefined);
+  const [loyaltyTier, setLoyaltyTier] = useState<number | undefined>(undefined);
+  const [status, setStatus] = useState<number | undefined>(undefined);
+
+  // Fetch customers
+  const { data: customersData, isLoading, refetch } = useGetCustomersQuery({
+    page,
+    itemsPerPage,
+    search: searchQuery,
+    classification,
+    loyaltyTier,
+    status,
+  });
+
   const handleCustomerAdded = () => {
     toast.success("Customer list updated");
-    // Switch to customers tab to show the updated list
+    setShowAddDialog(false);
+    refetch();
     setActiveTab("customers");
   };
 
@@ -37,20 +55,16 @@ export function CustomerManagement() {
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
         <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Users className="h-4 w-4" />
-            Overview
+            <Users className="h-4 w-4" /> Overview
           </TabsTrigger>
           <TabsTrigger value="customers" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" />
-            Customer List
+            <TrendingUp className="h-4 w-4" /> Customer List
           </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <Star className="h-4 w-4" />
-            Analytics
+            <Star className="h-4 w-4" /> Analytics
           </TabsTrigger>
           <TabsTrigger value="complaints" className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" />
-            Complaints
+            <AlertCircle className="h-4 w-4" /> Complaints
           </TabsTrigger>
         </TabsList>
 
@@ -59,7 +73,20 @@ export function CustomerManagement() {
         </TabsContent>
 
         <TabsContent value="customers">
-          <CustomerList />
+          <CustomerList 
+            customers={customersData?.customers || []} 
+            isLoading={isLoading} 
+            pagination={customersData?.pagination} 
+            searchQuery={searchQuery}
+            setSearchQuery={setSearchQuery}
+            classification={classification}
+            setClassification={setClassification}
+            loyaltyTier={loyaltyTier}
+            setLoyaltyTier={setLoyaltyTier}
+            status={status}
+            setStatus={setStatus}
+            refetch={refetch}
+          />
         </TabsContent>
 
         <TabsContent value="analytics">

@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Order } from "@/types/order";
+import { Order } from "@/redux/services/orders.services";
 import { Clock } from "lucide-react";
 
 interface OrderTimelineCardProps {
@@ -27,15 +27,15 @@ export function OrderTimelineCard({ order }: OrderTimelineCardProps) {
             <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
             <div>
               <p className="text-sm font-medium">Order Created</p>
-              <p className="text-xs text-gray-600">{formatDate(order.createdAt)}</p>
+              <p className="text-xs text-gray-600">{formatDate(order.orderDate)}</p>
             </div>
           </div>
-          {order.confirmedAt && (
+          {order.orderDate && (
             <div className="flex items-center gap-3">
               <div className="w-2 h-2 bg-green-500 rounded-full"></div>
               <div>
                 <p className="text-sm font-medium">Order Confirmed</p>
-                <p className="text-xs text-gray-600">{formatDate(order.confirmedAt)}</p>
+                <p className="text-xs text-gray-600">{formatDate(order.orderDate)}</p>
               </div>
             </div>
           )}

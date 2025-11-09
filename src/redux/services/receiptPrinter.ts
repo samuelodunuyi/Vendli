@@ -65,7 +65,7 @@ class BrowserReceiptPrinter implements ReceiptPrinter {
         </head>
         <body>
           <div class="receipt">
-            <h2>EasyShop POS</h2>
+            <h2>CW Retail POS</h2>
             <p>Receipt #: ${transaction.id}</p>
             <p>Date: ${new Date(transaction.timestamp).toLocaleString()}</p>
             <p>Cashier: ${transaction.cashierName}</p>
@@ -133,7 +133,7 @@ class BrowserReceiptPrinter implements ReceiptPrinter {
         </head>
         <body>
           <div style="text-align: center;">
-            <h2>EasyShop POS</h2>
+            <h2>CW Retail POS</h2>
             <p>Printer Test</p>
             <p>Date: ${new Date().toLocaleString()}</p>
             <p>If you can read this, the printer is working!</p>

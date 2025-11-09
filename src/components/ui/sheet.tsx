@@ -60,7 +60,11 @@ const SheetContent = React.forwardRef<
     <SheetOverlay />
     <SheetPrimitive.Content
       ref={ref}
-      className={cn(sheetVariants({ side }), className)}
+      className={cn(
+        sheetVariants({ side }),
+        "overflow-y-auto max-h-screen w-[512px] p-6", // ⬅ wider, consistent padding
+        className
+      )}
       {...props}
     >
       {children}
@@ -70,7 +74,8 @@ const SheetContent = React.forwardRef<
       </SheetPrimitive.Close>
     </SheetPrimitive.Content>
   </SheetPortal>
-))
+));
+
 SheetContent.displayName = SheetPrimitive.Content.displayName
 
 const SheetHeader = ({

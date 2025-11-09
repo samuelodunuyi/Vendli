@@ -1,6 +1,6 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Order } from "@/types/order";
+import { Order } from "@/redux/services/orders.services";
 
 interface OrderNotesCardProps {
   order: Order;

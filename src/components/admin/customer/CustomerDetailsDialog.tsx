@@ -1,27 +1,10 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Phone, Mail, MapPin, CreditCard, Calendar, TrendingUp } from "lucide-react";
-
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  classification: string;
-  industryClass?: string;
-  companyName?: string;
-  preferredStore: string;
-  loyaltyTier: string;
-  loyaltyPoints: number;
-  totalSpent: number;
-  lastTransaction: string;
-  kycStatus: string;
-  status: string;
-}
+import { User, Phone, Mail, MapPin, TrendingUp } from "lucide-react";
+import { Customer } from "@/redux/services/customer.services";
+import { useGetOrdersQuery } from "@/redux/services/orders.services";
 
 interface CustomerDetailsDialogProps {
   open: boolean;
@@ -29,12 +12,59 @@ interface CustomerDetailsDialogProps {
   customer: Customer | null;
 }
 
-// Mock additional data for customer details
-const mockCustomerTransactions = [
-  { id: "TXN001", date: "2024-01-20", amount: 125000, items: "iPhone 15, Case", store: "Victoria Island" },
-  { id: "TXN002", date: "2024-01-15", amount: 85000, items: "AirPods Pro", store: "Victoria Island" },
-  { id: "TXN003", date: "2024-01-10", amount: 200000, items: "MacBook Air", store: "Ikeja" },
-];
+// Enums
+const CustomerClassificationEnum = {
+  0: "Corporate",
+  1: "VIP",
+  2: "Regular",
+  3: "Walk-in",
+} as const;
+
+const CustomerStatusEnum = {
+  0: "Inactive",
+  1: "Active",
+  2: "Suspended",
+} as const;
+
+const LoyaltyTierEnum = {
+  0: "Bronze",
+  1: "Silver",
+  2: "Gold",
+  3: "Platinum",
+} as const;
+
+const KycStatusEnum = {
+  0: "Pending",
+  1: "Verified",
+  2: "Rejected",
+} as const;
+
+// Badge variants
+const classificationBadgeVariant = {
+  0: "default",
+  1: "secondary",
+  2: "outline",
+  3: "outline",
+};
+
+const statusBadgeVariant = {
+  0: "secondary",
+  1: "default",
+  2: "destructive",
+};
+
+const loyaltyTierBadgeVariant = {
+  0: "outline",
+  1: "secondary",
+  2: "default",
+  3: "default",
+};
+
+const kycStatusBadgeVariant = {
+  0: "secondary",
+  1: "default",
+  2: "destructive",
+};
 
 const mockLoyaltyActivity = [
   { date: "2024-01-20", action: "Purchase reward", points: 125 },
@@ -43,69 +73,64 @@ const mockLoyaltyActivity = [
 ];
 
 export function CustomerDetailsDialog({ open, onOpenChange, customer }: CustomerDetailsDialogProps) {
+const { data: ordersData, isLoading } = useGetOrdersQuery({});
   if (!customer) return null;
-
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Customer Details - {customer.firstName} {customer.lastName}</DialogTitle>
+          <DialogTitle>
+            Customer Details - {customer.userInfo.firstName} {customer.userInfo.lastName}
+          </DialogTitle>
         </DialogHeader>
-        
+
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="transactions">Transactions</TabsTrigger>
             <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
-            <TabsTrigger value="preferences">Preferences</TabsTrigger>
           </TabsList>
 
+          {/* Overview Tab */}
           <TabsContent value="overview" className="space-y-6">
-            {/* Customer Info Cards */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Personal Info */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <User className="h-4 w-4" />
-                    Personal Information
+                    <User className="h-4 w-4" /> Personal Information
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-3">
                   <div>
-                    <p className="font-medium">{customer.firstName} {customer.lastName}</p>
-                    {customer.companyName && (
-                      <p className="text-sm text-muted-foreground">{customer.companyName}</p>
-                    )}
+                    <p className="font-medium">{customer.userInfo.firstName} {customer.userInfo.lastName}</p>
+                    {customer.companyName && <p className="text-sm text-muted-foreground">{customer.companyName}</p>}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-3 w-3" />
-                    {customer.email}
+                    <Mail className="h-3 w-3" /> {customer.userInfo.email}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-3 w-3" />
-                    {customer.phone}
+                    <Phone className="h-3 w-3" /> {customer.userInfo.phoneNumber}
                   </div>
                   <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-3 w-3" />
-                    {customer.preferredStore}
+                    <MapPin className="h-3 w-3" /> {customer.preferredStore}
                   </div>
                   <div className="flex gap-2 mt-3">
-                    <Badge variant={customer.classification === 'corporate' ? 'default' : 
-                                   customer.classification === 'vip' ? 'secondary' : 'outline'}>
-                      {customer.classification}
+                    <Badge variant={classificationBadgeVariant[customer.customerClassification]}>
+                      {CustomerClassificationEnum[customer.customerClassification]}
                     </Badge>
-                    <Badge variant={customer.status === 'active' ? 'default' : 'secondary'}>
-                      {customer.status}
+                    <Badge variant={statusBadgeVariant[customer.customerStatus]}>
+                      {CustomerStatusEnum[customer.customerStatus]}
                     </Badge>
                   </div>
                 </CardContent>
               </Card>
 
+              {/* Customer Metrics */}
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" />
-                    Customer Metrics
+                    <TrendingUp className="h-4 w-4" /> Customer Metrics
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="space-y-4">
@@ -121,50 +146,104 @@ export function CustomerDetailsDialog({ open, onOpenChange, customer }: Customer
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <Badge variant="outline">{customer.loyaltyTier}</Badge>
+                      <Badge variant={loyaltyTierBadgeVariant[customer.loyaltyTier]}>
+                        {LoyaltyTierEnum[customer.loyaltyTier]}
+                      </Badge>
                       <p className="text-sm text-muted-foreground mt-1">Loyalty Tier</p>
                     </div>
                     <div>
-                      <Badge variant={customer.kycStatus === 'verified' ? 'default' : 'secondary'}>
-                        {customer.kycStatus}
+                      <Badge variant={kycStatusBadgeVariant[customer.kycStatus]}>
+                        {KycStatusEnum[customer.kycStatus]}
                       </Badge>
                       <p className="text-sm text-muted-foreground mt-1">KYC Status</p>
                     </div>
                   </div>
                   <div>
                     <p className="text-sm font-medium">Last Transaction</p>
-                    <p className="text-sm text-muted-foreground">{customer.lastTransaction}</p>
+                    <p className="text-sm text-muted-foreground">{customer.lastTransactionDate || "N/A"}</p>
                   </div>
                 </CardContent>
               </Card>
             </div>
           </TabsContent>
 
-          <TabsContent value="transactions" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {mockCustomerTransactions.map((transaction) => (
-                    <div key={transaction.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div>
-                        <p className="font-medium">{transaction.id}</p>
-                        <p className="text-sm text-muted-foreground">{transaction.items}</p>
-                        <p className="text-xs text-muted-foreground">{transaction.store} Store</p>
+          {/* Transactions Tab */}
+{/* Transactions Tab */}
+<TabsContent value="transactions" className="space-y-4">
+  <Card>
+    <CardHeader>
+      <CardTitle>Recent Transactions</CardTitle>
+    </CardHeader>
+    <CardContent>
+      {isLoading ? (
+        <p className="text-sm text-muted-foreground">Loading transactions...</p>
+      ) : !ordersData?.orders?.length ? (
+        <p className="text-sm text-muted-foreground">No transactions found.</p>
+      ) : (
+        <div className="space-y-4">
+          {ordersData.orders
+            .filter((order) => order.customer.id === customer.id)
+            .map((order) => (
+              <div key={order.id} className="p-4 border rounded-lg">
+                <div className="flex justify-between items-start">
+                  <div>
+                    <p className="font-semibold text-sm">Order #{order.id}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {new Date(order.orderDate).toLocaleString()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {order.store?.storeName}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <Badge variant="outline">
+                      ₦
+                      {order.orderItems
+                        ?.reduce(
+                          (sum, item) => sum + item.priceAtOrder * item.quantity,
+                          0
+                        )
+                        .toLocaleString()}
+                    </Badge>
+                  </div>
+                </div>
+
+                <div className="mt-3 border-t pt-3 space-y-2">
+                  {order.orderItems?.map((item) => (
+                    <div
+                      key={item.id}
+                      className="flex items-center justify-between text-sm"
+                    >
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={item.productImageUrl}
+                          alt={item.productName}
+                          className="w-10 h-10 rounded object-cover"
+                        />
+                        <div>
+                          <p className="font-medium">{item.productName}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {item.quantity} × ₦
+                            {item.priceAtOrder.toLocaleString()}
+                          </p>
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-medium text-green-600">₦{transaction.amount.toLocaleString()}</p>
-                        <p className="text-sm text-muted-foreground">{transaction.date}</p>
-                      </div>
+                      <p className="font-semibold">
+                        ₦{(item.priceAtOrder * item.quantity).toLocaleString()}
+                      </p>
                     </div>
                   ))}
                 </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
+              </div>
+            ))}
+        </div>
+      )}
+    </CardContent>
+  </Card>
+</TabsContent>
 
+
+          {/* Loyalty Tab */}
           <TabsContent value="loyalty" className="space-y-4">
             <Card>
               <CardHeader>
@@ -188,30 +267,6 @@ export function CustomerDetailsDialog({ open, onOpenChange, customer }: Customer
             </Card>
           </TabsContent>
 
-          <TabsContent value="preferences" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Customer Preferences</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <p className="font-medium">Preferred Store</p>
-                    <p className="text-sm text-muted-foreground">{customer.preferredStore}</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Communication Preferences</p>
-                    <p className="text-sm text-muted-foreground">Email notifications: Enabled</p>
-                    <p className="text-sm text-muted-foreground">SMS notifications: Enabled</p>
-                  </div>
-                  <div>
-                    <p className="font-medium">Purchase Categories</p>
-                    <p className="text-sm text-muted-foreground">Electronics (65%), Fashion (25%), Home & Garden (10%)</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
         </Tabs>
       </DialogContent>
     </Dialog>

@@ -1,35 +1,28 @@
-
-import { Input } from "@/components/ui/input";
+import { useGetCustomersQuery } from "@/redux/services/customer.services";
 
 interface CustomerInfoProps {
-  customerName: string;
-  customerPhone: string;
-  onCustomerNameChange: (name: string) => void;
-  onCustomerPhoneChange: (phone: string) => void;
+  selectedCustomerId: number | null;
+  onCustomerSelect: (id: number) => void;
 }
 
-export function CustomerInfo({ 
-  customerName, 
-  customerPhone, 
-  onCustomerNameChange, 
-  onCustomerPhoneChange 
-}: CustomerInfoProps) {
+export function CustomerInfo({ selectedCustomerId, onCustomerSelect }: CustomerInfoProps) {
+  const { data: customers, isLoading } = useGetCustomersQuery({});
+
   return (
     <div className="px-4 py-3 border-t bg-gray-50/50">
-      <div className="space-y-2">
-        <Input
-          placeholder="Customer Name (Optional)"
-          value={customerName}
-          onChange={(e) => onCustomerNameChange(e.target.value)}
-          className="h-9 text-sm"
-        />
-        <Input
-          placeholder="Customer Phone (Optional)"
-          value={customerPhone}
-          onChange={(e) => onCustomerPhoneChange(e.target.value)}
-          className="h-9 text-sm"
-        />
-      </div>
+      <select
+        value={selectedCustomerId || ""}
+        onChange={(e) => onCustomerSelect(Number(e.target.value))}
+        disabled={isLoading}
+        className="h-9 w-full text-sm border rounded"
+      >
+        <option value="">Select Customer</option>
+        {customers?.customers.map((customer) => (
+          <option key={customer.id} value={customer.id}>
+            {customer.userInfo.firstName} {customer.userInfo.lastName} ({customer.userInfo.phoneNumber || "N/A"})
+          </option>
+        ))}
+      </select>
     </div>
   );
 }

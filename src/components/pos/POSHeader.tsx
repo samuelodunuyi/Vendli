@@ -5,13 +5,17 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import { ConnectionStatus } from "@/components/ConnectionStatus";
+import { useAppSelector } from "@/redux/store";
 
 interface POSHeaderProps {
   currentTime: string;
   isOffline: boolean;
 }
 
+
 export function POSHeader({ currentTime, isOffline }: POSHeaderProps) {
+  const storeName = useAppSelector((state) => state.auth.user?.storeName);
+
   return (
     <header className="bg-white shadow-lg border-b-2 border-primary/10">
       <div className="max-w-full mx-auto px-4 py-3">
@@ -23,8 +27,8 @@ export function POSHeader({ currentTime, isOffline }: POSHeaderProps) {
                 <ShoppingCart className="h-5 w-5 text-white" />
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">EasyShop POS</h1>
-                <p className="text-sm text-gray-500">Main Store</p>
+                <h1 className="text-xl font-bold text-gray-900">CW Retail POS</h1>
+                <p className="text-sm text-gray-500">{storeName}</p>
               </div>
             </div>
             

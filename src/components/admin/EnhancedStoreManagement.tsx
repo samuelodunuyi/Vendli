@@ -31,7 +31,10 @@ import { toast } from "sonner";
 
 export function EnhancedStoreManagement() {
       const { data, isLoading, isError } = useGetStoresQuery();
-      const { data: getUserData } = useGetUsersQuery({});
+      const storeData = data?.stores
+      const { data: userData } = useGetUsersQuery({});
+      const getUserData = userData?.users
+
       const [createStore, { isLoading: isCreating }] = useCreateStoreMutation();
       const [updateStore, { isLoading: isUpdating }] = useUpdateStoreMutation();
   const {
@@ -61,7 +64,7 @@ export function EnhancedStoreManagement() {
   } = useStoreManagement();
 
   const [showWorkflowGuide, setShowWorkflowGuide] = useState(false);
-  const activeStore = data?.find(store => store.storeId === activeStoreId);
+  const activeStore = storeData?.find(store => store.storeId === activeStoreId);
 
 
 const handleAddStore = async (formData: StoreCreateRequest) => {
@@ -181,7 +184,7 @@ const handleUpdateStore = async (updatedData: StoreEditRequest) => {
 
         <TabsContent value="overview" className="space-y-6">
           <StoreOverviewTab
-            stores={data}
+            stores={storeData}
             activeStore={activeStore}
             activeStoreId={activeStoreId}
             compareMode={compareMode}
@@ -199,11 +202,11 @@ const handleUpdateStore = async (updatedData: StoreEditRequest) => {
         </TabsContent>
 
         <TabsContent value="bulk">
-          <BulkOperations stores={data} />
+          <BulkOperations stores={storeData} />
         </TabsContent>
 
         <TabsContent value="reporting">
-          <AdvancedReporting stores={data} />
+          <AdvancedReporting stores={storeData} />
         </TabsContent>
 
         <TabsContent value="notifications">
@@ -211,11 +214,11 @@ const handleUpdateStore = async (updatedData: StoreEditRequest) => {
         </TabsContent>
 
         <TabsContent value="customers">
-          <CustomerAnalytics stores={data} />
+          <CustomerAnalytics stores={storeData} />
         </TabsContent>
 
         <TabsContent value="staff">
-          <EnhancedStaffManagement stores={data} />
+          <EnhancedStaffManagement stores={storeData} />
         </TabsContent>
 
       </Tabs>

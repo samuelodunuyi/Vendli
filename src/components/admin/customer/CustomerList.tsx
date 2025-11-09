@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -7,43 +6,60 @@ import { EditCustomerDialog } from "./EditCustomerDialog";
 import { CustomerDetailsDialog } from "./CustomerDetailsDialog";
 import { CustomerFilters } from "./CustomerFilters";
 import { CustomerTableRow } from "./CustomerTableRow";
-import { mockCustomers } from "./mockCustomersData";
 import { toast } from "@/components/ui/sonner";
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  classification: string;
-  industryClass?: string;
-  companyName?: string;
-  preferredStore: string;
-  loyaltyTier: string;
-  loyaltyPoints: number;
-  totalSpent: number;
-  lastTransaction: string;
-  kycStatus: string;
-  status: string;
+import { Pagination, Customer } from "@/redux/services/customer.services";
+
+interface CustomerListProps {
+  customers: Customer[];
+  isLoading: boolean;
+  pagination?: Pagination;
+  searchQuery: string;
+  setSearchQuery: React.Dispatch<React.SetStateAction<string>>;
+  classification: number | undefined;
+  setClassification: React.Dispatch<React.SetStateAction<number | undefined>>;
+  loyaltyTier: number | undefined;
+  setLoyaltyTier: React.Dispatch<React.SetStateAction<number | undefined>>;
+  status: number | undefined;
+  setStatus: React.Dispatch<React.SetStateAction<number | undefined>>;
+  refetch: () => void;
 }
-export function CustomerList() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [classificationFilter, setClassificationFilter] = useState("all");
-  const [storeFilter, setStoreFilter] = useState("all");
+
+export function CustomerList({
+  customers,
+  isLoading,
+  pagination,
+  searchQuery,
+  setSearchQuery,
+  classification,
+  setClassification,
+  loyaltyTier,
+  setLoyaltyTier,
+  status,
+  setStatus,
+  refetch,
+}: CustomerListProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer>(null);
-  const [customers, setCustomers] = useState(mockCustomers);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
 
-  const filteredCustomers = customers.filter(customer => {
-    const matchesSearch = customer.firstName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         customer.email.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesClassification = classificationFilter === "all" || customer.classification === classificationFilter;
-    const matchesStore = storeFilter === "all" || customer.preferredStore === storeFilter;
-    
-    return matchesSearch && matchesClassification && matchesStore;
+  const filteredCustomers = customers.filter((customer) => {
+    const matchesSearch =
+      `${customer.userInfo.firstName} ${customer.userInfo.lastName}`
+        .toLowerCase()
+        .includes(searchQuery.toLowerCase()) ||
+      customer.userInfo.email?.toLowerCase().includes(searchQuery.toLowerCase());
+
+    const matchesClassification =
+      classification === undefined || customer.customerClassification === classification;
+
+    const matchesLoyalty =
+      loyaltyTier === undefined || customer.loyaltyTier === loyaltyTier;
+
+    const matchesStatus =
+      status === undefined || customer.customerStatus === status;
+
+    return matchesSearch && matchesClassification && matchesLoyalty && matchesStatus;
   });
 
   const handleViewCustomer = (customer: Customer) => {
@@ -57,11 +73,12 @@ export function CustomerList() {
   };
 
   const handleCustomerAdded = () => {
-    toast.success("Customer list refreshed");
+    refetch();
   };
 
   const handleCustomerUpdated = () => {
     toast.success("Customer list refreshed");
+    refetch();
   };
 
   const handleExport = () => {
@@ -71,19 +88,26 @@ export function CustomerList() {
   return (
     <div className="space-y-6">
       <CustomerFilters
-        searchTerm={searchTerm}
-        onSearchChange={setSearchTerm}
-        classificationFilter={classificationFilter}
-        onClassificationChange={setClassificationFilter}
-        storeFilter={storeFilter}
-        onStoreChange={setStoreFilter}
+        searchTerm={searchQuery}
+        onSearchChange={setSearchQuery}
+        classificationFilter={classification?.toString() ?? "all"}
+        onClassificationChange={(value) =>
+          setClassification(value === "all" ? undefined : Number(value))
+        }
+        storeFilter="all"
+        onStoreChange={() => {}}
         onAddCustomer={() => setShowAddDialog(true)}
         onExport={handleExport}
       />
 
       <Card>
         <CardHeader>
-          <CardTitle>Customer Directory ({filteredCustomers.length} customers)</CardTitle>
+          <CardTitle>
+            Customer Directory{" "}
+            {isLoading
+              ? "(Loading...)"
+              : `(${filteredCustomers.length} customers)`}
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -92,22 +116,35 @@ export function CustomerList() {
                 <TableHead>Customer</TableHead>
                 <TableHead>Contact</TableHead>
                 <TableHead>Classification</TableHead>
-                <TableHead>Loyalty</TableHead>
                 <TableHead>Total Spent</TableHead>
                 <TableHead>Last Transaction</TableHead>
-                <TableHead>KYC Status</TableHead>
                 <TableHead>Actions</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {filteredCustomers.map((customer) => (
-                <CustomerTableRow
-                  key={customer.id}
-                  customer={customer}
-                  onView={handleViewCustomer}
-                  onEdit={handleEditCustomer}
-                />
-              ))}
+              {isLoading ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-6">
+                    Loading customers...
+                  </td>
+                </tr>
+              ) : filteredCustomers.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="text-center py-6">
+                    No customers found.
+                  </td>
+                </tr>
+              ) : (
+                filteredCustomers.map((customer) => (
+                  <CustomerTableRow
+                    key={customer.id}
+                    customer={customer}
+                    onView={handleViewCustomer}
+                    onEdit={handleEditCustomer}
+                  />
+                ))
+              )}
             </TableBody>
           </Table>
         </CardContent>

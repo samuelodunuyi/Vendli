@@ -14,8 +14,8 @@ import { toast } from "@/components/ui/sonner";
 interface DeliveryTrackingDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  orderId: string;
-  deliveryTracking?: DeliveryTracking;
+  orderId: number;
+  // deliveryTracking?: DeliveryTracking;
 }
 
 export function DeliveryTrackingDialog({ 

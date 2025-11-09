@@ -36,6 +36,12 @@ export interface AuthResponse {
   email: string;
   role: number;
   username: string;
+  store: Store;
+}
+
+export interface Store{
+  storeId: number;
+  storeName: string
 }
 
 

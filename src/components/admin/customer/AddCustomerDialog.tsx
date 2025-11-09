@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
@@ -8,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
+import { useCreateCustomerMutation } from "@/redux/services/customer.services";
 
 interface AddCustomerDialogProps {
   open: boolean;
@@ -16,6 +16,8 @@ interface AddCustomerDialogProps {
 }
 
 export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCustomerDialogProps) {
+  const [createCustomer, { isLoading }] = useCreateCustomerMutation();
+
   const [formData, setFormData] = useState({
     firstName: "",
     lastName: "",
@@ -29,37 +31,67 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
     notes: ""
   });
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleInputChange = (field: string, value: string | boolean) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const classificationMap: Record<string, number> = {
+    corporate: 0,
+    vip: 1,
+    regular: 2,
+    "walk-in": 3
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
-    // Basic validation
+
     if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
       toast.error("Please fill in all required fields");
       return;
     }
 
-    console.log("Adding new customer:", formData);
-    toast.success("Customer added successfully!");
-    onCustomerAdded();
-    onOpenChange(false);
-    
-    // Reset form
-    setFormData({
-      firstName: "",
-      lastName: "",
-      email: "",
-      phone: "",
-      classification: "regular",
-      industryClass: "",
-      companyName: "",
-      preferredStore: "",
-      marketingConsent: false,
-      notes: ""
-    });
-  };
+    try {
+      const payload = {
+        username: formData.email.split("@")[0],
+        email: formData.email,
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        phoneNumber: formData.phone,
+        loyaltyTier: 0,
+        kycStatus: 0,
+        loyaltyPoints: 0,
+        lastTransactionDate: null,
+        totalSpent: 0,
+        customerClassification: classificationMap[formData.classification],
+        companyName: formData.companyName || null,
+        industryClass: formData.industryClass || null,
+        notes: formData.notes || "",
+        customerStatus: 1 // Active by default
+      };
 
-  const handleInputChange = (field: string, value: string | boolean) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
+      await createCustomer(payload).unwrap();
+
+      toast.success("Customer added successfully!");
+      onCustomerAdded();
+      onOpenChange(false);
+
+      // Reset form
+      setFormData({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        classification: "regular",
+        industryClass: "",
+        companyName: "",
+        preferredStore: "",
+        marketingConsent: false,
+        notes: ""
+      });
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.data?.message || "Failed to add customer");
+    }
   };
 
   return (
@@ -68,8 +100,9 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
         <DialogHeader>
           <DialogTitle>Add New Customer</DialogTitle>
         </DialogHeader>
-        
+
         <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Name Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="firstName">First Name *</Label>
@@ -93,6 +126,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             </div>
           </div>
 
+          {/* Contact Fields */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="email">Email *</Label>
@@ -117,10 +151,14 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             </div>
           </div>
 
+          {/* Classification & Store */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="classification">Customer Classification</Label>
-              <Select value={formData.classification} onValueChange={(value) => handleInputChange("classification", value)}>
+              <Select
+                value={formData.classification}
+                onValueChange={(value) => handleInputChange("classification", value)}
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -134,7 +172,10 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             </div>
             <div className="space-y-2">
               <Label htmlFor="preferredStore">Preferred Store</Label>
-              <Select value={formData.preferredStore} onValueChange={(value) => handleInputChange("preferredStore", value)}>
+              <Select
+                value={formData.preferredStore}
+                onValueChange={(value) => handleInputChange("preferredStore", value)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select store" />
                 </SelectTrigger>
@@ -148,6 +189,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             </div>
           </div>
 
+          {/* Conditional Corporate Fields */}
           {formData.classification === "corporate" && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
@@ -171,6 +213,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             </div>
           )}
 
+          {/* Notes */}
           <div className="space-y-2">
             <Label htmlFor="notes">Notes</Label>
             <Textarea
@@ -182,21 +225,25 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             />
           </div>
 
+          {/* Marketing Consent */}
           <div className="flex items-center space-x-2">
             <Switch
               id="marketingConsent"
               checked={formData.marketingConsent}
               onCheckedChange={(checked) => handleInputChange("marketingConsent", checked)}
             />
-            <Label htmlFor="marketingConsent">Customer consents to marketing communications</Label>
+            <Label htmlFor="marketingConsent">
+              Customer consents to marketing communications
+            </Label>
           </div>
 
+          {/* Buttons */}
           <div className="flex justify-end space-x-2">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit">
-              Add Customer
+            <Button type="submit" disabled={isLoading}>
+              {isLoading ? "Adding..." : "Add Customer"}
             </Button>
           </div>
         </form>

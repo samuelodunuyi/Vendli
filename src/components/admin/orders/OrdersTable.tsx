@@ -1,8 +1,8 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Order } from "@/types/order";
-import { Eye, Gift, Mail, Star, Truck } from "lucide-react";
+import { Order } from "@/redux/services/orders.services";
+import { Eye } from "lucide-react";
 
 interface OrdersTableProps {
   orders: Order[];
@@ -11,130 +11,134 @@ interface OrdersTableProps {
   onViewDeliveryTracking: (order: Order) => void;
 }
 
-export function OrdersTable({ 
-  orders, 
-  onViewOrderDetails, 
-  onViewEnhancedOrder, 
-  onViewDeliveryTracking 
+// Map numeric status to label
+const STATUS_LABELS: Record<number, string> = {
+  0: "Pending",
+  1: "Confirmed",
+  2: "Completed",
+  3: "Awaiting Delivery",
+  4: "Delivered",
+  5: "Failed",
+  6: "Returned",
+  7: "Cancelled",
+};
+
+export function OrdersTable({
+  orders,
+  onViewOrderDetails,
+  onViewEnhancedOrder,
 }: OrdersTableProps) {
-  const getStatusColor = (status: string) => {
+  const getStatusColor = (status: number | null) => {
     switch (status) {
-      case "pending": return "secondary";
-      case "confirmed":
-      case "processing":
-      case "shipped":
-      case "delivered": return "default";
-      case "cancelled":
-      case "returned": return "destructive";
-      default: return "secondary";
+      case 0:
+        return "secondary";
+      case 1:
+      case 2:
+      case 3:
+      case 4:
+        return "default";
+      case 5:
+      case 6:
+      case 7:
+        return "destructive";
+      default:
+        return "secondary";
     }
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-GB") + " " + 
-           new Date(dateString).toLocaleTimeString("en-GB", { hour: '2-digit', minute: '2-digit' });
+    return (
+      new Date(dateString).toLocaleDateString("en-GB") +
+      " " +
+      new Date(dateString).toLocaleTimeString("en-GB", {
+        hour: "2-digit",
+        minute: "2-digit",
+      })
+    );
   };
-
+  
   return (
-    <div className="w-full max-w-7xl mx-auto px-2">
-      <Card className="overflow-hidden">
-        <CardHeader>
-          <CardTitle>Enhanced Orders Management</CardTitle>
-        </CardHeader>
-        <CardContent className="p-0">
-          {/* Horizontal scroll container */}
-          <div className="overflow-x-auto">
-            <table className="min-w-full table-auto border-collapse">
-              <thead>
-                <tr className="border-b bg-gray-50">
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Order ID</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Customer</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Store & Rep</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Items</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Total</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Status</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Date</th>
-                  <th className="text-left p-3 text-sm font-semibold text-gray-600">Actions</th>
+<div className="w-full max-w-7xl mx-auto px-2">
+  <Card className="overflow-hidden">
+    <CardHeader>
+      <CardTitle>Enhanced Orders Management</CardTitle>
+    </CardHeader>
+    <CardContent className="p-0">
+      {/* Scrollable wrapper */}
+      <div className="overflow-x-auto w-full">
+        <table className="min-w-[900px] table-auto border-collapse">
+          <thead>
+            <tr className="border-b bg-gray-50">
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Order ID</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Customer</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Store & Rep</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Items</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Total</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Status</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Date</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders?.map((order) => {
+              const totalPrice = order.orderItems.reduce(
+                (sum, item) => sum + item.priceAtOrder * item.quantity,
+                0
+              );
+
+              return (
+                <tr key={order.id} className="border-b hover:bg-gray-50">
+                  <td className="p-3 whitespace-nowrap">{order.id}</td>
+                  <td className="p-3 whitespace-nowrap">
+                    <div>
+                      {order.customer.firstName} {order.customer.lastName}
+                      <div className="text-sm text-gray-500">{order.customer.phoneNumber}</div>
+                      {order.customer.email && (
+                        <div className="text-xs text-blue-600">{order.customer.email}</div>
+                      )}
+                    </div>
+                  </td>
+                  <td className="p-3 whitespace-nowrap">{order.createdBy}</td>
+                  <td className="p-3 whitespace-nowrap">
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      {order.orderItems.map((item) => (
+                        <li key={item.id}>
+                          {item.productName} x {item.quantity} (₦{item.priceAtOrder})
+                        </li>
+                      ))}
+                    </ul>
+                  </td>
+                  <td className="p-3 font-medium whitespace-nowrap">₦{totalPrice}</td>
+                  <td className="p-3 whitespace-nowrap">
+                    <Badge variant={getStatusColor(order.status)}>
+                      {STATUS_LABELS[order.status] || "Unknown"}
+                    </Badge>
+                  </td>
+                  <td className="p-3 text-sm whitespace-nowrap">{formatDate(order.orderDate)}</td>
+                  <td className="p-3 whitespace-nowrap">
+                    <div className="flex gap-1">
+                      <Button variant="outline" size="sm" onClick={() => onViewOrderDetails(order)}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => onViewEnhancedOrder(order)}
+                        className="bg-purple-600 hover:bg-purple-700"
+                      >
+                        Enhanced
+                      </Button>
+                    </div>
+                  </td>
                 </tr>
-              </thead>
-              <tbody>
-                {orders.map(order => (
-                  <tr key={order.id} className="border-b hover:bg-gray-50">
-                    <td className="p-3 whitespace-nowrap">
-                      <div>
-                        <div className="font-medium">{order.id}</div>
-                        <Badge variant="outline" className="text-xs">{order.orderType}</Badge>
-                      </div>
-                    </td>
+              );
+            })}
+          </tbody>
+        </table>
+      </div>
+    </CardContent>
+  </Card>
+</div>
 
-                    <td className="p-3 whitespace-nowrap">
-                      <div>
-                        <div className="font-medium">{order.customerName}</div>
-                        <div className="text-sm text-gray-500">{order.customerPhone}</div>
-                        {order.customerEmail && (
-                          <div className="text-xs text-blue-600">{order.customerEmail}</div>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="p-3 whitespace-nowrap">
-                      <div>
-                        <div className="font-medium text-sm">{order.originatingStore.name}</div>
-                        {order.salesRep && (
-                          <div className="text-xs text-gray-600">{order.salesRep.name}</div>
-                        )}
-                      </div>
-                    </td>
-
-                    <td className="p-3 whitespace-nowrap">{order.itemsCount}</td>
-                    <td className="p-3 font-medium whitespace-nowrap">₦{order.total.toLocaleString()}</td>
-                    
-                    <td className="p-3 whitespace-nowrap">
-                      <Badge variant={getStatusColor(order.status)}>
-                        {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                      </Badge>
-                    </td>
-
-                    <td className="p-3 text-sm whitespace-nowrap">{formatDate(order.createdAt)}</td>
-
-                    <td className="p-3 whitespace-nowrap">
-                      <div className="flex gap-1">
-                        <Button 
-                          variant="outline" 
-                          size="sm" 
-                          onClick={() => onViewOrderDetails(order)}
-                        >
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        
-                        <Button 
-                          variant="default" 
-                          size="sm"
-                          onClick={() => onViewEnhancedOrder(order)}
-                          className="bg-purple-600 hover:bg-purple-700"
-                        >
-                          Enhanced
-                        </Button>
-
-                        {order.deliveryTracking && (
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => onViewDeliveryTracking(order)}
-                            className="text-blue-600 hover:text-blue-700"
-                          >
-                            <Truck className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
   );
 }

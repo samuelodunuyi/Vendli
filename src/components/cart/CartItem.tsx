@@ -9,9 +9,9 @@ import { CartItem as CartItemType, Discount } from "@/types";
 interface CartItemProps {
   item: CartItemType;
   isPOS?: boolean;
-  onRemove: (productId: string) => void;
-  onUpdateQuantity: (productId: string, quantity: number) => void;
-  onApplyDiscount?: (productId: string, discount: Discount) => void;
+  onRemove: (productId: number) => void;
+  onUpdateQuantity: (productId: number, quantity: number) => void;
+  onApplyDiscount?: (productId: number, discount: Discount) => void;
 }
 
 export function CartItem({ 
@@ -35,15 +35,15 @@ export function CartItem({
         <div className="flex items-center flex-1">
           <img
             src={item.product.imageUrl}
-            alt={item.product.name}
+            alt={item.product.productName}
             className="w-12 h-12 object-cover rounded-md border"
           />
           <div className="ml-3 flex-1">
             <h4 className="font-medium text-sm text-gray-900 leading-tight">
-              {item.product.name}
+              {item.product.productName}
             </h4>
             <p className="text-xs text-gray-600 mt-1">
-              {formatCurrency(item.product.price)} each
+              {formatCurrency(item.product.basePrice)} each
             </p>
           </div>
         </div>
@@ -51,7 +51,7 @@ export function CartItem({
         <Button
           variant="ghost"
           size="sm"
-          onClick={() => onRemove(item.product.id)}
+          onClick={() => onRemove(item.product.productId)}
           className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0 ml-2"
         >
           <X className="h-4 w-4" />
@@ -70,7 +70,7 @@ export function CartItem({
             variant="outline"
             size="sm"
             className="h-7 w-7 p-0"
-            onClick={() => onUpdateQuantity(item.product.id, item.quantity - 1)}
+            onClick={() => onUpdateQuantity(item.product.productId, item.quantity - 1)}
           >
             -
           </Button>
@@ -80,7 +80,7 @@ export function CartItem({
             value={item.quantity}
             onChange={(e) =>
               onUpdateQuantity(
-                item.product.id,
+                item.product.productId,
                 parseInt(e.target.value) || 1
               )
             }
@@ -90,7 +90,7 @@ export function CartItem({
             variant="outline"
             size="sm"
             className="h-7 w-7 p-0"
-            onClick={() => onUpdateQuantity(item.product.id, item.quantity + 1)}
+            onClick={() => onUpdateQuantity(item.product.productId, item.quantity + 1)}
           >
             +
           </Button>
@@ -98,7 +98,7 @@ export function CartItem({
 
         {isPOS && onApplyDiscount && (
           <DiscountSelector
-            onDiscountSelect={(discount) => onApplyDiscount(item.product.id, discount)}
+            onDiscountSelect={(discount) => onApplyDiscount(item.product.productId, discount)}
             selectedDiscount={item.discount}
           />
         )}

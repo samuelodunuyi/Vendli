@@ -9,7 +9,6 @@ interface OrdersStatsProps {
     completed: number;
     cancelled: number;
     totalRevenue: number;
-    totalLoyaltyPoints: number;
     avgRating: number;
   };
 }
@@ -68,21 +67,7 @@ export function OrdersStats({ orderStats }: OrdersStatsProps) {
             <CardTitle className="text-sm font-medium text-gray-600">Revenue</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">₦{orderStats.totalRevenue.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-1">
-              <Gift className="h-3 w-3" />
-              Loyalty Points
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-xl font-bold text-purple-600">
-              {orderStats.totalLoyaltyPoints.toLocaleString()}
-            </div>
+            <div className="text-xl font-bold">₦{orderStats?.totalRevenue?.toLocaleString()}</div>
           </CardContent>
         </Card>
 

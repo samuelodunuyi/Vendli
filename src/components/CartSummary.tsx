@@ -1,4 +1,4 @@
-
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from "react";
 import { Trash } from "lucide-react";
 import { useCart } from "@/context/CartContext";
@@ -10,20 +10,29 @@ import { Transaction } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { CartItem } from "@/components/cart/CartItem";
 import { CartTotals } from "@/components/cart/CartTotals";
-import { CustomerInfo } from "@/components/cart/CustomerInfo";
 import { CartActions } from "@/components/cart/CartActions";
 import { EmptyCart } from "@/components/cart/EmptyCart";
+import { useCreateOrderMutation } from "@/redux/services/orders.services";
+import { useAppSelector } from "@/redux/store";
+import { useGetCustomersQuery } from "@/redux/services/customer.services";
+import { AddCustomerDialog } from "./admin/customer/AddCustomerDialog";
 
 interface CartSummaryProps {
   isPOS?: boolean;
 }
 
+enum PaymentMethod {
+  PAYMENT_CASH = 0,
+  PAYMENT_CARD = 1,
+  PAYMENT_BANK_TRANSFER = 2,
+}
+
 export function CartSummary({ isPOS = false }: CartSummaryProps) {
-  const { 
-    items, 
-    removeFromCart, 
-    updateQuantity, 
-    clearCart, 
+  const {
+    items,
+    removeFromCart,
+    updateQuantity,
+    clearCart,
     subtotal,
     totalDiscount,
     total,
@@ -31,38 +40,101 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
     completeTransaction,
     transactions,
     voidTransaction,
-    returnTransaction
+    returnTransaction,
   } = useCart();
-  
-  const [customerName, setCustomerName] = useState("");
-  const [customerPhone, setCustomerPhone] = useState("");
+
+  const storeId = useAppSelector((state) => state.auth.user?.storeId);
+  const [createOrder, { isLoading }] = useCreateOrderMutation();
+
+  const { data: customers, refetch } = useGetCustomersQuery({});
+  console.log(customers);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(
+    null
+  );
+  const [showAddDialog, setShowAddDialog] = useState(false);
   const [showPayment, setShowPayment] = useState(false);
   const [showVoidDialog, setShowVoidDialog] = useState(false);
   const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Transaction | null>(null);
+  const [selectedTransaction, setSelectedTransaction] =
+    useState<Transaction | null>(null);
 
   const handleCheckout = () => {
     if (items.length === 0) {
       toast.error("Your cart is empty");
       return;
     }
-    
+
     if (isPOS) {
       setShowPayment(true);
     } else {
-      toast.success("Order placed successfully");
-      clearCart();
+      handleCreateOrder(1);
     }
   };
 
-  const handlePaymentComplete = (paymentMethod: any, amount: number) => {
-    const transaction = completeTransaction(paymentMethod, customerName, customerPhone);
-    toast.success("Sale completed successfully");
-    setCustomerName("");
-    setCustomerPhone("");
-    
-    // Auto-print receipt
-    handlePrintReceipt(transaction);
+  const handleCreateOrder = async (
+    paymentOption: number,
+    customerId?: number
+  ) => {
+    if (!storeId) {
+      toast.error("Missing store information");
+      return;
+    }
+
+    // Only use selectedCustomerId if provided
+    if (!customerId && selectedCustomerId) {
+      customerId = selectedCustomerId;
+    }
+
+    const orderItems = items.map((item) => ({
+      productId: item.product.productId,
+      quantity: item.quantity,
+      unitPrice: item.product.basePrice,
+    }));
+
+    const payload: any = {
+      storeId,
+      orderItems,
+      paymentOption,
+    };
+
+    if (customerId) payload.customerId = customerId;
+
+    try {
+      const response = await createOrder(payload).unwrap();
+      toast.success(`Order #${response.id} created successfully`);
+      clearCart();
+      setSelectedCustomerId(null);
+    } catch (error) {
+      toast.error(error?.data?.message || "Failed to create order");
+    }
+  };
+
+  const handlePaymentComplete = async (
+    paymentMethod: PaymentMethod,
+    amount: number
+  ) => {
+    let customer;
+    if (selectedCustomerId && customers) {
+      customer = customers.customers.find((c) => c.id === selectedCustomerId);
+      if (!customer) {
+        toast.error("Selected customer not found.");
+        return;
+      }
+    }
+
+    try {
+      await handleCreateOrder(paymentMethod, selectedCustomerId || undefined);
+      const transaction = completeTransaction(
+        paymentMethod,
+        customer?.userInfo.firstName,
+        customer?.userInfo.phoneNumber || ""
+      );
+      toast.success("Sale completed successfully");
+      setSelectedCustomerId(null);
+      handlePrintReceipt(transaction);
+    } catch (error) {
+      toast.error("Payment failed. Please try again.");
+    }
   };
 
   const handlePrintReceipt = (transaction?: Transaction) => {
@@ -74,11 +146,25 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
     }
   };
 
-  const handleVoidTransaction = (txnId: string, reason: string, approver: string) => {
+  const handleCustomerAdded = () => {
+    toast.success("Customer list updated");
+    setShowAddDialog(false);
+    refetch();
+  };
+
+  const handleVoidTransaction = (
+    txnId: string,
+    reason: string,
+    approver: string
+  ) => {
     voidTransaction(txnId, reason, approver);
   };
 
-  const handleReturnTransaction = (txnId: string, reason: string, approver: string) => {
+  const handleReturnTransaction = (
+    txnId: string,
+    reason: string,
+    approver: string
+  ) => {
     returnTransaction(txnId, reason, approver);
   };
 
@@ -103,6 +189,7 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
               size="sm"
               className="text-red-500 hover:text-red-700 hover:bg-red-50 w-full"
               onClick={clearCart}
+              disabled={isLoading}
             >
               <Trash className="h-4 w-4 mr-2" /> Clear All Items
             </Button>
@@ -118,7 +205,7 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
               <div className="space-y-3">
                 {items.map((item) => (
                   <CartItem
-                    key={item.product.id}
+                    key={item.product.productId}
                     item={item}
                     isPOS={isPOS}
                     onRemove={removeFromCart}
@@ -128,25 +215,44 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
                 ))}
               </div>
             </ScrollArea>
-            
-            {/* Customer Info */}
+
+            {/* Customer Select */}
             {isPOS && (
-              <CustomerInfo
-                customerName={customerName}
-                customerPhone={customerPhone}
-                onCustomerNameChange={setCustomerName}
-                onCustomerPhoneChange={setCustomerPhone}
-              />
+              <div className="px-4 py-3 border-t bg-gray-50/50">
+                <select
+                  value={selectedCustomerId || ""}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    if (value === "add") {
+                      // Open the AddCustomerDialog
+                      setShowAddDialog(true);
+                      setSelectedCustomerId(null); // reset selection
+                    } else {
+                      setSelectedCustomerId(Number(value));
+                    }
+                  }}
+                  className="h-9 w-full text-sm border rounded"
+                >
+                  <option value="">Select Customer</option>
+                  {customers?.customers.map((c) => (
+                    <option key={c.id} value={c.id}>
+                      {c.userInfo.firstName} {c.userInfo.lastName} (
+                      {c.userInfo.phoneNumber || "N/A"})
+                    </option>
+                  ))}
+                  <option value="add">+ Add Customer</option>
+                </select>
+              </div>
             )}
-            
+
             {/* Totals */}
             <CartTotals
               subtotal={subtotal}
               totalDiscount={totalDiscount}
               total={total}
             />
-            
-            {/* Action Buttons */}
+
+            {/* Actions */}
             <CartActions
               isPOS={isPOS}
               hasItems={items.length > 0}
@@ -175,6 +281,12 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
         transaction={selectedTransaction}
         type="void"
         onApprove={handleVoidTransaction}
+      />
+
+      <AddCustomerDialog
+        open={showAddDialog}
+        onOpenChange={setShowAddDialog}
+        onCustomerAdded={handleCustomerAdded}
       />
 
       {/* Return Dialog */}

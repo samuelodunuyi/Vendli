@@ -20,7 +20,7 @@ interface PersonalizedPromotion {
 }
 
 interface PersonalizedPromotionsProps {
-  customerId: string;
+  customerId: number;
   customerName: string;
   purchaseHistory: any[];
   onApplyPromotion: (promotionId: string) => void;

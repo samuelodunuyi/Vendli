@@ -41,6 +41,19 @@ export interface StoreEditRequest {
   userId: number;
   isActive: boolean;
 }
+
+interface StoresResponse {
+  stores: Store[];
+  pagination: {
+    currentPage: number;
+    itemsPerPage: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
+}
+
 // ================== STATISTICS TYPES ==================
 
 export interface TopCategory {
@@ -111,7 +124,7 @@ export const storeApi = createApi({
   tagTypes: ['Store', 'Statistics'],
   endpoints: (builder) => ({
     // GET all stores
-    getStores: builder.query<Store[], void>({
+    getStores: builder.query<StoresResponse, void>({
       query: () => '/Store',
       providesTags: ['Store'],
     }),

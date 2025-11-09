@@ -2,8 +2,8 @@ import { Product} from "@/redux/services/products.services";
 import { useState } from "react";
 
 export interface FilterState {
-  category: string;  // changed from string
-  status: string;   // status isActive is boolean
+  categoryId: number;
+  status: string;
   priceMin: string;
   priceMax: string;
   stockMin: string;
@@ -12,7 +12,7 @@ export interface FilterState {
 
 export function useProductFilters(productList: Product[]) {
   const [filters, setFilters] = useState<FilterState>({
-    category: "all",
+    categoryId: null,
     status: "all",
     priceMin: "", 
     priceMax: "",
@@ -32,7 +32,7 @@ export function useProductFilters(productList: Product[]) {
 
       // Category filter
       const matchesCategory =
-        filters.category === "all" ;
+        filters.categoryId === null ;
 
       // Status filter
       const matchesStatus =
@@ -58,7 +58,7 @@ export function useProductFilters(productList: Product[]) {
 
   const handleClearFilters = () => {
     setFilters({
-      category: "all",
+      categoryId: null,
       status: "all",
       priceMin: "",
       priceMax: "",

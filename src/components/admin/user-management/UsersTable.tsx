@@ -11,10 +11,10 @@ import { User } from "@/redux/services/user.services";
 interface UsersTableProps {
   users: User[];
   onEditUser: (user: User) => void;
-  onDeleteUser: (user: User) => void;
+  onDisableUser: (user: User) => void;
 }
 
-export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps) {
+export function UsersTable({ users, onEditUser, onDisableUser }: UsersTableProps) {
   console.log(users)
   const getRoleIcon = (role: string) => {
     switch (role) {
@@ -26,22 +26,7 @@ export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps)
         return <UserIcon className="h-4 w-4" />;
     }
   };
-
-  const getRoleBadgeVariant = (role: string) => {
-    switch (role) {
-      case "super_admin":
-        return "default";
-      case "store_manager":
-        return "secondary";
-      default:
-        return "outline";
-    }
-  };
-
-  const formatRoleName = (role: string) => {
-    return role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
-  };
-
+  console.log(users)
   return (
     <Card>
       <CardHeader>
@@ -89,12 +74,13 @@ export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps)
                     </div>
                   </TableCell>
                   <TableCell>
-                    <Badge variant={user.status === "inactive" ? "secondary" : "default"}>
-                      {user.status === "active" ? "Active" : "Inactive"}
-                    </Badge>
+<Badge variant={user.isActive ? "default" : "secondary"}>
+  {user.isActive ? "Active" : "Inactive"}
+</Badge>
+
                   </TableCell>
                   <TableCell className="text-sm text-gray-600">
-                    {new Date(user.created_at).toLocaleDateString()}
+                    {new Date(user.joinedDate).toLocaleDateString()}
                   </TableCell>
                   <TableCell>
                     <DropdownMenu>
@@ -109,11 +95,11 @@ export function UsersTable({ users, onEditUser, onDeleteUser }: UsersTableProps)
                           Edit User
                         </DropdownMenuItem>
                         <DropdownMenuItem 
-                          onClick={() => onDeleteUser(user)}
+                          onClick={() => onDisableUser(user)}
                           className="text-red-600"
                         >
                           <Trash2 className="h-4 w-4 mr-2" />
-                          Delete User
+                          Disabele User
                         </DropdownMenuItem>
                       </DropdownMenuContent>
                     </DropdownMenu>

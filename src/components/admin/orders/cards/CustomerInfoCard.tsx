@@ -1,7 +1,7 @@
 
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Order } from "@/types/order";
+import { Order } from "@/redux/services/orders.services";
 import { User, Phone, Mail } from "lucide-react";
 
 interface CustomerInfoCardProps {
@@ -19,19 +19,19 @@ export function CustomerInfoCard({ order }: CustomerInfoCardProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="font-medium">{order.customerName}</p>
+          <p className="font-medium">{order.customer.firstName + " " + order.customer.lastName}</p>
           {order.customerLevel && (
             <Badge className="text-xs mt-1">{order.customerLevel}</Badge>
           )}
         </div>
         <div className="flex items-center gap-2 text-sm">
           <Phone className="h-3 w-3" />
-          {order.customerPhone}
+          {order.customer.phoneNumber}
         </div>
-        {order.customerEmail && (
+        {order.customer.email && (
           <div className="flex items-center gap-2 text-sm">
             <Mail className="h-3 w-3" />
-            {order.customerEmail}
+            {order.customer.email}
           </div>
         )}
         {order.loyaltyPoints && (

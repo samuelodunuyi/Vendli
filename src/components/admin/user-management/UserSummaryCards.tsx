@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "./types";
+import { User } from "@/redux/services/user.services";
 
 interface UserSummaryCardsProps {
   users: User[];
@@ -7,12 +7,12 @@ interface UserSummaryCardsProps {
 
 export function UserSummaryCards({ users }: UserSummaryCardsProps) {
   const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.status === "active").length;
+  const activeUsers = users.filter(u => u.isActive === true).length;
 
-  const superAdmins = users.filter(u => u.roles === 0).length;
-  const storeAdmins = users.filter(u => u.roles === 1).length;
-  const employees = users.filter(u => u.roles === 2).length;
-  const customers = users.filter(u => u.roles === 3).length;
+  const superAdmins = users.filter(u => u.role === "SuperAdmin").length;
+  const storeAdmins = users.filter(u => u.role === "StoreAdmin").length;
+  const employees = users.filter(u => u.role === "Employee").length;
+  const customers = users.filter(u => u.role === "Customer").length;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">

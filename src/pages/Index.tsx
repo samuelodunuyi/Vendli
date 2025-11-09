@@ -5,9 +5,11 @@ import { Nav } from "@/components/Nav";
 import { products } from "@/data/products";
 import { ShoppingCart, Store, Monitor, Settings } from "lucide-react";
 import { Link } from "react-router-dom";
+import { useGetProductsQuery } from "@/redux/services/products.services";
 
 const Index = () => {
-  const featuredProducts = products.slice(0, 8);
+  const {data: products } = useGetProductsQuery({})
+  const featuredProducts = products?.products?.slice(0, 8);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50">
@@ -82,8 +84,8 @@ const Index = () => {
         <div className="max-w-6xl mx-auto">
           <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
+            {featuredProducts?.map((product) => (
+              <ProductCard key={product.productId} product={product} />
             ))}
           </div>
         </div>

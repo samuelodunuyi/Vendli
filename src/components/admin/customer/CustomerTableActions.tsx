@@ -1,24 +1,7 @@
 
 import { Button } from "@/components/ui/button";
+import { Customer } from "@/redux/services/customer.services";
 import { Eye, Edit } from "lucide-react";
-
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  classification: string;
-  industryClass?: string;
-  companyName?: string;
-  preferredStore: string;
-  loyaltyTier: string;
-  loyaltyPoints: number;
-  totalSpent: number;
-  lastTransaction: string;
-  kycStatus: string;
-  status: string;
-}
 
 interface CustomerTableActionsProps {
   customer: Customer;

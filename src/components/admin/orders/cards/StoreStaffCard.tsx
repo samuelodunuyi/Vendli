@@ -1,7 +1,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Order } from "@/types/order";
+import { Order } from "@/redux/services/orders.services";
 import { Store } from "lucide-react";
 
 interface StoreStaffCardProps {
@@ -19,22 +19,13 @@ export function StoreStaffCard({ order }: StoreStaffCardProps) {
       </CardHeader>
       <CardContent className="space-y-3">
         <div>
-          <p className="font-medium">{order.originatingStore.name}</p>
-          <p className="text-sm text-gray-600">{order.originatingStore.address}</p>
-          <p className="text-sm text-gray-600">{order.originatingStore.phone}</p>
+          <p className="text-sm text-gray-600">{order.store.storeName}</p>
         </div>
         <Separator />
-        {order.salesRep && (
+        {order.createdBy && (
           <div>
             <p className="text-sm font-medium">Sales Representative</p>
-            <p className="text-sm">{order.salesRep.name}</p>
-            <p className="text-sm text-gray-600">{order.salesRep.email}</p>
-          </div>
-        )}
-        {order.assignedTo && (
-          <div>
-            <p className="text-sm font-medium">Assigned To</p>
-            <p className="text-sm">{order.assignedTo}</p>
+            <p className="text-sm">{order.createdBy}</p>
           </div>
         )}
       </CardContent>

@@ -21,11 +21,10 @@ export interface Tax {
   description: string;
 }
 
-export interface PaymentMethod {
-  id: string;
-  name: string;
-  type: 'card' | 'transfer' | 'cash' | 'wallet';
-  icon: string;
+export enum PaymentMethod {
+  PAYMENT_CASH = 0,
+  PAYMENT_CARD = 1,
+  PAYMENT_BANK_TRANSFER = 2,
 }
 
 export interface Transaction {

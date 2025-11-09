@@ -1,21 +1,26 @@
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Search, Download, RefreshCw } from "lucide-react";
 
 interface OrdersFiltersProps {
   searchQuery: string;
   setSearchQuery: (query: string) => void;
-  statusFilter: string;
-  setStatusFilter: (status: string) => void;
+  statusFilter: number;
+  setStatusFilter: (status: number) => void;
 }
 
-export function OrdersFilters({ 
-  searchQuery, 
-  setSearchQuery, 
-  statusFilter, 
-  setStatusFilter 
+export function OrdersFilters({
+  searchQuery,
+  setSearchQuery,
+  statusFilter,
+  setStatusFilter,
 }: OrdersFiltersProps) {
   return (
     <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
@@ -29,23 +34,28 @@ export function OrdersFilters({
             onChange={(e) => setSearchQuery(e.target.value)}
           />
         </div>
-        
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="w-40">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            <SelectItem value="pending">Pending</SelectItem>
-            <SelectItem value="confirmed">Confirmed</SelectItem>
-            <SelectItem value="processing">Processing</SelectItem>
-            <SelectItem value="shipped">Shipped</SelectItem>
-            <SelectItem value="delivered">Delivered</SelectItem>
-            <SelectItem value="cancelled">Cancelled</SelectItem>
-          </SelectContent>
-        </Select>
+<Select
+  value={statusFilter !== null ? statusFilter.toString() : undefined}
+  onValueChange={(val) =>
+    setStatusFilter(val === undefined ? null : Number(val))
+  }
+>
+  <SelectTrigger className="w-40">
+    <SelectValue placeholder="All Status" />
+  </SelectTrigger>
+  <SelectContent>
+    {/* No empty string value here */}
+    <SelectItem value="0">Pending</SelectItem>
+    <SelectItem value="1">Confirmed</SelectItem>
+    <SelectItem value="3">Shipped</SelectItem>
+    <SelectItem value="4">Delivered</SelectItem>
+    <SelectItem value="7">Cancelled</SelectItem>
+    <SelectItem value="6">Returned</SelectItem>
+  </SelectContent>
+</Select>
+
       </div>
-      
+
       <div className="flex gap-2">
         <Button variant="outline">
           <Download className="mr-2 h-4 w-4" />

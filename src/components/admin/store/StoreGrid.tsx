@@ -11,11 +11,12 @@ interface StoreGridProps {
 }
 
 export function StoreGrid({ stores, activeStoreId, onStoreSwitch }: StoreGridProps) {
-  const filteredStores = stores.filter(store => store.storeId !== activeStoreId);
+  console.log(stores)
+  const filteredStores = stores?.filter(store => store.storeId !== activeStoreId);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-      {filteredStores.map((store) => (
+      {filteredStores?.map((store) => (
         <Card 
           key={store.storeId} 
           className="hover:shadow-lg transition-shadow cursor-pointer" 
@@ -27,8 +28,8 @@ export function StoreGrid({ stores, activeStoreId, onStoreSwitch }: StoreGridPro
                 <StoreIcon className="h-5 w-5 text-blue-600" />
                 <CardTitle className="text-lg">{store.storeName}</CardTitle>
               </div>
-              <Badge variant={store.status === 'active' ? 'default' : 'secondary'}>
-                {store.status}
+              <Badge variant={store.isActive === true ? 'default' : 'secondary'}>
+                {store.isActive}
               </Badge>
             </div>
           </CardHeader>

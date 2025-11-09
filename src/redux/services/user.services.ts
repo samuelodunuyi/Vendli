@@ -1,7 +1,5 @@
 // src/store/users.services.ts
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { baseUrl } from '../baseUrl';
-import type { RootState } from '../store';
+import { createApi } from '@reduxjs/toolkit/query/react';
 import { baseQueryWithReauth } from './baseQueryWithReauth';
 
 // Request types
@@ -10,44 +8,79 @@ export interface CreateUserRequest {
   email: string;
   password: string;
   roleId: number;
-  storeId: number;
+  role: string;
+  phoneNumber: string;
   firstName: string;
   lastName: string;
-  phoneNumber: string;
+  storeId?: number;
+  notes?: string;
+  customerClassification?: string;
+}
+
+export interface UpdateUserRequest {
+  id: number;
+  firstName?: string;
+  lastName?: string;
+  email?: string;
+  phoneNumber?: string;
+  isActive?: boolean;
+  notes?: string;
+  customerClassification?: string;
 }
 
 export interface AssignStoreAdminRequest {
-  storeId: string; 
-  userEmail: string;
-}
-
-export interface AssignEmployeeRequest {
+  userId: number;
   storeId: number;
-  userEmail: string;
 }
 
 export interface SetUserStatusRequest {
-  userEmail: string;
+  userId: number;
   isActive: boolean;
 }
 
 export interface GetUsersRequest {
-  role?: string; // optional query parameter
+  role?: string;
+  page?: number;
+  itemsPerPage?: number;
 }
 
-// Response type
+// Response types
 export interface MessageResponse {
   message: string;
 }
 
+// Pagination
+export interface Pagination {
+  currentPage: number;
+  itemsPerPage: number;
+  totalItems: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
 export interface User {
   id: number;
+  username: string;
   email: string;
   firstName: string;
   lastName: string;
-  phoneNumber: string;
   role: string;
-  username: string;
+  roleId: number;
+  roleName: string;
+  isActive: boolean;
+  joinedDate: string;
+  phoneNumber: string;
+  notes?: string;
+  customerClassification?: string;
+  storeId?: number;
+  storeName?: string;
+}
+
+// Users Response
+export interface GetUsersResponse {
+  users: User[];
+  pagination: Pagination;
 }
 
 // Users API
@@ -55,67 +88,64 @@ export const usersApi = createApi({
   reducerPath: 'usersApi',
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
-    // Create store admin
-    createStoreAdmin: builder.mutation<MessageResponse, CreateUserRequest>({
-      query: (body) => ({
-        url: '/UserManagement/create-store-admin',
-        method: 'POST',
-        body,
-      }),
-    }),
-
-    // Create employee
-    createEmployee: builder.mutation<MessageResponse, CreateUserRequest>({
-      query: (body) => ({
-        url: '/UserManagement/create-employee',
-        method: 'POST',
-        body,
-      }),
-    }),
-
-    // Set user status (active/inactive)
-    setUserStatus: builder.mutation<MessageResponse, SetUserStatusRequest>({
-      query: ({ userEmail, isActive }) => ({
-        url: '/UserManagement/set-user-status',
-        method: 'POST',
-        params: { userEmail, isActive },
-      }),
-    }),
-
-    // Assign store admin to a store
-    assignStoreAdmin: builder.mutation<MessageResponse, AssignStoreAdminRequest>({
-      query: (body) => ({
-        url: '/UserManagement/assign-storeadmin',
-        method: 'POST',
-        body,
-      }),
-    }),
-
-    // Assign employee to a store
-    assignEmployee: builder.mutation<MessageResponse, AssignEmployeeRequest>({
-      query: ({ storeId, userEmail }) => ({
-        url: '/UserManagement/assign-employee',
-        method: 'POST',
-        params: { storeId, userEmail },
-      }),
-    }),
-
-    // GET users (optionally filter by role)
-    getUsers: builder.query<User[], GetUsersRequest>({
-      query: ({ role } = {}) => ({
+    getUsers: builder.query<GetUsersResponse, GetUsersRequest>({
+      query: (params) => ({
         url: '/UserManagement/get-users',
         method: 'GET',
-        params: role ? { role } : undefined,
+        params: {
+          ...(params.role && { role: params.role }),
+          ...(params.page && { page: params.page }),
+          ...(params.itemsPerPage && { itemsPerPage: params.itemsPerPage }),
+        },
+      }),
+    }),
+
+    createUser: builder.mutation<MessageResponse, CreateUserRequest>({
+      query: (body) => ({
+        url: '/UserManagement/create-user',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    updateUser: builder.mutation<MessageResponse, UpdateUserRequest>({
+      query: ({ id, ...body }) => ({
+        url: `/UserManagement/edit/${id}`,
+        method: 'PUT',
+        body,
+      }),
+    }),
+
+    deleteUser: builder.mutation<MessageResponse, { id: number }>({
+      query: ({ id }) => ({
+        url: `/UserManagement/delete-user/${id}`,
+        method: 'DELETE',
+      }),
+    }),
+
+    assignStoreAdmin: builder.mutation<MessageResponse, AssignStoreAdminRequest>({
+      query: (body) => ({
+        url: '/UserManagement/assign-store-admin',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    setUserStatus: builder.mutation<MessageResponse, SetUserStatusRequest>({
+      query: ({ userId, isActive }) => ({
+        url: '/UserManagement/set-user-status',
+        method: 'PUT',
+        params: { userId, isActive },
       }),
     }),
   }),
 });
 
 export const {
-  useCreateStoreAdminMutation,
-  useCreateEmployeeMutation,
-  useSetUserStatusMutation,
-  useAssignStoreAdminMutation,
-  useAssignEmployeeMutation,
   useGetUsersQuery,
+  useCreateUserMutation,
+  useUpdateUserMutation,
+  useDeleteUserMutation,
+  useAssignStoreAdminMutation,
+  useSetUserStatusMutation,
 } = usersApi;

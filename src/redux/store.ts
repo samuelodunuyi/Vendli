@@ -20,6 +20,7 @@ import { authApi } from '@/redux/services/auth.services';
 import { storeApi } from '@/redux/services/stores.services';
 import { productApi } from '@/redux/services/products.services';
 import { orderApi } from '@/redux/services/orders.services';
+import { customersApi } from '@/redux/services/customer.services';
 import { usersApi } from '@/redux/services/user.services';
 import { restaurantApi } from '@/redux/services/restaurant.services';
 
@@ -42,6 +43,7 @@ const rootReducer = combineReducers({
   [storeApi.reducerPath]: storeApi.reducer,
   [productApi.reducerPath]: productApi.reducer,
   [orderApi.reducerPath]: orderApi.reducer,
+  [customersApi.reducerPath]: customersApi.reducer,
   [usersApi.reducerPath]: usersApi.reducer,
   [restaurantApi.reducerPath]: restaurantApi.reducer,
 });
@@ -63,6 +65,7 @@ export const store = configureStore({
       storeApi.middleware,
       productApi.middleware,
       orderApi.middleware,
+      customersApi.middleware,
       usersApi.middleware,
       restaurantApi.middleware,
     ]),

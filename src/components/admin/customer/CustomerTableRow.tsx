@@ -1,26 +1,35 @@
-
 import { Badge } from "@/components/ui/badge";
 import { TableCell, TableRow } from "@/components/ui/table";
 import { Phone, Mail } from "lucide-react";
 import { CustomerTableActions } from "./CustomerTableActions";
+import { Customer } from "@/redux/services/customer.services";
 
-interface Customer {
-  id: string;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phone: string;
-  classification: string;
-  industryClass?: string;
-  companyName?: string;
-  preferredStore: string;
-  loyaltyTier: string;
-  loyaltyPoints: number;
-  totalSpent: number;
-  lastTransaction: string;
-  kycStatus: string;
-  status: string;
-}
+// Enum mappings
+const LoyaltyTierMap: Record<number, string> = {
+  0: "Bronze",
+  1: "Silver",
+  2: "Gold",
+  3: "Platinum",
+};
+
+const CustomerClassificationMap: Record<number, string> = {
+  0: "Corporate",
+  1: "VIP",
+  2: "Regular",
+  3: "Walk-In",
+};
+
+const CustomerStatusMap: Record<number, string> = {
+  0: "Inactive",
+  1: "Active",
+  2: "Suspended",
+};
+
+const KYCStatusMap: Record<number, string> = {
+  0: "Unverified",
+  1: "Pending",
+  2: "Verified",
+};
 
 interface CustomerTableRowProps {
   customer: Customer;
@@ -31,54 +40,63 @@ interface CustomerTableRowProps {
 export function CustomerTableRow({ customer, onView, onEdit }: CustomerTableRowProps) {
   return (
     <TableRow>
+      {/* Customer Name + Company */}
       <TableCell>
         <div>
-          <div className="font-medium">{customer.firstName} {customer.lastName}</div>
+          <div className="font-medium">
+            {customer.userInfo.firstName} {customer.userInfo.lastName}
+          </div>
           <div className="text-sm text-muted-foreground">{customer.companyName}</div>
-          <div className="text-xs text-muted-foreground">{customer.preferredStore}</div>
+          <Badge variant="outline" className="mb-1">
+            {LoyaltyTierMap[customer.loyaltyTier]}
+          </Badge>
         </div>
       </TableCell>
+
+      {/* Contact Info */}
       <TableCell>
         <div className="space-y-1">
           <div className="flex items-center gap-1 text-sm">
             <Mail className="h-3 w-3" />
-            {customer.email}
+            {customer.userInfo.email}
           </div>
           <div className="flex items-center gap-1 text-sm">
             <Phone className="h-3 w-3" />
-            {customer.phone}
+            {customer.userInfo.phoneNumber}
           </div>
         </div>
       </TableCell>
+
+      {/* Classification */}
       <TableCell>
-        <Badge variant={customer.classification === 'corporate' ? 'default' : 
-                       customer.classification === 'vip' ? 'secondary' : 'outline'}>
-          {customer.classification}
+        <Badge
+          variant={
+            customer.customerClassification === 1
+              ? "secondary"
+              : customer.customerClassification === 2
+              ? "outline"
+              : "default"
+          }
+        >
+          {CustomerClassificationMap[customer.customerClassification]}
         </Badge>
       </TableCell>
+
+      {/* Total Spent */}
       <TableCell>
-        <div>
-          <Badge variant="outline" className="mb-1">{customer.loyaltyTier}</Badge>
-          <div className="text-sm text-muted-foreground">{customer.loyaltyPoints} pts</div>
+        <div className="font-medium">
+          ₦{customer.totalSpent.toLocaleString()}
         </div>
       </TableCell>
+
+      {/* Last Transaction Date */}
       <TableCell>
-        <div className="font-medium">₦{customer.totalSpent.toLocaleString()}</div>
+        <div className="text-sm">{customer.lastTransactionDate}</div>
       </TableCell>
+
+      {/* Actions */}
       <TableCell>
-        <div className="text-sm">{customer.lastTransaction}</div>
-      </TableCell>
-      <TableCell>
-        <Badge variant={customer.kycStatus === 'verified' ? 'default' : 'secondary'}>
-          {customer.kycStatus}
-        </Badge>
-      </TableCell>
-      <TableCell>
-        <CustomerTableActions 
-          customer={customer}
-          onView={onView}
-          onEdit={onEdit}
-        />
+        <CustomerTableActions customer={customer} onView={onView} onEdit={onEdit} />
       </TableCell>
     </TableRow>
   );

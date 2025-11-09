@@ -1,16 +1,17 @@
-
 import { Search, Barcode } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import React from "react";
 
 interface ProductSearchBarProps {
   searchQuery: string;
   barcodeInput: string;
   onSearchChange: (query: string) => void;
   onBarcodeInputChange: (barcode: string) => void;
-  onBarcodeSubmit: (e: React.FormEvent) => void;
+  onBarcodeSubmit: (code: string) => void;
   onScannerOpen: () => void;
+  loading?: boolean
 }
 
 export function ProductSearchBar({
@@ -19,8 +20,14 @@ export function ProductSearchBar({
   onSearchChange,
   onBarcodeInputChange,
   onBarcodeSubmit,
-  onScannerOpen
+  onScannerOpen,
+  loading
 }: ProductSearchBarProps) {
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    onBarcodeSubmit(barcodeInput); 
+  };
+
   return (
     <Card className="shadow-md">
       <CardContent className="p-4">
@@ -35,10 +42,10 @@ export function ProductSearchBar({
               onChange={(e) => onSearchChange(e.target.value)}
             />
           </div>
-          
+
           {/* Barcode Section */}
           <div className="flex gap-2">
-            <form onSubmit={onBarcodeSubmit} className="flex gap-2">
+            <form onSubmit={handleSubmit} className="flex gap-2">
               <div className="relative">
                 <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
                 <Input
@@ -52,8 +59,8 @@ export function ProductSearchBar({
                 Add Item
               </Button>
             </form>
-            
-            <Button 
+
+            <Button
               variant="outline"
               className="h-11 px-4"
               onClick={onScannerOpen}

@@ -5,6 +5,8 @@ export interface User {
   lastName: string;
   firstName: string;
   username: string;
+  storeId: number;
+  storeName: string;
   email: string;
   role: number;
 }

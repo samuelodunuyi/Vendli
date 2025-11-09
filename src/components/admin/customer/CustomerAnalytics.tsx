@@ -1,74 +1,98 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, PieChart, Pie, Cell, LineChart, Line, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  PieChart,
+  Pie,
+  Cell,
+  LineChart,
+  Line,
+  ResponsiveContainer,
+} from "recharts";
+import { useGetCustomerAnalyticsQuery } from "@/redux/services/customer.services";
 
-const customerClassificationData = [
-  { name: "Corporate", value: 2847, color: "#3b82f6" },
-  { name: "VIP", value: 1256, color: "#8b5cf6" },
-  { name: "Regular", value: 9847, color: "#10b981" },
-  { name: "Walk-in", value: 1897, color: "#f59e0b" }
-];
+// ===== ENUM MAPPINGS =====
+const CustomerClassificationColors = {
+  Corporate: { label: "Corporate", color: "#3b82f6" },
+  VIP: { label: "VIP", color: "#8b5cf6" },
+  Regular: { label: "Regular", color: "#10b981" },
+  "Walk-in": { label: "Walk-in", color: "#f59e0b" },
+};
 
-const loyaltyTierData = [
-  { name: "Bronze", customers: 6500, spending: 125000 },
-  { name: "Silver", customers: 4200, spending: 285000 },
-  { name: "Gold", customers: 2800, spending: 465000 },
-  { name: "Platinum", customers: 1200, spending: 750000 }
-];
+const LoyaltyTierColors = {
+  Bronze: { label: "Bronze", color: "#a16207" },
+  Silver: { label: "Silver", color: "#6b7280" },
+  Gold: { label: "Gold", color: "#f59e0b" },
+  Platinum: { label: "Platinum", color: "#14b8a6" },
+};
 
-const customerAcquisitionData = [
-  { month: "Jul", customers: 1200 },
-  { month: "Aug", customers: 1450 },
-  { month: "Sep", customers: 1380 },
-  { month: "Oct", customers: 1620 },
-  { month: "Nov", customers: 1520 },
-  { month: "Dec", customers: 1750 },
-  { month: "Jan", customers: 1890 }
-];
+interface CustomerAnalyticsProps {
+  timeline?: string;
+  storeId?: number;
+  startDate?: string;
+  endDate?: string;
+}
 
-const industryDistribution = [
-  { industry: "Banking & Finance", customers: 3200, revenue: 45000000 },
-  { industry: "Oil & Gas", customers: 2100, revenue: 38000000 },
-  { industry: "Telecommunications", customers: 1800, revenue: 28000000 },
-  { industry: "Manufacturing", customers: 1500, revenue: 22000000 },
-  { industry: "Retail", customers: 2200, revenue: 18000000 },
-  { industry: "Others", customers: 1200, revenue: 15000000 }
-];
+export function CustomerAnalytics({
+  timeline,
+  storeId,
+  startDate,
+  endDate,
+}: CustomerAnalyticsProps) {
+  const { data, isLoading, isError } = useGetCustomerAnalyticsQuery({
+    timeline,
+    storeId,
+    startDate,
+    endDate,
+  });
 
-export function CustomerAnalytics() {
+  if (isLoading) return <p>Loading analytics...</p>;
+  if (isError || !data) return <p>Error loading analytics</p>;
+
+  const customerClassificationData = data.demographics?.byClassification || [];
+  const loyaltyTierData = data.demographics?.byLoyaltyTier || [];
+  const customerAcquisitionData = data.customerAcquisitionTrend || [];
+
+  const categoryDistributionFromAPI = data.financialMetrics;
+  const categoryDistribution = [
+    { category: "Total Revenue", value: categoryDistributionFromAPI.totalRevenue },
+    { category: "Average Order Value", value: categoryDistributionFromAPI.averageOrderValue },
+    { category: "Revenue per Customer", value: categoryDistributionFromAPI.revenuePerCustomer },
+  ];
+
   return (
-    <div className="space-y-6">
-      {/* Customer Classification Chart */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+    <div className="space-y-6 w-full overflow-x-hidden">
+      {/* 1. Customer Classification Pie Chart */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Customer Classification</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                corporate: { label: "Corporate", color: "#3b82f6" },
-                vip: { label: "VIP", color: "#8b5cf6" },
-                regular: { label: "Regular", color: "#10b981" },
-                walkin: { label: "Walk-in", color: "#f59e0b" }
-              }}
-              className="h-[300px]"
-            >
+          <CardContent className="w-full overflow-hidden">
+            <ChartContainer config={CustomerClassificationColors} className="w-full h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={customerClassificationData}
+                    dataKey="count"
+                    nameKey="classification"
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                     outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
+                    label={({ classification, percent }) =>
+                      `${classification} ${(percent * 100).toFixed(0)}%`
+                    }
+                    labelLine={false}
                   >
-                    {customerClassificationData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
+                    {customerClassificationData.map((entry) => (
+                      <Cell
+                        key={entry.classification}
+                        fill={CustomerClassificationColors[entry.classification]?.color ?? "#ccc"}
+                      />
                     ))}
                   </Pie>
                   <ChartTooltip content={<ChartTooltipContent />} />
@@ -78,25 +102,23 @@ export function CustomerAnalytics() {
           </CardContent>
         </Card>
 
-        <Card>
+        {/* 2. Loyalty Tier Bar Chart */}
+        <Card className="w-full">
           <CardHeader>
             <CardTitle>Loyalty Tier Performance</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ChartContainer
-              config={{
-                customers: { label: "Customers", color: "#3b82f6" },
-                spending: { label: "Avg Spending", color: "#10b981" }
-              }}
-              className="h-[300px]"
-            >
+          <CardContent className="w-full overflow-hidden">
+            <ChartContainer config={LoyaltyTierColors} className="w-full h-[300px]">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={loyaltyTierData}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
+                  <XAxis
+                    dataKey="loyaltyTier"
+                    tickFormatter={(tier) => LoyaltyTierColors[tier]?.label ?? "Unknown"}
+                  />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="customers" fill="#3b82f6" />
+                  <Bar dataKey="count" fill="#3b82f6" />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>
@@ -104,51 +126,46 @@ export function CustomerAnalytics() {
         </Card>
       </div>
 
-      {/* Customer Acquisition Trend */}
-      <Card>
+      {/* 3. Customer Acquisition Trend */}
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>Customer Acquisition Trend</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full overflow-hidden">
           <ChartContainer
-            config={{
-              customers: { label: "New Customers", color: "#3b82f6" }
-            }}
-            className="h-[300px]"
+            config={{ newCustomers: { label: "New Customers", color: "#3b82f6" } }}
+            className="w-full h-[300px]"
           >
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={customerAcquisitionData}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
+                <XAxis dataKey="date" />
                 <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Line type="monotone" dataKey="customers" stroke="#3b82f6" strokeWidth={2} />
+                <Line type="monotone" dataKey="newCustomers" stroke="#3b82f6" strokeWidth={2} />
               </LineChart>
             </ResponsiveContainer>
           </ChartContainer>
         </CardContent>
       </Card>
 
-      {/* Industry Distribution */}
-      <Card>
+      {/* 4. Financial Metrics (Bar Chart) */}
+      <Card className="w-full">
         <CardHeader>
-          <CardTitle>Customer Distribution by Industry</CardTitle>
+          <CardTitle>Financial Performance Overview</CardTitle>
         </CardHeader>
-        <CardContent>
+        <CardContent className="w-full overflow-hidden">
           <ChartContainer
-            config={{
-              customers: { label: "Customers", color: "#3b82f6" },
-              revenue: { label: "Revenue", color: "#10b981" }
-            }}
-            className="h-[400px]"
+            config={{ value: { label: "Value", color: "#10b981" } }}
+            className="w-full h-[300px]"
           >
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={industryDistribution} layout="horizontal">
+              <BarChart data={categoryDistribution}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis dataKey="industry" type="category" width={120} />
+                <XAxis dataKey="category" />
+                <YAxis />
                 <ChartTooltip content={<ChartTooltipContent />} />
-                <Bar dataKey="customers" fill="#3b82f6" />
+                <Bar dataKey="value" fill="#10b981" />
               </BarChart>
             </ResponsiveContainer>
           </ChartContainer>

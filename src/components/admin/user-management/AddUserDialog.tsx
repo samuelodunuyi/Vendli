@@ -18,7 +18,12 @@ export function AddUserDialog({ stores, onUserAdded }: AddUserDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-
+const roles = [
+  { id: 0, name: "Super Admin" },
+  { id: 1, name: "Store Admin" },
+  { id: 2, name: "Employee" },
+  { id: 3, name: "Customer" },
+];
   const [formData, setFormData] = useState<CreateUserRequest>({
     email: "",
     password: "",
@@ -26,6 +31,7 @@ export function AddUserDialog({ stores, onUserAdded }: AddUserDialogProps) {
     lastName: "",
     phoneNumber: "",
     roleId: null,
+    role: "",
     storeId: null,
     username: ""
   });
@@ -48,6 +54,7 @@ export function AddUserDialog({ stores, onUserAdded }: AddUserDialogProps) {
         lastName: formData.lastName,
         phoneNumber: formData.phoneNumber,
         roleId: formData.roleId,
+        role: formData.role,
         storeId: formData.storeId,
         username: formData.email
       });
@@ -61,6 +68,7 @@ export function AddUserDialog({ stores, onUserAdded }: AddUserDialogProps) {
         lastName: "",
         phoneNumber: "",
         roleId: null,
+        role: "",
         storeId: null,
         username: ""
       });
@@ -116,15 +124,28 @@ export function AddUserDialog({ stores, onUserAdded }: AddUserDialogProps) {
 
           <div>
             <Label htmlFor="role">Role</Label>
-            <Select value={formData?.roleId?.toString() || ""} onValueChange={value => setFormData(prev => ({ ...prev, roleId: Number(value) }))}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="3">Customer</SelectItem>
-                <SelectItem value="2">Employee</SelectItem>
-                <SelectItem value="1">Store Admin</SelectItem>
-                <SelectItem value="0">Super Admin</SelectItem>
-              </SelectContent>
-            </Select>
+<Select
+  value={formData?.roleId?.toString() || ""}
+  onValueChange={(value) => {
+    const selectedRole = roles.find(r => r.id === Number(value));
+    if (selectedRole) {
+      setFormData(prev => ({
+        ...prev,
+        roleId: selectedRole.id,
+        role: selectedRole.name,
+      }));
+    }
+  }}
+>
+  <SelectTrigger><SelectValue placeholder="Select Role" /></SelectTrigger>
+  <SelectContent>
+    {roles.map((r) => (
+      <SelectItem key={r.id} value={r.id.toString()}>
+        {r.name}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
           </div>
 
           <div>

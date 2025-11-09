@@ -21,8 +21,12 @@ export default function Auth() {
   const [signUpMutation] = useRegisterMutation();
 
   useEffect(() => {
-    if (user) {
+    console.log(user)
+    if (user?.role==0 || user?.role==1) {
       navigate('/admin');
+    }
+    else if (user?.role==2){
+      navigate('/POS');
     }
   }, [user, navigate]);
 
@@ -43,7 +47,9 @@ export default function Auth() {
             lastName: response.lastName,
             email: response.email,
             role: response.role,
-            username: response.username
+            username: response.username,
+            storeId: response.store.storeId,
+            storeName: response.store.storeName
           },
         })
       );
