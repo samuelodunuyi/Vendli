@@ -10,7 +10,6 @@ interface CartActionsProps {
   onCheckout: () => void;
   onPrintReceipt: () => void;
   onVoidSale: () => void;
-  onReturnSale: () => void;
 }
 
 export function CartActions({ 
@@ -19,8 +18,7 @@ export function CartActions({
   hasTransactions,
   onCheckout,
   onPrintReceipt,
-  onVoidSale,
-  onReturnSale
+  onVoidSale
 }: CartActionsProps) {
   if (!hasItems) return null;
 
@@ -45,7 +43,7 @@ export function CartActions({
           </Button>
           
           {hasTransactions && (
-            <div className="grid grid-cols-2 gap-2 mt-2">
+            <div className="grid grid-cols-1 gap-2 mt-2">
               <Button 
                 variant="destructive" 
                 size="sm" 
@@ -53,14 +51,6 @@ export function CartActions({
                 onClick={onVoidSale}
               >
                 Void Sale
-              </Button>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="h-9 text-xs"
-                onClick={onReturnSale}
-              >
-                Return Sale
               </Button>
             </div>
           )}

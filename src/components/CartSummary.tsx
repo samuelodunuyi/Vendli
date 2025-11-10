@@ -5,14 +5,14 @@ import { useCart } from "@/context/CartContext";
 import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { PaymentMethods } from "@/components/PaymentMethods";
-import { VoidReturnDialog } from "@/components/VoidReturnDialog";
+import { VoidDialog } from "@/components/VoidDialog";
 import { Transaction } from "@/types";
 import { toast } from "@/components/ui/sonner";
 import { CartItem } from "@/components/cart/CartItem";
 import { CartTotals } from "@/components/cart/CartTotals";
 import { CartActions } from "@/components/cart/CartActions";
 import { EmptyCart } from "@/components/cart/EmptyCart";
-import { useCreateOrderMutation } from "@/redux/services/orders.services";
+import { Order, useCreateOrderMutation } from "@/redux/services/orders.services";
 import { useAppSelector } from "@/redux/store";
 import { useGetCustomersQuery } from "@/redux/services/customer.services";
 import { AddCustomerDialog } from "./admin/customer/AddCustomerDialog";
@@ -40,7 +40,6 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
     completeTransaction,
     transactions,
     voidTransaction,
-    returnTransaction,
   } = useCart();
 
   const storeId = useAppSelector((state) => state.auth.user?.storeId);
@@ -115,7 +114,7 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
   ) => {
     let customer;
     if (selectedCustomerId && customers) {
-      customer = customers.customers.find((c) => c.id === selectedCustomerId);
+      customer = customers.customers.find((c) => c.userId === selectedCustomerId);
       if (!customer) {
         toast.error("Selected customer not found.");
         return;
@@ -160,22 +159,9 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
     voidTransaction(txnId, reason, approver);
   };
 
-  const handleReturnTransaction = (
-    txnId: string,
-    reason: string,
-    approver: string
-  ) => {
-    returnTransaction(txnId, reason, approver);
-  };
-
   const handleVoidSale = () => {
     setSelectedTransaction(transactions[0]);
     setShowVoidDialog(true);
-  };
-
-  const handleReturnSale = () => {
-    setSelectedTransaction(transactions[0]);
-    setShowReturnDialog(true);
   };
 
   return (
@@ -235,7 +221,7 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
                 >
                   <option value="">Select Customer</option>
                   {customers?.customers.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={c.userId}>
                       {c.userInfo.firstName} {c.userInfo.lastName} (
                       {c.userInfo.phoneNumber || "N/A"})
                     </option>
@@ -260,7 +246,6 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
               onCheckout={handleCheckout}
               onPrintReceipt={() => handlePrintReceipt()}
               onVoidSale={handleVoidSale}
-              onReturnSale={handleReturnSale}
             />
           </>
         )}
@@ -275,7 +260,7 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
       />
 
       {/* Void Dialog */}
-      <VoidReturnDialog
+      <VoidDialog
         open={showVoidDialog}
         onOpenChange={setShowVoidDialog}
         transaction={selectedTransaction}
@@ -287,15 +272,6 @@ export function CartSummary({ isPOS = false }: CartSummaryProps) {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onCustomerAdded={handleCustomerAdded}
-      />
-
-      {/* Return Dialog */}
-      <VoidReturnDialog
-        open={showReturnDialog}
-        onOpenChange={setShowReturnDialog}
-        transaction={selectedTransaction}
-        type="return"
-        onApprove={handleReturnTransaction}
       />
     </>
   );

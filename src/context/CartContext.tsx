@@ -38,7 +38,6 @@ interface CartContextProps {
     customerPhone?: string
   ) => Transaction;
   voidTransaction: (transactionId: string, reason: string, approver: string) => void;
-  returnTransaction: (transactionId: string, reason: string, approver: string) => void;
 }
 
 const CartContext = createContext<CartContextProps>({} as CartContextProps);
@@ -136,14 +135,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     );
   };
 
-  const returnTransaction = (transactionId: string, reason: string, approver: string) => {
-    setTransactions(prev =>
-      prev.map(txn =>
-        txn.id === transactionId ? { ...txn, status: "returned", returnReason: reason, approvedBy: approver } : txn
-      )
-    );
-  };
-
   return (
     <CartContext.Provider
       value={{
@@ -164,7 +155,6 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         setDeliveryProvider,
         completeTransaction,
         voidTransaction,
-        returnTransaction,
       }}
     >
       {children}

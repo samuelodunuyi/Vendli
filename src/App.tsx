@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { CartProvider } from "@/context/CartContext";
 import { ThemeProvider } from "@/context/ThemeContext";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { ChakraProvider } from "@chakra-ui/react";
 
 import Index from "./pages/Index";
 import Cart from "./pages/Cart";
@@ -15,12 +16,15 @@ import Admin from "./pages/Admin";
 import Auth from "./pages/Auth";
 import ThemeSettings from "./pages/ThemeSettings";
 import NotFound from "./pages/NotFound";
+import POSOrders from "./pages/POSOrders";
 
 const queryClient = new QueryClient();
 
+
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <ThemeProvider>
+    <ChakraProvider>
+      <ThemeProvider>
         <CartProvider>
           <TooltipProvider>
             <Toaster />
@@ -30,21 +34,29 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/auth" element={<Auth />} />
-                <Route 
-                  path="/pos" 
+                <Route
+                  path="/pos"
                   element={
                     <ProtectedRoute requiredRole="store_cashier">
                       <POS />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
-                <Route 
-                  path="/admin" 
+                <Route
+                  path="/POSOrders"
+                  element={
+                    <ProtectedRoute requiredRole="store_cashier">
+                      <POSOrders />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
                   element={
                     <ProtectedRoute requiredRole="super_admin">
                       <Admin />
                     </ProtectedRoute>
-                  } 
+                  }
                 />
                 <Route path="/theme-settings" element={<ThemeSettings />} />
                 <Route path="*" element={<NotFound />} />
@@ -52,7 +64,8 @@ const App = () => (
             </BrowserRouter>
           </TooltipProvider>
         </CartProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </ChakraProvider>
   </QueryClientProvider>
 );
 

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Wifi, WifiOff, Cloud, CloudOff, ShoppingCart } from 'lucide-react';
+import { Link } from "react-router-dom";
 
 export const ConnectionStatus = () => {
   const [isOnline, setIsOnline] = useState(navigator.onLine);
@@ -41,10 +42,15 @@ export const ConnectionStatus = () => {
         <span>{cloudConnected ? 'Cloud' : 'Disconnected'}</span>
       </Badge>
 
-      <Badge variant={onlineOrdersActive ? "default" : "outline"} className="flex items-center space-x-1">
-        <ShoppingCart className="h-3 w-3" />
-        <span>Orders</span>
-      </Badge>
+<Link to="/POSOrders" className="no-underline">
+  <Badge
+    variant={onlineOrdersActive ? "default" : "outline"}
+    className="flex items-center space-x-1 cursor-pointer hover:bg-blue-50"
+  >
+    <ShoppingCart className="h-3 w-3" />
+    <span>Orders</span>
+  </Badge>
+</Link>
     </div>
   );
 };

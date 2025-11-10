@@ -7,16 +7,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Transaction } from "@/types";
 import { toast } from "@/components/ui/sonner";
+import { Order } from "@/redux/services/orders.services";
 
 interface VoidReturnDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  transaction: Transaction | null;
+  transaction: Order | null;
   type: 'void' | 'return';
-  onApprove: (transactionId: string, reason: string, approver: string) => void;
+  onApprove: (transactionId: number, reason: string, approver: string) => void;
 }
 
-export function VoidReturnDialog({ 
+export function ReturnDialog({ 
   open, 
   onOpenChange, 
   transaction, 
@@ -45,7 +46,7 @@ export function VoidReturnDialog({
 
     if (transaction) {
       onApprove(transaction.id, reason, approverName);
-      toast.success(`Transaction ${type === 'void' ? 'voided' : 'returned'} successfully`);
+      toast.success(`Transaction ${'returned'} successfully`);
       onOpenChange(false);
       setReason("");
       setApproverPassword("");
@@ -55,12 +56,18 @@ export function VoidReturnDialog({
 
   if (!transaction) return null;
 
+  const orderTotal = transaction.orderItems.reduce(
+  (acc, item) => acc + item.priceAtOrder * item.quantity,
+  0
+);
+
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>
-            {type === 'void' ? 'Void Transaction' : 'Return Transaction'}
+             Return Transaction
           </DialogTitle>
         </DialogHeader>
         
@@ -72,7 +79,7 @@ export function VoidReturnDialog({
             </div>
             <div className="flex justify-between items-center mb-2">
               <span className="font-medium">Total:</span>
-              <span className="text-lg font-bold">₦{transaction.total.toLocaleString()}</span>
+              <span className="text-lg font-bold">₦{orderTotal?.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="font-medium">Status:</span>
@@ -122,7 +129,7 @@ export function VoidReturnDialog({
               variant={type === 'void' ? "destructive" : "default"}
               className="flex-1"
             >
-              {type === 'void' ? 'Void Transaction' : 'Process Return'}
+              'Process Return
             </Button>
           </div>
         </div>
