@@ -34,13 +34,18 @@ import { Order, useGetOrdersQuery } from "@/redux/services/orders.services";
 import { useAppSelector } from "@/redux/store";
 import { ReturnDialog } from "@/components/ReturnDialog";
 
-// Payment Status Enum
 enum PaymentStatus {
   Pending = 0,
   Paid = 1,
   Failed = 2,
   Refunded = 3,
   Partial = 4,
+}
+
+enum PaymentOption {
+  "CASH" = 0,
+  "CARD" = 1,
+  "BANK TRANSFER" = 2,
 }
 
 const POSOrders = () => {
@@ -53,6 +58,7 @@ const POSOrders = () => {
   const [selectedTransaction, setSelectedTransaction] = useState<Order | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
 
   // Filter states
   const [startDate, setStartDate] = useState("");
@@ -73,20 +79,24 @@ const POSOrders = () => {
     setIsModalOpen(false);
   };
 
-  const getStatusColor = (status: number) => {
+  const getPaymentStatusColor = (status: PaymentStatus) => {
     switch (status) {
-      case 0:
+      case PaymentStatus.Pending:
         return "yellow";
-      case 1:
+      case PaymentStatus.Paid:
         return "green";
-      case 2:
+      case PaymentStatus.Failed:
         return "red";
+      case PaymentStatus.Refunded:
+        return "blue";
+      case PaymentStatus.Partial:
+        return "orange";
       default:
         return "gray";
     }
   };
 
-  // Filtered orders based on date range and payment status
+  // Filtered orders based on search, date range, and payment status
   const filteredOrders = data?.orders?.filter((order: any) => {
     const orderTime = new Date(order.orderDate).setHours(0, 0, 0, 0);
     const start = startDate ? new Date(startDate).getTime() : null;
@@ -95,10 +105,17 @@ const POSOrders = () => {
     if (start && end && (orderTime < start || orderTime > end)) return false;
     if (start && !end && orderTime < start) return false;
     if (end && !start && orderTime > end) return false;
-
     if (paymentStatusFilter !== "" && order.paymentStatus !== paymentStatusFilter) return false;
 
-    return true;
+    // Search logic
+    const query = searchQuery.toLowerCase();
+    const matchId = order.id?.toString().includes(query);
+    const matchCustomer =
+      order.customer?.firstName?.toLowerCase().includes(query) ||
+      order.customer?.lastName?.toLowerCase().includes(query);
+    const matchStatus = PaymentStatus[order.paymentStatus]?.toLowerCase().includes(query);
+
+    return matchId || matchCustomer || matchStatus;
   });
 
   return (
@@ -120,9 +137,12 @@ const POSOrders = () => {
               width={{ base: "100%", md: "300px" }}
               borderRadius="8px"
               fontSize="sm"
+              bg="white"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
             <Button colorScheme="blue" display={{ base: "none", md: "inline-flex" }}>
-              Search
+              <Search size={16} />
             </Button>
           </Flex>
         </Flex>
@@ -135,6 +155,7 @@ const POSOrders = () => {
             onChange={(e) => setStartDate(e.target.value)}
             placeholder="Start Date"
             width={{ base: "100%", md: "150px" }}
+            bg="white"
           />
           <Input
             type="date"
@@ -142,6 +163,7 @@ const POSOrders = () => {
             onChange={(e) => setEndDate(e.target.value)}
             placeholder="End Date"
             width={{ base: "100%", md: "150px" }}
+            bg="white"
           />
           <Select
             placeholder="Payment Status"
@@ -150,6 +172,7 @@ const POSOrders = () => {
               setPaymentStatusFilter(e.target.value === "" ? "" : Number(e.target.value) as PaymentStatus)
             }
             width={{ base: "100%", md: "180px" }}
+            bg="white"
           >
             <option value={PaymentStatus.Pending}>Pending</option>
             <option value={PaymentStatus.Paid}>Paid</option>
@@ -163,6 +186,7 @@ const POSOrders = () => {
               setStartDate("");
               setEndDate("");
               setPaymentStatusFilter("");
+              setSearchQuery("");
             }}
           >
             Reset
@@ -185,15 +209,22 @@ const POSOrders = () => {
                   <Text fontWeight="600" color="blue.600">
                     ORD-{order.id}
                   </Text>
-                  <Badge colorScheme={getStatusColor(order.status)} p={2}>
-                    {order.status === 0 ? "Pending" : order.status === 1 ? "Completed" : "Cancelled"}
+                  <Badge
+                    colorScheme={getPaymentStatusColor(order.paymentStatus)}
+                    borderRadius="full"
+                    px={3}
+                    py={1}
+                    fontSize="sm"
+                    fontWeight="600"
+                  >
+                    {PaymentStatus[order.paymentStatus]}
                   </Badge>
                 </Flex>
                 <Text fontSize="sm" color="gray.600">
                   Customer: <strong>{order.customer?.firstName} {order.customer?.lastName}</strong>
                 </Text>
                 <Text fontSize="sm" color="gray.600">
-                  Payment: {PaymentStatus[order.paymentStatus]}
+                  Payment: {PaymentOption[order.paymentOption]}
                 </Text>
                 <Text fontSize="sm" color="gray.600">
                   Total: ₦
@@ -240,7 +271,6 @@ const POSOrders = () => {
                   <Th isNumeric>Total (₦)</Th>
                   <Th>Payment</Th>
                   <Th>Payment Status</Th>
-                  <Th>Status</Th>
                   <Th>Date</Th>
                   <Th>Action</Th>
                 </Tr>
@@ -265,19 +295,17 @@ const POSOrders = () => {
                         )
                         .toLocaleString()}
                     </Td>
-                    <Td>{order.paymentOption === 0 ? "Cash" : "Card"}</Td>
+                    <Td>{PaymentOption[order.paymentOption]}</Td>
                     <Td>
-                      <Badge colorScheme="purple" variant="subtle">
+                      <Badge
+                        colorScheme={getPaymentStatusColor(order.paymentStatus)}
+                        borderRadius="full"
+                        px={3}
+                        py={1}
+                        fontSize="sm"
+                        fontWeight="600"
+                      >
                         {PaymentStatus[order.paymentStatus]}
-                      </Badge>
-                    </Td>
-                    <Td>
-                      <Badge colorScheme={getStatusColor(order.status)} variant="subtle">
-                        {order.status === 0
-                          ? "Pending"
-                          : order.status === 1
-                          ? "Completed"
-                          : "Cancelled"}
                       </Badge>
                     </Td>
                     <Td>{new Date(order.orderDate).toLocaleDateString()}</Td>
@@ -330,7 +358,7 @@ const POSOrders = () => {
                   </Text>
                   <Text>
                     <strong>Payment:</strong>{" "}
-                    {selectedOrder.paymentOption === 0 ? "Cash" : "Card"}
+                    {PaymentOption[selectedOrder.paymentOption]}
                   </Text>
                   <Text>
                     <strong>Payment Status:</strong>{" "}
