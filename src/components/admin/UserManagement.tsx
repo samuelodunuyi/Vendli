@@ -40,6 +40,7 @@ const { data: userListData, isLoading } = useGetUsersQuery({
   } = useGetStoresQuery();
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
+    console.log(user)
     setIsEditUserOpen(true);
   };
 
@@ -94,6 +95,7 @@ const { data: userListData, isLoading } = useGetUsersQuery({
       <UsersTable
         users={filteredUsers}
         onEditUser={openEditDialog}
+        onDisableUser={null}
         onDeleteUser={openDeleteDialog}
       />
 

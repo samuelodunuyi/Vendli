@@ -1,28 +1,33 @@
-
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Shield, ArrowLeft, Mail, LogOut } from 'lucide-react';
 import { useAuth } from '@/context/AuthContext';
 import { useNavigate } from 'react-router-dom';
+import { useAppSelector } from "@/redux/store";
 
 interface AccessDeniedMessageProps {
-  requiredRole?: string;
-  requiredPermission?: {
-    module: string;
-    permission: string;
-  };
+  requiredRole?: number;
 }
 
-export function AccessDeniedMessage({ requiredRole, requiredPermission }: AccessDeniedMessageProps) {
-  const { user, userRoles, signOut } = useAuth();
+export function AccessDeniedMessage({ requiredRole }: AccessDeniedMessageProps) {
+  const role = useAppSelector((state) => state.auth.user?.role);
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
-  const currentRole = userRoles[0]?.role || 'customer';
-
+  const currentRole = role ?? 'Unknown';
   const handleSwitchAccount = async () => {
     await signOut();
     navigate('/auth');
+  };
+
+  const roleLabel = (role: number | string) => {
+    switch (Number(role)) {
+      case 0: return 'Super Admin';
+      case 1: return 'Store Admin';
+      case 2: return 'POS User';
+      default: return 'Customer';
+    }
   };
 
   return (
@@ -38,21 +43,21 @@ export function AccessDeniedMessage({ requiredRole, requiredPermission }: Access
           <p className="text-gray-600">
             You don't have sufficient permissions to access this page.
           </p>
-          
+
           <div className="space-y-2">
             <p className="text-sm text-gray-500">Your current role:</p>
             <Badge variant="secondary" className="gap-1">
               <Shield className="h-3 w-3" />
-              {currentRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+              {roleLabel(currentRole)}
             </Badge>
           </div>
 
-          {requiredRole && (
+          {requiredRole !== undefined && (
             <div className="space-y-2">
               <p className="text-sm text-gray-500">Required role:</p>
               <Badge variant="destructive" className="gap-1">
                 <Shield className="h-3 w-3" />
-                {requiredRole.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}
+                {roleLabel(requiredRole)}
               </Badge>
             </div>
           )}

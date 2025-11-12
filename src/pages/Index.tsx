@@ -27,13 +27,6 @@ const Index = () => {
           </p>
           
           <div className="flex flex-wrap gap-4 justify-center mb-12">
-            <Link to="/cart">
-              <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold">
-                <ShoppingCart className="mr-2 h-5 w-5" />
-                Shop Online
-              </Button>
-            </Link>
-            
             <Link to="/pos">
               <Button size="lg" variant="outline" className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white font-bold">
                 <Monitor className="mr-2 h-5 w-5" />
@@ -57,12 +50,7 @@ const Index = () => {
           </div>
           
           {/* Features Grid */}
-          <div className="grid md:grid-cols-3 gap-8 mb-16">
-            <div className="bg-white p-6 rounded-lg shadow-lg">
-              <ShoppingCart className="h-12 w-12 text-blue-600 mx-auto mb-4" />
-              <h3 className="text-xl font-bold mb-2">Online Store</h3>
-              <p className="text-gray-600">Full-featured e-commerce with cart, checkout, and order management</p>
-            </div>
+          <div className="grid md:grid-cols-2 gap-8 mb-16">
             
             <div className="bg-white p-6 rounded-lg shadow-lg">
               <Monitor className="h-12 w-12 text-green-600 mx-auto mb-4" />
@@ -75,18 +63,6 @@ const Index = () => {
               <h3 className="text-xl font-bold mb-2">Admin Dashboard</h3>
               <p className="text-gray-600">Comprehensive management tools for inventory, sales, and analytics</p>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Featured Products */}
-      <section className="py-16 px-4 bg-white">
-        <div className="max-w-6xl mx-auto">
-          <h2 className="text-3xl font-bold text-center mb-12">Featured Products</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {featuredProducts?.map((product) => (
-              <ProductCard key={product.productId} product={product} />
-            ))}
           </div>
         </div>
       </section>

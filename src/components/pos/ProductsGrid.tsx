@@ -10,7 +10,6 @@ interface ProductsGridProps {
 }
 
 export function ProductsGrid({ products }: ProductsGridProps) {
-  console.log(products)
   return (
     <Card className="flex-1 shadow-md">
       <CardHeader className="pb-4">

@@ -21,7 +21,6 @@ export default function Auth() {
   const [signUpMutation] = useRegisterMutation();
 
   useEffect(() => {
-    console.log(user)
     if (user?.role==0 || user?.role==1) {
       navigate('/admin');
     }
@@ -48,12 +47,11 @@ export default function Auth() {
             email: response.email,
             role: response.role,
             username: response.username,
-            storeId: response.store.storeId,
-            storeName: response.store.storeName
+            storeId: response?.store?.storeId,
+            storeName: response?.store?.storeName
           },
         })
       );
-
       navigate('/admin');
     } catch (error) {
       console.error('Sign in failed:', error);

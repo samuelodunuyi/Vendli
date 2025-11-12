@@ -103,7 +103,6 @@ const handleBarcodeSubmit = (code: string) => {
             </div>
           </div>
 
-          {/* Right Side - Cart */}
           <div className="lg:col-span-1 flex flex-col h-full">
             <POSCartPanel totalItems={itemCount} className="flex-1 overflow-y-auto" />
           </div>

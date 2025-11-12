@@ -7,24 +7,16 @@ import type { RootState } from '@/redux/store';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
-  requiredRole?: string;
-  allowedRoles?: string[];
-  requiredPermission?: {
-    module: string;
-    permission: string;
-  };
+  allowedRoles?: (number | string)[];
 }
 
 export function ProtectedRoute({ 
   children, 
-  requiredRole, 
   allowedRoles,
-  requiredPermission 
 }: ProtectedRouteProps) {
   const navigate = useNavigate();
   const { user, loading } = useSelector((state: RootState) => state.auth);
 
-  // Redirect if not logged in
   useEffect(() => {
     if (!loading && !user) {
       navigate('/auth');
@@ -41,26 +33,16 @@ export function ProtectedRoute({
 
   if (!user) return null;
 
-  // Roles check
-  // const hasRole = (role: string) => user.roles?.includes(role); // assuming user.roles is string[]
-  
-  // const hasRequiredRole = () => {
-  //   if (allowedRoles?.length) return allowedRoles.some(role => hasRole(role));
-  //   return requiredRole ? hasRole('super_admin') || hasRole(requiredRole) : true;
-  // };
+  const hasRole = (role: number | string) => {
+    const userRole = typeof user.role === 'string' ? parseInt(user.role) : user.role;
+    return userRole === Number(role);
+  };
 
-  // if (!hasRequiredRole()) {
-  //   return <AccessDeniedMessage requiredRole={requiredRole} requiredPermission={requiredPermission} />;
-  // }
+  const isAllowed = allowedRoles ? allowedRoles.some(role => hasRole(role)) : true;
 
-  // Permissions check
-  // const hasPermission = (module: string, permission: string) => {
-  //   return user.permissions?.[module]?.includes(permission); // adjust according to your schema
-  // };
-
-  // if (requiredPermission && !hasPermission(requiredPermission.module, requiredPermission.permission)) {
-  //   return <AccessDeniedMessage requiredRole={requiredRole} requiredPermission={requiredPermission} />;
-  // }
+  if (!isAllowed) {
+    return <AccessDeniedMessage />;
+  }
 
   return <>{children}</>;
 }

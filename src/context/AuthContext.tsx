@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { useState } from 'react';
 import { useLoginMutation, useRegisterMutation } from '@/redux/services/auth.services';
 
@@ -11,10 +12,9 @@ export function useAuth() {
     const response = await login({ email, password }).unwrap();
     localStorage.setItem('accessToken', response.accessToken);
     localStorage.setItem('refreshToken', response.refreshToken);
+    console.log(response)
     setUser({ username: response.username, email: response.email, role: response.role });
-    setProfile(response.profile ?? null); // only if API returns it
-  
-  console.log(response.role)
+    setProfile(response ?? null); 
   };
 
   const signUp = async (email: string, password: string, firstName: string, lastName: string) => {

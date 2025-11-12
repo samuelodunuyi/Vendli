@@ -74,8 +74,6 @@ export const authApi = createApi({
   tagTypes: ['Auth'],
   endpoints: (builder) => ({
     // ================== AUTH ENDPOINTS ==================
-
-    // Register
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: (body) => ({
         url: 'Auth/register',

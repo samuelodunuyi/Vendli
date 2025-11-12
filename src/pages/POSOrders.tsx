@@ -28,11 +28,12 @@ import {
   HStack,
   Select,
 } from "@chakra-ui/react";
-import { Search, ShoppingCart } from "lucide-react";
+import { ArrowLeft, Search, ShoppingCart } from "lucide-react";
 import { POSHeader } from "@/components/pos/POSHeader";
 import { Order, useGetOrdersQuery } from "@/redux/services/orders.services";
 import { useAppSelector } from "@/redux/store";
 import { ReturnDialog } from "@/components/ReturnDialog";
+import { useNavigate } from "react-router-dom";
 
 enum PaymentStatus {
   Pending = 0,
@@ -59,7 +60,7 @@ const POSOrders = () => {
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-
+  const navigate = useNavigate();
   // Filter states
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
@@ -96,7 +97,6 @@ const POSOrders = () => {
     }
   };
 
-  // Filtered orders based on search, date range, and payment status
   const filteredOrders = data?.orders?.filter((order: any) => {
     const orderTime = new Date(order.orderDate).setHours(0, 0, 0, 0);
     const start = startDate ? new Date(startDate).getTime() : null;
@@ -124,6 +124,17 @@ const POSOrders = () => {
 
       <Box p={{ base: 4, md: 6 }} bg="gray.50" minH="100vh">
         {/* Header */}
+          <Button 
+        variant="outline"
+        size="md"
+        mb={4}
+        bgColor="white"
+        onClick={() => navigate(-1)}
+        leftIcon={<ArrowLeft className="h-4 w-4" />}
+        className="flex items-center gap-2"
+      >
+        Back
+      </Button>
         <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={3}>
           <Flex align="center" gap={3}>
             <ShoppingCart size={24} color="#2563eb" />
@@ -211,7 +222,7 @@ const POSOrders = () => {
                   </Text>
                   <Badge
                     colorScheme={getPaymentStatusColor(order.paymentStatus)}
-                    borderRadius="full"
+                    borderRadius="10px"
                     px={3}
                     py={1}
                     fontSize="sm"
@@ -299,7 +310,7 @@ const POSOrders = () => {
                     <Td>
                       <Badge
                         colorScheme={getPaymentStatusColor(order.paymentStatus)}
-                        borderRadius="full"
+                        borderRadius="8px"
                         px={3}
                         py={1}
                         fontSize="sm"

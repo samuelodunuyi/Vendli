@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -17,9 +16,9 @@ import Auth from "./pages/Auth";
 import ThemeSettings from "./pages/ThemeSettings";
 import NotFound from "./pages/NotFound";
 import POSOrders from "./pages/POSOrders";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
-
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
@@ -34,30 +33,43 @@ const App = () => (
                 <Route path="/" element={<Index />} />
                 <Route path="/cart" element={<Cart />} />
                 <Route path="/auth" element={<Auth />} />
+
                 <Route
                   path="/pos"
                   element={
-                    <ProtectedRoute requiredRole="store_cashier">
+                    <ProtectedRoute allowedRoles={[2]}>
                       <POS />
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/POSOrders"
                   element={
-                    <ProtectedRoute requiredRole="store_cashier">
+                    <ProtectedRoute allowedRoles={[1, 2, 3]}>
                       <POSOrders />
                     </ProtectedRoute>
                   }
                 />
+
                 <Route
                   path="/admin"
                   element={
-                    <ProtectedRoute requiredRole="super_admin">
+                    <ProtectedRoute allowedRoles={[0, 1]}>
                       <Admin />
                     </ProtectedRoute>
                   }
                 />
+
+               <Route
+                  path="/profile"
+                  element={
+                    <ProtectedRoute allowedRoles={[0, 1, 2]}>
+                      <Profile />
+                    </ProtectedRoute>
+                  }
+                />
+
                 <Route path="/theme-settings" element={<ThemeSettings />} />
                 <Route path="*" element={<NotFound />} />
               </Routes>
