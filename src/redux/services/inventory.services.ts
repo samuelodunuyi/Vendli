@@ -33,7 +33,7 @@ export interface Inventory {
     description: string;
     sku: string;
     barcode: string;
-    catergory?: {
+    category?: {
       categoryId: number;
       catergoryName?: string;
     };
@@ -42,7 +42,7 @@ export interface Inventory {
     unitOfMeasure: string;
     vatCalculated: boolean;
     basePrice: number;
-    minumumStockLevel: number;
+    minimumStockLevel: number;
     showInWeb: boolean;
     isActive: boolean;
 
@@ -139,7 +139,7 @@ export interface TransactionRequest {
   reason: string;
 
   // ===== Missing fields =====
-  transactionType: string;
+  // transactionType: string;
 }
 
 export interface GetTransactionResponse {
@@ -168,10 +168,14 @@ export const inventoryApi = createApi({
         productId?: number;
         sortBy?: string;
         page?: number;
-        itemPerPage?: number;
+        itemsPerPage?: number;
       }
     >({
-      query: (params) => ({ url: "/Inventory/inventory-products", params }),
+      query: (params) => ({
+        url: "/Inventory/inventory-products",
+        method: "GET",
+        params,
+      }),
       providesTags: (result) =>
         result
           ? [
@@ -194,7 +198,6 @@ export const inventoryApi = createApi({
         body,
       }),
       invalidatesTags: (result, error, { id }) => [
-        { type: "Transaction", id },
         { type: "Transaction", id: "LIST" },
         { type: "Inventory", id: "LIST" },
       ],
@@ -213,7 +216,11 @@ export const inventoryApi = createApi({
         itemsPerPage?: number;
       }
     >({
-      query: (params) => ({ url: "/Inventory/transactions", params }),
+      query: (params) => ({
+        url: "/Inventory/transactions",
+        params,
+        method: "GET",
+      }),
       providesTags: (result) =>
         result
           ? [
