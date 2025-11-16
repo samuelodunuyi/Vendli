@@ -222,7 +222,7 @@ export const inventoryApi = createApi({
         method: "GET",
       }),
       providesTags: (result) =>
-        result
+        result?.items
           ? [
               ...result.items.map((tx) => ({
                 type: "Transaction" as const,
