@@ -78,73 +78,51 @@ export interface GetInventoryResponse {
 // Transaction
 
 export interface Transaction {
-  transactionId: number;
-  transactionType: string;
+  id: number;
+  type: number;
   quantity: number;
   reference: string;
-  reason?: string;
+  reason: string;
   createdOn: string;
+
   createdBy: {
-    id: number;
-    username: string;
     email: string;
+    username: string;
     firstName: string;
     lastName: string;
-    roleName: string;
   };
+
   store: {
-    storeId: number;
-    storeName: string;
-    storePhoneNumber: string;
-    storeEmailAddress: string;
-    storeAddress: string;
-    storeAdminId?: number | null;
-    storeType: string;
-    isActive: boolean;
-    createdAt: string;
-    updatedAt?: string | null;
+    id: number;
+    name: string;
   };
-  product?: {
-    productId: number;
-    productName: string;
-    description: string;
+
+  product: {
+    id: number;
+    name: string;
     sku: string;
-    barcode: string;
-    categoryId: number;
-    categoryName?: string;
-    storeId: number;
-    storeName?: string;
-    basePrice: number;
-    currentStock: number;
-    unitOfMeasure: string;
-    imageUrl: string;
-    additionalImages: { imagePath: string; productId?: number }[];
-    showInWeb: boolean;
-    showInPOS: boolean;
-    isActive: boolean;
-    costPrice: number;
-    minimumStockLevel: number;
-    maximumStockLevel: number;
-    createdAt?: string;
-    updatedAt?: string;
-    createdBy?: string;
-    updatedBy?: string;
   };
 }
 
 export interface TransactionRequest {
-  storeId: string;
-  newQuantity: number;
+  transactionType: number;
+  storeId: number;
+  productId: number;
+  quantity: number;
   reference?: string;
   reason: string;
-
-  // ===== Missing fields =====
-  // transactionType: string;
+  fromStore?: number;
+  toStore?: number;
 }
 
 export interface GetTransactionResponse {
-  items: Transaction[];
+  transactions: Transaction[];
   pagination: Pagination;
+  summary?: {
+    type: number;
+    count: number;
+    totalQuantity: number;
+  }[];
 }
 
 // ----------------- API -----------------------
@@ -181,23 +159,20 @@ export const inventoryApi = createApi({
           ? [
               ...result.items.map((inv) => ({
                 type: "Inventory" as const,
-                id: inv.product?.productId,
+                id: inv.product!.productId,
               })),
               { type: "Inventory", id: "LIST" },
             ]
           : [{ type: "Inventory", id: "LIST" }],
     }),
 
-    createTransactions: builder.mutation<
-      Transaction,
-      { id: number; body: TransactionRequest }
-    >({
-      query: ({ id, body }) => ({
-        url: `/Inventory/bulk-product-stock-adjustment/${id}`,
+    createTransactions: builder.mutation<Transaction, TransactionRequest>({
+      query: (body) => ({
+        url: "/Inventory/transactions/",
         method: "POST",
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [
+      invalidatesTags: (result, error) => [
         { type: "Transaction", id: "LIST" },
         { type: "Inventory", id: "LIST" },
       ],
@@ -222,11 +197,11 @@ export const inventoryApi = createApi({
         method: "GET",
       }),
       providesTags: (result) =>
-        result?.items
+        result
           ? [
-              ...result.items.map((tx) => ({
+              ...result.transactions.map((tx) => ({
                 type: "Transaction" as const,
-                id: tx.transactionId,
+                id: tx.id,
               })),
               { type: "Transaction", id: "LIST" },
             ]

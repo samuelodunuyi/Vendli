@@ -38,6 +38,16 @@ import {
   useGetTransactionsQuery,
 } from "@/redux/services/inventory.services";
 
+const transactionTypeMap: Record<
+  number,
+  "in" | "out" | "adjustment" | "transfer"
+> = {
+  0: "in",
+  1: "out",
+  2: "adjustment",
+  3: "transfer",
+};
+
 interface InventoryTransaction {
   id: string;
   productId: string;
@@ -63,14 +73,14 @@ export function InventoryTracking() {
   const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
 
   const [newTransaction, setNewTransaction] = useState({
-    productId: "",
-    type: "in" as "in" | "out" | "adjustment" | "transfer",
-    quantity: "",
+    productId: 0,
+    type: 0, // "in" as "in" | "out" | "adjustment" | "transfer",
+    quantity: 0,
     reason: "",
     reference: "",
-    storeId: selectedStoreId === "all" ? "store1" : selectedStoreId,
-    fromStore: "",
-    toStore: "",
+    storeId: selectedStoreId === "all" ? 0 : Number(selectedStoreId),
+    fromStore: 0,
+    toStore: 0,
   });
 
   const [createTransaction] = useCreateTransactionsMutation();
@@ -78,34 +88,33 @@ export function InventoryTracking() {
   // // Enhanced mock inventory transactions with multi-store data
   // const [transactions] = useState<InventoryTransaction[]>([]);
 
+  const queryParams: any = {};
+
+  if (selectedStoreId !== "all") queryParams.storeId = Number(selectedStoreId);
+  if (typeFilter !== "all") queryParams.type = typeFilter;
+  if (userFilter !== "all") queryParams.createdBy = userFilter;
+  if (dateRange.from) queryParams.startDate = dateRange.from.toISOString();
+  if (dateRange.to) queryParams.endDate = dateRange.to.toISOString();
+
   const {
     data: txData,
     isLoading,
     isError,
-  } = useGetTransactionsQuery({
-    storeId: selectedStoreId === "all" ? 0 : Number(selectedStoreId),
-    productId: 0,
-    type: typeFilter === "all" ? "" : typeFilter,
-    startDate: dateRange.from ? dateRange.from.toISOString() : "",
-    endDate: dateRange.to ? dateRange.to.toISOString() : "",
-    createdBy: userFilter === "all" ? "" : userFilter,
-  });
+  } = useGetTransactionsQuery(queryParams);
 
   const transactions: InventoryTransaction[] =
-    txData?.items?.map((tx) => ({
-      id: String(tx.transactionId),
-      productId: String(tx.product?.productId ?? ""),
-      productName: tx.product?.productName ?? "",
-      type: tx.transactionType as any,
+    txData?.transactions?.map((tx) => ({
+      id: String(tx.id),
+      productId: String(tx.product?.id ?? ""),
+      productName: tx.product?.name ?? "",
+      type: transactionTypeMap[tx.type],
       quantity: tx.quantity,
       reason: tx.reason ?? "",
       reference: tx.reference ?? "",
       date: tx.createdOn,
       user: tx.createdBy?.firstName + " " + tx.createdBy?.lastName,
-      storeId: String(tx.store.storeId),
-      storeName: tx.store.storeName,
-      fromStore: undefined,
-      toStore: undefined,
+      storeId: String(tx.store.id),
+      storeName: tx.store.name,
     })) ?? [];
 
   const filteredTransactions = transactions.filter((transaction) => {
@@ -217,7 +226,7 @@ export function InventoryTracking() {
     }
 
     if (
-      newTransaction.type === "transfer" &&
+      newTransaction.type === 3 &&
       (!newTransaction.fromStore || !newTransaction.toStore)
     ) {
       toast.error(
@@ -228,13 +237,14 @@ export function InventoryTracking() {
 
     try {
       await createTransaction({
-        id: Number(newTransaction.productId),
-        body: {
-          storeId: newTransaction.storeId,
-          newQuantity: Number(newTransaction.quantity),
-          reference: newTransaction.reference,
-          reason: newTransaction.reason,
-        },
+        transactionType: newTransaction.type,
+        productId: newTransaction.productId,
+        storeId: newTransaction.storeId,
+        quantity: newTransaction.quantity,
+        reference: newTransaction.reference ?? undefined,
+        reason: newTransaction.reason,
+        fromStore: newTransaction.fromStore ?? undefined,
+        toStore: newTransaction.toStore ?? undefined,
       }).unwrap();
 
       toast.success("Inventory transaction recorded successfully");
@@ -349,9 +359,12 @@ export function InventoryTracking() {
                 <div>
                   <Label htmlFor="product">Product *</Label>
                   <Select
-                    value={newTransaction.productId}
+                    value={String(newTransaction.productId)}
                     onValueChange={(value) =>
-                      setNewTransaction({ ...newTransaction, productId: value })
+                      setNewTransaction({
+                        ...newTransaction,
+                        productId: Number(value),
+                      })
                     }
                   >
                     <SelectTrigger>
@@ -371,22 +384,23 @@ export function InventoryTracking() {
                 <div>
                   <Label htmlFor="store">Store *</Label>
                   <Select
-                    value={newTransaction.storeId}
+                    value={String(newTransaction.storeId)}
                     onValueChange={(value) =>
-                      setNewTransaction({ ...newTransaction, storeId: value })
+                      setNewTransaction({
+                        ...newTransaction,
+                        storeId: Number(value),
+                      })
                     }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="store1">
-                        Victoria Island Store
-                      </SelectItem>
-                      <SelectItem value="store2">Ikeja Store</SelectItem>
-                      <SelectItem value="store3">Lekki Store</SelectItem>
-                      <SelectItem value="store4">Ajah Store</SelectItem>
-                      <SelectItem value="store5">Egbeda Store</SelectItem>
+                      <SelectItem value="1">Victoria Island Store</SelectItem>
+                      <SelectItem value="2">Ikeja Store</SelectItem>
+                      <SelectItem value="3">Lekki Store</SelectItem>
+                      <SelectItem value="4">Ajah Store</SelectItem>
+                      <SelectItem value="5">Egbeda Store</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -394,33 +408,36 @@ export function InventoryTracking() {
                 <div>
                   <Label htmlFor="type">Transaction Type *</Label>
                   <Select
-                    value={newTransaction.type}
-                    onValueChange={(
-                      value: "in" | "out" | "adjustment" | "transfer"
-                    ) => setNewTransaction({ ...newTransaction, type: value })}
+                    value={String(newTransaction.type)}
+                    onValueChange={(value) =>
+                      setNewTransaction({
+                        ...newTransaction,
+                        type: Number(value),
+                      })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="in">Stock In</SelectItem>
-                      <SelectItem value="out">Stock Out</SelectItem>
-                      <SelectItem value="adjustment">Adjustment</SelectItem>
-                      <SelectItem value="transfer">Transfer</SelectItem>
+                      <SelectItem value="0">Stock In</SelectItem>
+                      <SelectItem value="1">Stock Out</SelectItem>
+                      <SelectItem value="2">Adjustment</SelectItem>
+                      <SelectItem value="3">Transfer</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
-                {newTransaction.type === "transfer" && (
+                {newTransaction.type === 3 && (
                   <>
                     <div>
                       <Label htmlFor="fromStore">From Store *</Label>
                       <Select
-                        value={newTransaction.fromStore}
+                        value={String(newTransaction.fromStore)}
                         onValueChange={(value) =>
                           setNewTransaction({
                             ...newTransaction,
-                            fromStore: value,
+                            fromStore: Number(value),
                           })
                         }
                       >
@@ -447,11 +464,11 @@ export function InventoryTracking() {
                     <div>
                       <Label htmlFor="toStore">To Store *</Label>
                       <Select
-                        value={newTransaction.toStore}
+                        value={String(newTransaction.toStore)}
                         onValueChange={(value) =>
                           setNewTransaction({
                             ...newTransaction,
-                            toStore: value,
+                            toStore: Number(value),
                           })
                         }
                       >
@@ -484,11 +501,11 @@ export function InventoryTracking() {
                     id="quantity"
                     type="number"
                     placeholder="Enter quantity"
-                    value={newTransaction.quantity}
+                    value={String(newTransaction.quantity)}
                     onChange={(e) =>
                       setNewTransaction({
                         ...newTransaction,
-                        quantity: e.target.value,
+                        quantity: Number(e.target.value),
                       })
                     }
                   />
@@ -594,8 +611,9 @@ export function InventoryTracking() {
                       <div className="flex items-center gap-2">
                         {getTransactionIcon(transaction.type)}
                         <Badge variant={getTransactionColor(transaction.type)}>
-                          {transaction.type.charAt(0).toUpperCase() +
-                            transaction.type.slice(1)}
+                          {/* {transaction.type.charAt(0).toUpperCase() +
+                            transaction.type.slice(1)} */}
+                          {transaction.type?.charAt?.(0)?.toUpperCase() ?? ""}
                         </Badge>
                       </div>
                     </td>
