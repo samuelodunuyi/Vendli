@@ -74,7 +74,7 @@ export function InventoryTracking() {
 
   const [newTransaction, setNewTransaction] = useState({
     productId: 0,
-    type: 0, // "in" as "in" | "out" | "adjustment" | "transfer",
+    type: 0,
     quantity: 0,
     reason: "",
     reference: "",
@@ -84,10 +84,6 @@ export function InventoryTracking() {
   });
 
   const [createTransaction] = useCreateTransactionsMutation();
-
-  // // Enhanced mock inventory transactions with multi-store data
-  // const [transactions] = useState<InventoryTransaction[]>([]);
-
   const queryParams: any = {};
 
   if (selectedStoreId !== "all") queryParams.storeId = Number(selectedStoreId);
@@ -249,7 +245,7 @@ export function InventoryTracking() {
 
       toast.success("Inventory transaction recorded successfully");
       setIsAddTransactionOpen(false);
-    } catch (err: any) {
+    } catch (err) {
       toast.error("Failed to add transaction");
     }
   };
