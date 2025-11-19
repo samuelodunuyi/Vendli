@@ -1,8 +1,18 @@
 // src/store/index.ts
 
-import { configureStore, combineReducers, type Action, type ThunkAction, Reducer } from '@reduxjs/toolkit';
-import { setupListeners } from '@reduxjs/toolkit/query/react';
-import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux';
+import {
+  configureStore,
+  combineReducers,
+  type Action,
+  type ThunkAction,
+  Reducer,
+} from "@reduxjs/toolkit";
+import { setupListeners } from "@reduxjs/toolkit/query/react";
+import {
+  useDispatch,
+  useSelector,
+  type TypedUseSelectorHook,
+} from "react-redux";
 import {
   persistStore,
   persistReducer,
@@ -12,27 +22,28 @@ import {
   PERSIST,
   PURGE,
   REGISTER,
-} from 'redux-persist';
-import storage from 'redux-persist/lib/storage';
+} from "redux-persist";
+import storage from "redux-persist/lib/storage";
 
 // ================== SERVICES ==================
-import { authApi } from '@/redux/services/auth.services';
-import { storeApi } from '@/redux/services/stores.services';
-import { productApi } from '@/redux/services/products.services';
-import { orderApi } from '@/redux/services/orders.services';
-import { customersApi } from '@/redux/services/customer.services';
-import { usersApi } from '@/redux/services/user.services';
-import { restaurantApi } from '@/redux/services/restaurant.services';
+import { authApi } from "@/redux/services/auth.services";
+import { storeApi } from "@/redux/services/stores.services";
+import { productApi } from "@/redux/services/products.services";
+import { orderApi } from "@/redux/services/orders.services";
+import { customersApi } from "@/redux/services/customer.services";
+import { usersApi } from "@/redux/services/user.services";
+import { restaurantApi } from "@/redux/services/restaurant.services";
+import { inventoryApi } from "./services/inventory.services";
 
 // ================== SLICES ==================
-import authReducer from './slices/authSlice';
-import leadReducer from './slices/leadSlice';
+import authReducer from "./slices/authSlice";
+import leadReducer from "./slices/leadSlice";
 
 // ================== PERSIST CONFIG ==================
 const persistConfig = {
-  key: 'root',
+  key: "root",
   storage,
-  whitelist: ['auth', 'lead'],
+  whitelist: ["auth", "lead"],
 };
 
 // ================== ROOT REDUCER ==================
@@ -46,11 +57,13 @@ const rootReducer = combineReducers({
   [customersApi.reducerPath]: customersApi.reducer,
   [usersApi.reducerPath]: usersApi.reducer,
   [restaurantApi.reducerPath]: restaurantApi.reducer,
+  [inventoryApi.reducerPath]: inventoryApi.reducer,
 });
 
-const persistedReducer = persistReducer(persistConfig, rootReducer) as unknown as Reducer<
-  ReturnType<typeof rootReducer>
->;
+const persistedReducer = persistReducer(
+  persistConfig,
+  rootReducer
+) as unknown as Reducer<ReturnType<typeof rootReducer>>;
 
 // ================== STORE ==================
 export const store = configureStore({
@@ -68,6 +81,7 @@ export const store = configureStore({
       customersApi.middleware,
       usersApi.middleware,
       restaurantApi.middleware,
+      inventoryApi.middleware,
     ]),
 });
 
