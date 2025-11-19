@@ -9,6 +9,7 @@ import { ComplaintsManagement } from "./customer/ComplaintsManagement";
 import { AddCustomerDialog } from "./customer/AddCustomerDialog";
 import { toast } from "sonner";
 import { useGetCustomersQuery } from "@/redux/services/customer.services";
+import { useGetStoresQuery } from "@/redux/services/stores.services";
 
 export function CustomerManagement() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -21,7 +22,7 @@ export function CustomerManagement() {
   const [classification, setClassification] = useState<number | undefined>(undefined);
   const [loyaltyTier, setLoyaltyTier] = useState<number | undefined>(undefined);
   const [status, setStatus] = useState<number | undefined>(undefined);
-
+  const {data: storeData} = useGetStoresQuery()
   // Fetch customers
   const { data: customersData, isLoading, refetch } = useGetCustomersQuery({
     page,
@@ -73,20 +74,21 @@ export function CustomerManagement() {
         </TabsContent>
 
         <TabsContent value="customers">
-          <CustomerList 
-            customers={customersData?.customers || []} 
-            isLoading={isLoading} 
-            pagination={customersData?.pagination} 
-            searchQuery={searchQuery}
-            setSearchQuery={setSearchQuery}
-            classification={classification}
-            setClassification={setClassification}
-            loyaltyTier={loyaltyTier}
-            setLoyaltyTier={setLoyaltyTier}
-            status={status}
-            setStatus={setStatus}
-            refetch={refetch}
-          />
+<CustomerList 
+  customers={customersData?.customers || []} 
+  isLoading={isLoading} 
+  pagination={customersData?.pagination} 
+  searchQuery={searchQuery}
+  setSearchQuery={setSearchQuery}
+  classification={classification}
+  setClassification={setClassification}
+  loyaltyTier={loyaltyTier}
+  setLoyaltyTier={setLoyaltyTier}
+  status={status}
+  setStatus={setStatus}
+  storeData={storeData.stores || []}
+  refetch={refetch}
+/>
         </TabsContent>
 
         <TabsContent value="analytics">
@@ -102,6 +104,7 @@ export function CustomerManagement() {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onCustomerAdded={handleCustomerAdded}
+        storeData={storeData.stores || []}
       />
     </div>
   );

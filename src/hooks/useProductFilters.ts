@@ -2,7 +2,7 @@ import { Product} from "@/redux/services/products.services";
 import { useState } from "react";
 
 export interface FilterState {
-  categoryId: number;
+  categoryId: number | null;
   status: string;
   priceMin: string;
   priceMax: string;
@@ -45,8 +45,8 @@ export function useProductFilters(productList: Product[]) {
 
       // Stock range filter
       const matchesStock =
-        (!filters.stockMin || product.currentStock >= parseInt(filters.stockMin)) &&
-        (!filters.stockMax || product.currentStock <= parseInt(filters.stockMax));
+        (!filters.stockMin || product.basestock >= parseInt(filters.stockMin)) &&
+        (!filters.stockMax || product.basestock <= parseInt(filters.stockMax));
 
       return matchesSearch && matchesCategory && matchesStatus && matchesPrice && matchesStock;
     });
@@ -69,7 +69,7 @@ export function useProductFilters(productList: Product[]) {
 
   const filteredProducts = applyFilters(productList);
   const lowStockProducts = productList?.filter(
-    product => product.currentStock <= (product.minimumStockLevel || 10)
+    product => product.basestock <= (product.minimumStockLevel || 10)
   );
 
   const categories = Array.from(new Set(productList?.map(p => p.categoryId)));

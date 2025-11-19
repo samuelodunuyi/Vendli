@@ -153,6 +153,7 @@ export const orderApi = createApi({
         paymentStatus?: string;
         userId?: string;
         storeId?: number;
+        productId?: number;
         customerEmail?: string
       }
     >({

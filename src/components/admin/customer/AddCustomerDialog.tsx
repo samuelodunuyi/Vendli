@@ -1,21 +1,39 @@
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "@/components/ui/sonner";
 import { useCreateCustomerMutation } from "@/redux/services/customer.services";
+import { Store } from "@/redux/services/stores.services";
 
 interface AddCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCustomerAdded: () => void;
+  storeData: Store[];
 }
 
-export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCustomerDialogProps) {
+export function AddCustomerDialog({
+  open,
+  onOpenChange,
+  onCustomerAdded,
+  storeData,
+}: AddCustomerDialogProps) {
   const [createCustomer, { isLoading }] = useCreateCustomerMutation();
 
   const [formData, setFormData] = useState({
@@ -28,7 +46,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
     companyName: "",
     preferredStore: "",
     marketingConsent: false,
-    notes: ""
+    notes: "",
   });
 
   const handleInputChange = (field: string, value: string | boolean) => {
@@ -39,13 +57,18 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
     corporate: 0,
     vip: 1,
     regular: 2,
-    "walk-in": 3
+    "walk-in": 3,
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.firstName || !formData.lastName || !formData.email || !formData.phone) {
+    if (
+      !formData.firstName ||
+      !formData.lastName ||
+      !formData.email ||
+      !formData.phone
+    ) {
       toast.error("Please fill in all required fields");
       return;
     }
@@ -66,7 +89,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
         companyName: formData.companyName || null,
         industryClass: formData.industryClass || null,
         notes: formData.notes || "",
-        customerStatus: 1 // Active by default
+        customerStatus: 1,
       };
 
       await createCustomer(payload).unwrap();
@@ -86,7 +109,7 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
         companyName: "",
         preferredStore: "",
         marketingConsent: false,
-        notes: ""
+        notes: "",
       });
     } catch (error) {
       console.error(error);
@@ -157,7 +180,9 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
               <Label htmlFor="classification">Customer Classification</Label>
               <Select
                 value={formData.classification}
-                onValueChange={(value) => handleInputChange("classification", value)}
+                onValueChange={(value) =>
+                  handleInputChange("classification", value)
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -170,23 +195,25 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="preferredStore">Preferred Store</Label>
-              <Select
-                value={formData.preferredStore}
-                onValueChange={(value) => handleInputChange("preferredStore", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select store" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Victoria Island Store">Victoria Island Store</SelectItem>
-                  <SelectItem value="Ikeja Store">Ikeja Store</SelectItem>
-                  <SelectItem value="Lekki Store">Lekki Store</SelectItem>
-                  <SelectItem value="Ajah Store">Ajah Store</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+<div className="space-y-2">
+  <Label htmlFor="preferredStore">Preferred Store</Label>
+  <Select
+    value={formData.preferredStore}
+    onValueChange={(value) => handleInputChange("preferredStore", value)}
+  >
+    <SelectTrigger>
+      <SelectValue placeholder="Select store" />
+    </SelectTrigger>
+    <SelectContent>
+      {storeData?.map((store) => (
+        <SelectItem key={store.storeId} value={store.storeName}>
+          {store.storeName}
+        </SelectItem>
+      ))}
+    </SelectContent>
+  </Select>
+</div>
+
           </div>
 
           {/* Conditional Corporate Fields */}
@@ -197,7 +224,9 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
                 <Input
                   id="companyName"
                   value={formData.companyName}
-                  onChange={(e) => handleInputChange("companyName", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("companyName", e.target.value)
+                  }
                   placeholder="Enter company name"
                 />
               </div>
@@ -206,7 +235,9 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
                 <Input
                   id="industryClass"
                   value={formData.industryClass}
-                  onChange={(e) => handleInputChange("industryClass", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("industryClass", e.target.value)
+                  }
                   placeholder="e.g., Banking & Finance"
                 />
               </div>
@@ -230,7 +261,9 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
             <Switch
               id="marketingConsent"
               checked={formData.marketingConsent}
-              onCheckedChange={(checked) => handleInputChange("marketingConsent", checked)}
+              onCheckedChange={(checked) =>
+                handleInputChange("marketingConsent", checked)
+              }
             />
             <Label htmlFor="marketingConsent">
               Customer consents to marketing communications
@@ -239,7 +272,11 @@ export function AddCustomerDialog({ open, onOpenChange, onCustomerAdded }: AddCu
 
           {/* Buttons */}
           <div className="flex justify-end space-x-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+            >
               Cancel
             </Button>
             <Button type="submit" disabled={isLoading}>

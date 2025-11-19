@@ -13,13 +13,9 @@ export interface Store {
 }
 
 export interface StoreFilter {
-  storeId?: string;
-  productId?: string;
-  category?: string;
-  dateRange?: {
-    start: string;
-    end: string;
-  };
+  storeId?: number;
+  categoryId?: number;
+  timeline?: "last7days" | "last30days" | "last90days" | "thisYear";
 }
 
 export interface RevenueSource {

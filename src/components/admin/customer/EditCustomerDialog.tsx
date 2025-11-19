@@ -9,15 +9,30 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "@/components/ui/sonner";
 import { Customer, useUpdateCustomerMutation } from "@/redux/services/customer.services";
+import { Store } from "@/redux/services/stores.services";
+
+export enum KYCStatus {
+  Unverified = 0,
+  Pending = 1,
+  Verified = 2,
+}
+
+export enum LoyaltyTier {
+  Bronze = 0,
+  Silver = 1,
+  Gold = 2,
+  Platinum = 3,
+}
 
 interface EditCustomerDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   customer: Customer | null;
+  storeData: Store[];
   onCustomerUpdated: () => void;
 }
 
-export function EditCustomerDialog({ open, onOpenChange, customer, onCustomerUpdated }: EditCustomerDialogProps) {
+export function EditCustomerDialog({ open, onOpenChange, customer, onCustomerUpdated, storeData }: EditCustomerDialogProps) {
   const [updateCustomer, { isLoading }] = useUpdateCustomerMutation();
 
   const [formData, setFormData] = useState({
@@ -29,13 +44,12 @@ export function EditCustomerDialog({ open, onOpenChange, customer, onCustomerUpd
     industryClass: "",
     companyName: "",
     preferredStore: "",
-    status: 1 as number | null, 
-    notes: ""
+    status: 1 as number | null,
+    notes: "",
   });
 
   useEffect(() => {
     if (customer) {
-      console.log(customer)
       setFormData({
         firstName: customer.userInfo.firstName,
         lastName: customer.userInfo.lastName,
@@ -46,7 +60,7 @@ export function EditCustomerDialog({ open, onOpenChange, customer, onCustomerUpd
         companyName: customer.companyName || "",
         preferredStore: customer.preferredStore || "",
         status: customer.customerStatus,
-        notes: ""
+        notes: customer.notes || "",
       });
     }
   }, [customer]);
@@ -55,35 +69,33 @@ export function EditCustomerDialog({ open, onOpenChange, customer, onCustomerUpd
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
-  e.preventDefault();
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!customer) return;
 
-  if (!customer) return;
+    const payload: any = { id: customer.id };
 
-  // Build payload dynamically to only include filled fields
-  const payload: any = { id: customer.id };
+    if (formData.firstName) payload.firstName = formData.firstName;
+    if (formData.lastName) payload.lastName = formData.lastName;
+    if (formData.email) payload.email = formData.email;
+    if (formData.phone) payload.phoneNumber = formData.phone;
+    if (formData.classification !== null) payload.customerClassification = formData.classification;
+    if (formData.status !== null) payload.customerStatus = formData.status;
+    if (formData.companyName) payload.companyName = formData.companyName;
+    if (formData.industryClass) payload.industryClass = formData.industryClass;
+    if (formData.preferredStore) payload.preferredStore = formData.preferredStore;
+    if (formData.notes) payload.notes = formData.notes;
 
-  if (formData.firstName) payload.firstName = formData.firstName;
-  if (formData.lastName) payload.lastName = formData.lastName;
-  if (formData.email) payload.email = formData.email;
-  if (formData.phone) payload.phoneNumber = formData.phone;
-  if (formData.classification !== null) payload.customerClassification = formData.classification;
-  if (formData.status !== null) payload.customerStatus = formData.status;
-  if (formData.companyName) payload.companyName = formData.companyName;
-  if (formData.industryClass) payload.industryClass = formData.industryClass;
-  if (formData.preferredStore) payload.preferredStore = formData.preferredStore;
-  if (formData.notes) payload.notes = formData.notes;
-
-  try {
-    await updateCustomer(payload).unwrap();
-    toast.success("Customer updated successfully!");
-    onCustomerUpdated();
-    onOpenChange(false);
-  } catch (error) {
-    console.error(error);
-    toast.error(error?.data?.message || "Failed to update customer");
-  }
-};
+    try {
+      await updateCustomer(payload).unwrap();
+      toast.success("Customer updated successfully!");
+      onCustomerUpdated();
+      onOpenChange(false);
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.data?.message || "Failed to update customer");
+    }
+  };
 
   if (!customer) return null;
 
@@ -102,19 +114,25 @@ const handleSubmit = async (e: React.FormEvent) => {
               <div className="text-sm text-gray-600">Total Spent</div>
             </div>
             <div className="text-center">
-              <Badge variant="outline">{customer.loyaltyTier}</Badge>
+              <Badge variant="outline">{LoyaltyTier[customer.loyaltyTier]}</Badge>
               <div className="text-sm text-gray-600 mt-1">{customer.loyaltyPoints} points</div>
             </div>
             <div className="text-center">
-              <Badge variant={customer.kycStatus === 1 ? 'default' : 'secondary'}>
-                {customer.kycStatus}
+              <Badge
+                variant={
+                  customer.kycStatus === KYCStatus.Verified ? "default" :
+                  customer.kycStatus === KYCStatus.Pending ? "secondary" :
+                  "destructive"
+                }
+              >
+                {KYCStatus[customer.kycStatus]}
               </Badge>
               <div className="text-sm text-gray-600 mt-1">KYC Status</div>
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Name */}
+            {/* Name Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="firstName">First Name *</Label>
@@ -126,7 +144,7 @@ const handleSubmit = async (e: React.FormEvent) => {
               </div>
             </div>
 
-            {/* Contact */}
+            {/* Contact Fields */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="email">Email *</Label>
@@ -168,10 +186,9 @@ const handleSubmit = async (e: React.FormEvent) => {
                 <Select value={formData.preferredStore || ""} onValueChange={(value) => handleInputChange("preferredStore", value)}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Victoria Island Store">Victoria Island Store</SelectItem>
-                    <SelectItem value="Ikeja Store">Ikeja Store</SelectItem>
-                    <SelectItem value="Lekki Store">Lekki Store</SelectItem>
-                    <SelectItem value="Ajah Store">Ajah Store</SelectItem>
+                    {storeData.map(store => (
+                      <SelectItem key={store.storeId} value={store.storeName}>{store.storeName}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

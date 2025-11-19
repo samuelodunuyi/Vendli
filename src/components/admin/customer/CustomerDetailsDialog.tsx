@@ -181,8 +181,8 @@ const { data: ordersData, isLoading } = useGetOrdersQuery({});
         <p className="text-sm text-muted-foreground">No transactions found.</p>
       ) : (
         <div className="space-y-4">
-          {ordersData.orders
-            .filter((order) => order.customer.id === customer.id)
+          {ordersData?.orders
+            .filter((order) => order?.customer?.id === customer.id)
             .map((order) => (
               <div key={order.id} className="p-4 border rounded-lg">
                 <div className="flex justify-between items-start">

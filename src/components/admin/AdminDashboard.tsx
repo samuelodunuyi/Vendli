@@ -13,7 +13,7 @@ interface DateRange {
 
 export function AdminDashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState("today");
-  const [selectedStore, setSelectedStore] = useState("");
+const [selectedStore, setSelectedStore] = useState<number | null>(null);
   const [customDateRange, setCustomDateRange] = useState<DateRange>({
     from: undefined,
     to: undefined,
@@ -31,7 +31,6 @@ export function AdminDashboard() {
   if (isLoading) return <p>Loading statistics...</p>;
   if (isError || !data) return <p>Failed to load statistics.</p>;
 
-  // ✅ Map API data to the shapes expected by DashboardTables
   const mappedSalesData = data.salesChart.labels.map((label, index) => ({
     labels: label,
     values: data.salesChart.values[index] ?? 0,
@@ -42,6 +41,16 @@ export function AdminDashboard() {
     sold: cat.totalSales,
   }));
 
+  const RETENTION_COLORS = [
+    "hsl(142, 70.6%, 45.3%)", 
+    "hsl(271, 76%, 53%)" 
+];
+
+const mappedRetentionData = data.retentionRate.labels.map((label, index) => ({
+    name: label,
+    value: data.retentionRate.values[index] || 0, 
+    color: RETENTION_COLORS[index] || '#ccc', 
+}));
   const mappedTopProducts = data.topSellingProducts.map((prod) => ({
     name: prod.productName,
     sold: prod.totalSales,
@@ -52,9 +61,10 @@ export function AdminDashboard() {
     sold: prod.totalSales,
   }));
 
-  const mappedTopStores = data.totalStores 
-    ? []
-    : [];
+const mappedTopStores = data.topPerformingStores.map((store) => ({
+    name: store.storeName,
+    sales: store.totalSales,
+  }));
 
   const mappedTopCustomers = data.topCustomers.map((cust) => ({
     name: cust.userName,
@@ -90,7 +100,7 @@ export function AdminDashboard() {
         }}
       />
 
-      <DashboardCharts salesData={mappedSalesData} retentionData={[]} />
+      <DashboardCharts salesData={mappedSalesData} retentionData={mappedRetentionData} />
 
       <DashboardTables
         topCategories={mappedTopCategories}

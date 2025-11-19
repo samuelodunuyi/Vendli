@@ -133,7 +133,7 @@ export function DeliveryServicesSettings() {
           </p>
           
           <Tabs value={activeProvider} onValueChange={setActiveProvider} className="w-full">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-3 mb-6">
               <TabsTrigger value="gig-logistics" className="flex items-center gap-2">
                 <MapPin className="h-3 w-3" />
                 Local Carriers
@@ -146,10 +146,7 @@ export function DeliveryServicesSettings() {
                 <Settings className="h-3 w-3" />
                 Custom API
               </TabsTrigger>
-              <TabsTrigger value="settings" className="flex items-center gap-2">
-                <Clock className="h-3 w-3" />
-                Automation
-              </TabsTrigger>
+ 
             </TabsList>
 
             <TabsContent value="gig-logistics" className="space-y-4">
@@ -377,109 +374,6 @@ export function DeliveryServicesSettings() {
               </Card>
             </TabsContent>
 
-            <TabsContent value="settings" className="space-y-4">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Clock className="h-5 w-5" />
-                    Automation Settings
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Auto-submit Orders</Label>
-                      <p className="text-sm text-gray-500">Automatically submit new orders to delivery providers</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Real-time Status Updates</Label>
-                      <p className="text-sm text-gray-500">Enable webhook updates from delivery providers</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  
-                  <Separator />
-                  
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Rate Comparison</Label>
-                      <p className="text-sm text-gray-500">Compare rates across providers before assignment</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                    <div>
-                      <Label htmlFor="sync-interval">Status Sync Interval</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select interval" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="15">Every 15 minutes</SelectItem>
-                          <SelectItem value="30">Every 30 minutes</SelectItem>
-                          <SelectItem value="60">Every 1 hour</SelectItem>
-                          <SelectItem value="240">Every 4 hours</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                    <div>
-                      <Label htmlFor="fallback-provider">Fallback Provider</Label>
-                      <Select>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select fallback" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="gig-logistics">GIG Logistics</SelectItem>
-                          <SelectItem value="red-star">Red Star Express</SelectItem>
-                          <SelectItem value="manual">Manual Assignment</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <DollarSign className="h-5 w-5" />
-                    Cost Optimization
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <Label>Smart Provider Selection</Label>
-                      <p className="text-sm text-gray-500">Automatically choose the best provider based on cost and delivery time</p>
-                    </div>
-                    <Switch />
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="cost-weight">Cost Weight (%)</Label>
-                      <Input id="cost-weight" type="number" defaultValue="60" min="0" max="100" />
-                    </div>
-                    <div>
-                      <Label htmlFor="speed-weight">Speed Weight (%)</Label>
-                      <Input id="speed-weight" type="number" defaultValue="40" min="0" max="100" />
-                    </div>
-                  </div>
-                  
-                  <div>
-                    <Label htmlFor="max-cost">Maximum Cost per Delivery (₦)</Label>
-                    <Input id="max-cost" type="number" placeholder="5000" />
-                  </div>
-                </CardContent>
-              </Card>
-            </TabsContent>
           </Tabs>
         </CardContent>
       </Card>

@@ -29,6 +29,7 @@ export function AddProductDialog({
   onAddProduct,
   onCancel
 }: AddProductDialogProps) {
+
   const generateCode = () => {
     const randomCode = Math.random().toString(36).substring(2, 10).toUpperCase();
     setNewProduct({ ...newProduct, barcode: randomCode, sku: randomCode });
@@ -45,11 +46,14 @@ export function AddProductDialog({
         </DialogHeader>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
           {/* Left Column */}
           <div className="lg:col-span-2 space-y-6">
+
             {/* General Info */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">General Information</h3>
+
               <div>
                 <Label>Product Name *</Label>
                 <Input
@@ -74,9 +78,10 @@ export function AddProductDialog({
               </div>
             </div>
 
-            {/* Pricing */}
+            {/* Pricing Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Price and Quantity</h3>
+
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label>Base Price *</Label>
@@ -85,13 +90,11 @@ export function AddProductDialog({
                     placeholder="0"
                     value={newProduct.basePrice}
                     onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        basePrice: Number(e.target.value),
-                      })
+                      setNewProduct({ ...newProduct, basePrice: Number(e.target.value) })
                     }
                   />
                 </div>
+
                 <div>
                   <Label>Cost Price</Label>
                   <Input
@@ -99,48 +102,48 @@ export function AddProductDialog({
                     placeholder="0"
                     value={newProduct.costPrice}
                     onChange={(e) =>
+                      setNewProduct({ ...newProduct, costPrice: Number(e.target.value) })
+                    }
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Minimum Stock Level</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 10"
+                    value={newProduct.minimumStockLevel}
+                    onChange={(e) =>
                       setNewProduct({
                         ...newProduct,
-                        costPrice: Number(e.target.value),
+                        minimumStockLevel: Number(e.target.value),
+                      })
+                    }
+                  />
+                </div>
+
+                <div>
+                  <Label>Stock Count</Label>
+                  <Input
+                    type="number"
+                    placeholder="e.g. 10"
+                    value={newProduct.basestock}
+                    onChange={(e) =>
+                      setNewProduct({
+                        ...newProduct,
+                        basestock: Number(e.target.value),
                       })
                     }
                   />
                 </div>
               </div>
-              <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label>Minimum Stock Level</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 10"
-                  value={newProduct.minimumStockLevel}
-                  onChange={(e) =>
-                    setNewProduct({
-                      ...newProduct,
-                      minimumStockLevel: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
 
+              {/* SKU + Barcode + UOM */}
+              <div className="grid grid-cols-3 gap-4">
 
-<div>
-                <Label>Stock Count</Label>
-                <Input
-                  type="number"
-                  placeholder="e.g. 10"
-                  value={newProduct.currentStock}
-                  onChange={(e) =>
-                    setNewProduct({
-                      ...newProduct,
-                      currentStock: Number(e.target.value),
-                    })
-                  }
-                />
-              </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-4">
+                {/* SKU */}
                 <div>
                   <Label>SKU</Label>
                   <Input
@@ -151,6 +154,8 @@ export function AddProductDialog({
                     }
                   />
                 </div>
+
+                {/* Barcode */}
                 <div>
                   <Label>Barcode</Label>
                   <div className="flex gap-2">
@@ -171,6 +176,32 @@ export function AddProductDialog({
                     </Button>
                   </div>
                 </div>
+
+                {/* UOM */}
+                <div>
+                  <Label>Unit of Measurement (UoM)</Label>
+                  <Select
+                    value={newProduct.unitOfMeasure || ""}
+                    onValueChange={(value) =>
+                      setNewProduct({ ...newProduct, unitOfMeasure: value })
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pcs">Pieces (pcs)</SelectItem>
+                      <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                      <SelectItem value="g">Gram (g)</SelectItem>
+                      <SelectItem value="litre">Litre (L)</SelectItem>
+                      <SelectItem value="ml">Millilitre (ml)</SelectItem>
+                      <SelectItem value="pack">Pack</SelectItem>
+                      <SelectItem value="box">Box</SelectItem>
+                      <SelectItem value="dozen">Dozen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
               </div>
             </div>
 
@@ -187,6 +218,8 @@ export function AddProductDialog({
 
           {/* Right Column */}
           <div className="space-y-6">
+
+            {/* Category */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Category</h3>
               <Label>Product Category *</Label>
@@ -209,6 +242,7 @@ export function AddProductDialog({
               </Select>
             </div>
 
+            {/* Status */}
             <div className="space-y-4">
               <h3 className="text-lg font-medium">Status</h3>
               <Label>Status</Label>
@@ -226,6 +260,7 @@ export function AddProductDialog({
                   <SelectItem value="Inactive">Inactive</SelectItem>
                 </SelectContent>
               </Select>
+
               <Badge
                 variant={newProduct.isActive ? "default" : "secondary"}
                 className="mt-2"
@@ -236,6 +271,7 @@ export function AddProductDialog({
           </div>
         </div>
 
+        {/* Footer Buttons */}
         <div className="flex gap-2 justify-end pt-4 border-t">
           <Button variant="outline" onClick={onCancel}>
             Cancel
@@ -248,6 +284,7 @@ export function AddProductDialog({
             {isCreating ? "Adding..." : "Add Product"}
           </Button>
         </div>
+
       </DialogContent>
     </Dialog>
   );

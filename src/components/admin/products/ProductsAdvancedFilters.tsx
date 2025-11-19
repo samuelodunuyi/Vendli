@@ -1,4 +1,3 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -6,11 +5,11 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { X, Filter } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Category } from "@/redux/services/products.services";
 
 interface FilterState {
-  categoryId: number;
+  categoryId: number | null;
   status: string;
   priceMin: string;
   priceMax: string;
@@ -23,15 +22,11 @@ interface ProductsAdvancedFiltersProps {
   onApplyFilters: (filters: FilterState) => void;
   activeFilters: FilterState;
   onClearFilters: () => void;
+    showFilters: boolean;
+  setShowFilters: (value: boolean) => void;
 }
 
-export function ProductsAdvancedFilters({ 
-  categories, 
-  onApplyFilters, 
-  activeFilters, 
-  onClearFilters 
-}: ProductsAdvancedFiltersProps) {
-  const [showFilters, setShowFilters] = useState(false);
+export function ProductsAdvancedFilters({ categories, onApplyFilters, activeFilters, onClearFilters, showFilters, setShowFilters }: ProductsAdvancedFiltersProps) {
   const [filters, setFilters] = useState<FilterState>(activeFilters);
 
   const handleApplyFilters = () => {
@@ -40,16 +35,27 @@ export function ProductsAdvancedFilters({
   };
 
   const handleClearFilters = () => {
-    const emptyFilters = { category: "all", status: "all", priceMin: "", priceMax: "", stockMin: "", stockMax: "" };
+    const emptyFilters: FilterState = {
+      categoryId: null,
+      status: 'all',
+      priceMin: '',
+      priceMax: '',
+      stockMin: '',
+      stockMax: ''
+    };
     setFilters(emptyFilters);
     onClearFilters();
   };
 
-  const activeFilterCount = Object.values(activeFilters).filter(value => value !== "" && value !== "all").length;
+  useEffect(() => {
+  setFilters(activeFilters);
+}, [activeFilters]);
+
+  const activeFilterCount = Object.values(activeFilters).filter(v => v !== '' && v !== 'all').length;
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center gap-2">
+      <div className="flex flex-wrap items-center gap-2">
         <Button 
           variant="outline" 
           onClick={() => setShowFilters(!showFilters)}
@@ -58,9 +64,7 @@ export function ProductsAdvancedFilters({
           <Filter className="h-4 w-4" />
           Advanced Filters
           {activeFilterCount > 0 && (
-            <Badge variant="secondary" className="ml-1">
-              {activeFilterCount}
-            </Badge>
+            <Badge variant="secondary" className="ml-1">{activeFilterCount}</Badge>
           )}
         </Button>
         
@@ -73,29 +77,39 @@ export function ProductsAdvancedFilters({
       </div>
 
       {showFilters && (
-        <Card>
+        <Card className="bg-white shadow-md border border-gray-200">
           <CardHeader>
-            <CardTitle className="text-lg">Filter Products</CardTitle>
+            <CardTitle className="text-lg font-semibold">Filter Products</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="filter-category">Category</Label>
-                <Select value={filters.category} onValueChange={(value) => setFilters({...filters, category: value})}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="All Categories" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Categories</SelectItem>
-                    {categories.map(cat => (
-                      <SelectItem key={cat.categoryId} value={String(cat.categoryId)}>{cat.categoryName}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label htmlFor="filter-category" className="mb-1 block text-sm font-medium text-gray-700">Category</Label>
+<Select
+  value={filters.categoryId !== null ? String(filters.categoryId) : "all"}
+  onValueChange={(value) =>
+    setFilters({
+      ...filters,
+      categoryId: value === "all" ? null : Number(value),
+    })
+  }
+>
+  <SelectTrigger>
+    <SelectValue placeholder="All Categories" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All Categories</SelectItem>
+    {categories.map((cat) => (
+      <SelectItem key={cat.categoryId} value={String(cat.categoryId)}>
+        {cat.categoryName}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
               </div>
 
               <div>
-                <Label htmlFor="filter-status">Status</Label>
+                <Label htmlFor="filter-status" className="mb-1 block text-sm font-medium text-gray-700">Status</Label>
                 <Select value={filters.status} onValueChange={(value) => setFilters({...filters, status: value})}>
                   <SelectTrigger>
                     <SelectValue placeholder="All Status" />
@@ -110,47 +124,12 @@ export function ProductsAdvancedFilters({
 
               <div className="grid grid-cols-2 gap-2">
                 <div>
-                  <Label htmlFor="price-min">Min Price (₦)</Label>
-                  <Input
-                    id="price-min"
-                    type="number"
-                    placeholder="0"
-                    value={filters.priceMin}
-                    onChange={(e) => setFilters({...filters, priceMin: e.target.value})}
-                  />
+                  <Label htmlFor="price-min" className="mb-1 block text-sm font-medium text-gray-700">Min Price (₦)</Label>
+                  <Input id="price-min" type="number" placeholder="0" value={filters.priceMin} onChange={e => setFilters({...filters, priceMin: e.target.value})} />
                 </div>
                 <div>
-                  <Label htmlFor="price-max">Max Price (₦)</Label>
-                  <Input
-                    id="price-max"
-                    type="number"
-                    placeholder="999999"
-                    value={filters.priceMax}
-                    onChange={(e) => setFilters({...filters, priceMax: e.target.value})}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <Label htmlFor="stock-min">Min Stock</Label>
-                  <Input
-                    id="stock-min"
-                    type="number"
-                    placeholder="0"
-                    value={filters.stockMin}
-                    onChange={(e) => setFilters({...filters, stockMin: e.target.value})}
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="stock-max">Max Stock</Label>
-                  <Input
-                    id="stock-max"
-                    type="number"
-                    placeholder="999"
-                    value={filters.stockMax}
-                    onChange={(e) => setFilters({...filters, stockMax: e.target.value})}
-                  />
+                  <Label htmlFor="price-max" className="mb-1 block text-sm font-medium text-gray-700">Max Price (₦)</Label>
+                  <Input id="price-max" type="number" placeholder="999999" value={filters.priceMax} onChange={e => setFilters({...filters, priceMax: e.target.value})} />
                 </div>
               </div>
             </div>

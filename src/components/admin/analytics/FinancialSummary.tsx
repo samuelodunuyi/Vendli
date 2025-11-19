@@ -1,31 +1,30 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { FinancialData } from "@/types/analytics";
+import { SalesStatistics } from "@/redux/services/stores.services";
 
 interface FinancialSummaryProps {
-  financialData: FinancialData;
+  stats: SalesStatistics;
 }
 
-export function FinancialSummary({ financialData }: FinancialSummaryProps) {
+export function FinancialSummary({ stats }: FinancialSummaryProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
       <Card>
         <CardHeader>
-          <CardTitle>Revenue vs Expenses</CardTitle>
+          <CardTitle>Revenue Summary</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span>Revenue</span>
-              <span className="font-bold text-green-600">₦{financialData.revenue.toLocaleString()}</span>
+              <span>Period Revenue</span>
+              <span className="font-bold text-green-600">₦{(stats.totalSales || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Expenses</span>
-              <span className="font-bold text-red-600">₦{financialData.expenses.toLocaleString()}</span>
+              <span>Average Order</span>
+              <span className="font-bold">₦{Math.round(stats.averageOrderValue || 0).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t">
-              <span className="font-medium">Net Profit</span>
-              <span className="font-bold text-blue-600">₦{financialData.profit.toLocaleString()}</span>
+              <span className="font-medium">Total Orders</span>
+              <span className="font-bold text-blue-600">{stats.totalOrders}</span>
             </div>
           </div>
         </CardContent>
@@ -33,23 +32,21 @@ export function FinancialSummary({ financialData }: FinancialSummaryProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Accounts Summary</CardTitle>
+          <CardTitle>Accounts / Cash</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span>Accounts Receivable</span>
-              <span className="font-bold">₦{financialData.accountsReceivable.toLocaleString()}</span>
+              <span>Pending Remittance</span>
+              <span className="font-bold">₦{((stats.cashRemittanceByStore ?? []).reduce((s, r) => s + (r.amount || 0), 0)).toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Accounts Payable</span>
-              <span className="font-bold">₦{financialData.accountsPayable.toLocaleString()}</span>
+              <span>Top Category</span>
+              <span className="font-bold">{(stats.salesByCategory?.[0]?.categoryName) ?? "—"}</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t">
-              <span className="font-medium">Net Position</span>
-              <span className="font-bold text-green-600">
-                ₦{(financialData.accountsReceivable - financialData.accountsPayable).toLocaleString()}
-              </span>
+              <span className="font-medium">Products</span>
+              <span className="font-bold">{stats.totalProducts}</span>
             </div>
           </div>
         </CardContent>

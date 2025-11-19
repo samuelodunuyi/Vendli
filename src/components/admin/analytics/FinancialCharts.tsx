@@ -1,78 +1,54 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  ChartContainer,
-  ChartTooltip,
-  ChartTooltipContent,
-} from "@/components/ui/chart";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  AreaChart,
-  Area,
-  LineChart,
-  Line,
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ResponsiveContainer,
-} from "recharts";
-import {
-  DailyReceiptsData,
-  CashRemittanceData,
-  TrendData,
-} from "@/types/analytics";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { PieChart, Pie, Cell, AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
+import { SalesStatistics } from "@/redux/services/stores.services";
 
 interface FinancialChartsProps {
-  revenueSourcesData: Array<{
-    name: string;
-    value: number;
-    amount: number;
-    color: string;
-  }>;
-  dailyReceiptsData: DailyReceiptsData[];
-  trendData: TrendData[];
-  cashRemittanceData: CashRemittanceData[];
+  stats: SalesStatistics;
 }
 
-const chartConfig = {
-  sales: { label: "Sales", color: "#3B82F6" },
-  orders: { label: "Orders", color: "#10B981" },
-};
+export function FinancialCharts({ stats }: FinancialChartsProps) {
+  const colors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
 
-export function FinancialCharts({
-  revenueSourcesData,
-  dailyReceiptsData,
-  trendData,
-  cashRemittanceData,
-}: FinancialChartsProps) {
+  const revenueByCategory = (stats.salesByCategory ?? []).map((s) => ({
+    name: s.categoryName,
+    value: s.totalAmount ?? s.totalSales ?? 0,
+    percent: 0,
+  }));
+
+  const receiptsTrend = (stats.salesTrend?.labels ?? []).map((label, idx) => ({
+    name: label,
+    inStore: stats.salesTrend?.values?.[idx] ?? 0,
+  }));
+
+  const remittanceData = (stats.cashRemittanceByStore ?? []).map((c) => ({
+    store: c.storeName,
+    amount: c.amount,
+  }));
+
   return (
     <div className="w-full space-y-6">
-      {/* Revenue & Daily Receipts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Revenue by Sources */}
         <Card className="overflow-hidden shadow-md">
           <CardHeader>
-            <CardTitle>Revenue by Sources</CardTitle>
+            <CardTitle>Revenue by Category</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
             <div className="h-80 w-full">
-              <ChartContainer config={chartConfig} className="h-full w-full">
+              <ChartContainer config={{}} className="h-full w-full">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
-                      data={revenueSourcesData}
+                      data={revenueByCategory}
                       cx="50%"
                       cy="50%"
                       labelLine={false}
-                      label={({ name, value }) => `${name} ${value}%`}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
                       outerRadius={90}
                       dataKey="value"
                     >
-                      {revenueSourcesData.map((entry, index) => (
-                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      {revenueByCategory.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={colors[index % colors.length]} />
                       ))}
                     </Pie>
                     <ChartTooltip content={<ChartTooltipContent />} />
@@ -83,44 +59,20 @@ export function FinancialCharts({
           </CardContent>
         </Card>
 
-        {/* Daily Receipts */}
         <Card className="overflow-hidden shadow-md">
           <CardHeader>
-            <CardTitle>Daily Receipts by Source</CardTitle>
+            <CardTitle>Daily/Period Receipts</CardTitle>
           </CardHeader>
           <CardContent className="p-4">
             <div className="h-80 w-full">
-              <ChartContainer config={chartConfig} className="h-full w-full">
+              <ChartContainer config={{}} className="h-full w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart
-                    data={dailyReceiptsData}
-                    margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                  >
+                  <AreaChart data={receiptsTrend} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                     <CartesianGrid strokeDasharray="3 3" />
-                    <XAxis dataKey="date" />
+                    <XAxis dataKey="name" />
                     <YAxis />
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <Area
-                      type="monotone"
-                      dataKey="inStore"
-                      stackId="1"
-                      stroke="#3B82F6"
-                      fill="#3B82F6"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="online"
-                      stackId="1"
-                      stroke="#10B981"
-                      fill="#10B981"
-                    />
-                    <Area
-                      type="monotone"
-                      dataKey="wholesale"
-                      stackId="1"
-                      stroke="#F59E0B"
-                      fill="#F59E0B"
-                    />
+                    <Area type="monotone" dataKey="inStore" stackId="1" stroke={colors[0]} fill={colors[0]} />
                   </AreaChart>
                 </ResponsiveContainer>
               </ChartContainer>
@@ -129,71 +81,20 @@ export function FinancialCharts({
         </Card>
       </div>
 
-      {/* Financial Trend */}
       <Card className="overflow-hidden shadow-md">
         <CardHeader>
-          <CardTitle>Financial Trend Analysis</CardTitle>
-        </CardHeader>
-        <CardContent className="p-4">
-          <div className="h-96 w-full">
-            <ChartContainer config={chartConfig} className="h-full w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart
-                  data={trendData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Line
-                    type="monotone"
-                    dataKey="revenue"
-                    stroke="#3B82F6"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="profit"
-                    stroke="#10B981"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                  <Line
-                    type="monotone"
-                    dataKey="expenses"
-                    stroke="#EF4444"
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </ChartContainer>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Cash Remittance */}
-      <Card className="overflow-hidden shadow-md">
-        <CardHeader>
-          <CardTitle>Cash Remittance Status by Store</CardTitle>
+          <CardTitle>Cash Remittance by Store</CardTitle>
         </CardHeader>
         <CardContent className="p-4">
           <div className="h-80 w-full">
-            <ChartContainer config={chartConfig} className="h-full w-full">
+            <ChartContainer config={{}} className="h-full w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={cashRemittanceData}
-                  margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                >
+                <BarChart data={remittanceData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
                   <XAxis dataKey="store" />
                   <YAxis />
                   <ChartTooltip content={<ChartTooltipContent />} />
-                  <Bar dataKey="completed" fill="#10B981" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="pending" fill="#F59E0B" radius={[4, 4, 0, 0]} />
-                  <Bar dataKey="failed" fill="#EF4444" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="amount" fill={colors[1]} radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </ChartContainer>

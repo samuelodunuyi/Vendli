@@ -1,12 +1,12 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Package, DollarSign } from "lucide-react";
-import { InventoryStats } from "@/types/analytics";
+import { SalesStatistics } from "@/redux/services/stores.services";
 
 interface InventoryMetricsProps {
-  inventoryStats: InventoryStats;
+  stats: SalesStatistics;
 }
 
-export function InventoryMetrics({ inventoryStats }: InventoryMetricsProps) {
+export function InventoryMetrics({ stats }: InventoryMetricsProps) {
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
       <Card className="w-full">
@@ -17,7 +17,7 @@ export function InventoryMetrics({ inventoryStats }: InventoryMetricsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-xl md:text-2xl font-bold truncate">{inventoryStats.totalProducts}</div>
+          <div className="text-xl md:text-2xl font-bold truncate">{stats.totalProducts}</div>
           <div className="text-sm text-gray-500 mt-1 truncate">In catalog</div>
         </CardContent>
       </Card>
@@ -31,7 +31,7 @@ export function InventoryMetrics({ inventoryStats }: InventoryMetricsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-xl md:text-2xl font-bold text-orange-600 truncate">
-            {inventoryStats.lowStockItems}
+            {stats.lowStockProducts}
           </div>
           <div className="text-sm text-gray-500 mt-1 truncate">Items need reorder</div>
         </CardContent>
@@ -45,7 +45,7 @@ export function InventoryMetrics({ inventoryStats }: InventoryMetricsProps) {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-xl md:text-2xl font-bold text-red-600 truncate">{inventoryStats.outOfStock}</div>
+          <div className="text-xl md:text-2xl font-bold text-red-600 truncate">{stats.outOfStockProducts}</div>
           <div className="text-sm text-gray-500 mt-1 truncate">Items unavailable</div>
         </CardContent>
       </Card>
@@ -59,7 +59,7 @@ export function InventoryMetrics({ inventoryStats }: InventoryMetricsProps) {
         </CardHeader>
         <CardContent>
           <div className="text-xl md:text-2xl font-bold truncate">
-            ₦{inventoryStats.totalValue.toLocaleString()}
+            ₦{(stats.inventoryValue || 0).toLocaleString()}
           </div>
           <div className="text-sm text-gray-500 mt-1 truncate">Total stock value</div>
         </CardContent>

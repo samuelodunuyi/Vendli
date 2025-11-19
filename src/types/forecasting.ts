@@ -9,7 +9,7 @@ export interface SalesForecast {
 export interface RestockRecommendation {
   productId: string;
   productName: string;
-  currentStock: number;
+  basestock: number;
   predictedDemand: number;
   recommendedOrder: number;
   urgency: 'low' | 'medium' | 'high' | 'critical';

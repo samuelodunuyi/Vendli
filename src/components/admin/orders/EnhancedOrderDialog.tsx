@@ -3,8 +3,6 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { LoyaltyProgramCard } from "./LoyaltyProgramCard";
-import { PersonalizedPromotions } from "./PersonalizedPromotions";
 import { DigitalReceiptManager } from "./DigitalReceiptManager";
 import { EnhancedOrderDetails } from "./EnhancedOrderDetails";
 import { toast } from "@/components/ui/sonner";
@@ -53,13 +51,6 @@ const mockLoyaltyData = {
   ]
 };
 
-// Mock purchase history for personalized promotions
-const mockPurchaseHistory = [
-  { category: "electronics", amount: 450000, date: "2023-12-01" },
-  { category: "electronics", amount: 280000, date: "2023-11-15" },
-  { category: "fashion", amount: 125000, date: "2023-11-01" }
-];
-
 export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrderDialogProps) {
   const [activeTab, setActiveTab] = useState("details");
 
@@ -86,35 +77,18 @@ export function EnhancedOrderDialog({ open, onOpenChange, order }: EnhancedOrder
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Enhanced Order Management - {order.id}</DialogTitle>
+          <DialogTitle>Enhanced Order Management - ORD-{order.id}</DialogTitle>
         </DialogHeader>
         
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="details">Order Details</TabsTrigger>
-            <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
-            <TabsTrigger value="promotions">Promotions</TabsTrigger>
             <TabsTrigger value="receipt">Digital Receipt</TabsTrigger>
+            <TabsTrigger value="engagement">Engagement</TabsTrigger>
           </TabsList>
 
           <TabsContent value="details" className="mt-4">
             <EnhancedOrderDetails order={order} />
-          </TabsContent>
-
-          <TabsContent value="loyalty" className="mt-4">
-            <LoyaltyProgramCard 
-              loyalty={mockLoyaltyData}
-              onApplyReward={handleApplyReward}
-            />
-          </TabsContent>
-
-          <TabsContent value="promotions" className="mt-4">
-            <PersonalizedPromotions
-              customerId={order.customer.id}
-              customerName={order.customer.firstName + " " + order.customer.lastName}
-              purchaseHistory={mockPurchaseHistory}
-              onApplyPromotion={handleApplyPromotion}
-            />
           </TabsContent>
 
           <TabsContent value="receipt" className="mt-4">

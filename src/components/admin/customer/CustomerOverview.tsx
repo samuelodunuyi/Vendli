@@ -31,15 +31,15 @@ export function CustomerOverview({ timeline, storeId, startDate, endDate }: Cust
   if (isLoading) return <p>Loading customer overview...</p>;
   if (isError || !data) return <p>Error loading customer overview</p>;
 
-  const { demographics, activityMetrics, financialMetrics, topCustomersByLifetimeValue } = data;
-
+  const { demographics, activityMetrics, financialMetrics, topCustomersByLifetimeValue, complaints} = data;
+  console.log(data)
   // Metrics
   const totalCustomers = demographics?.totalCustomers ?? 0;
   const newCustomersThisMonth = activityMetrics?.newCustomersInPeriod ?? 0;
   const activeCustomers = activityMetrics?.activeCustomers ?? 0;
   const customerRetentionRate = activityMetrics?.customerRetentionRate ?? 0;
   const averageLifetimeValue = financialMetrics?.revenuePerCustomer ?? 0;
-
+  const openComplaints = complaints.openComplaints ?? 0
   // Classification counts
   const classificationCounts = demographics?.byClassification ?? [];
   const recentCustomers = topCustomersByLifetimeValue ?? [];
@@ -88,7 +88,7 @@ export function CustomerOverview({ timeline, storeId, startDate, endDate }: Cust
             <AlertCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{/* Add complaints metrics if available */}</div>
+            <div className="text-2xl font-bold">{openComplaints.toLocaleString()}</div>
           </CardContent>
         </Card>
       </div>
@@ -120,7 +120,7 @@ export function CustomerOverview({ timeline, storeId, startDate, endDate }: Cust
         <CardContent>
           <div className="space-y-4">
             {recentCustomers.map((customer) => (
-              <div key={customer.customerId} className="flex items-center justify-between p-4 border rounded-lg">
+              <div key={customer.customerUserId} className="flex items-center justify-between p-4 border rounded-lg">
                 <div className="flex items-center gap-4">
                   <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                     <Users className="h-5 w-5 text-blue-600" />

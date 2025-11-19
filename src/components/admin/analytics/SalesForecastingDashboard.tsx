@@ -24,7 +24,7 @@ const mockRestockData: RestockRecommendation[] = [
   {
     productId: "1",
     productName: "Samsung Galaxy S23",
-    currentStock: 12,
+    basestock: 12,
     predictedDemand: 45,
     recommendedOrder: 50,
     urgency: 'critical',
@@ -33,7 +33,7 @@ const mockRestockData: RestockRecommendation[] = [
   {
     productId: "2", 
     productName: "iPhone 15 Pro",
-    currentStock: 8,
+    basestock: 8,
     predictedDemand: 32,
     recommendedOrder: 40,
     urgency: 'high',
@@ -42,7 +42,7 @@ const mockRestockData: RestockRecommendation[] = [
   {
     productId: "3",
     productName: "Dell XPS 15",
-    currentStock: 25,
+    basestock: 25,
     predictedDemand: 18,
     recommendedOrder: 15,
     urgency: 'medium',
@@ -51,7 +51,7 @@ const mockRestockData: RestockRecommendation[] = [
   {
     productId: "4",
     productName: "Nike Air Max",
-    currentStock: 45,
+    basestock: 45,
     predictedDemand: 28,
     recommendedOrder: 20,
     urgency: 'low',
@@ -192,7 +192,7 @@ export function SalesForecastingDashboard({ storeFilter }: SalesForecastingDashb
                         <div>
                           <h4 className="font-medium">{item.productName}</h4>
                           <p className="text-sm text-gray-600">
-                            Current: {item.currentStock} | Predicted Demand: {item.predictedDemand}
+                            Current: {item.basestock} | Predicted Demand: {item.predictedDemand}
                           </p>
                           <p className="text-xs text-gray-500">
                             Est. stockout: {item.estimatedStockoutDate}

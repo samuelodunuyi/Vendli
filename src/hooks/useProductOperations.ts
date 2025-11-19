@@ -2,7 +2,6 @@ import { useState } from "react";
 import { toast } from "@/components/ui/sonner";
 import { Product } from "@/redux/services/products.services";
 
-// Form type for new product
 export interface NewProductForm {
   productName: string;
   description: string;
@@ -11,7 +10,7 @@ export interface NewProductForm {
   categoryId: number | null;
   basePrice: number;
   costPrice: number;
-  currentStock: number;
+  basestock: number;
   minimumStockLevel: number;
   maximumStockLevel: number;
   unitOfMeasure: string;
@@ -20,13 +19,18 @@ export interface NewProductForm {
 
 export function useProductOperations(initialProducts: Product[]) {
   const [productList, setProductList] = useState(initialProducts);
+
+  // Dialog states
   const [isAddProductOpen, setIsAddProductOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [restockingProduct, setRestockingProduct] = useState<Product | null>(null);
+  const [stockByStoreProduct, setStockByStoreProduct] = useState<Product | null>(null);
+  const [adjustStockProduct, setAdjustStockProduct] = useState<Product | null>(null);
+  const [transactionHistoryProduct, setTransactionHistoryProduct] = useState<Product | null>(null);
+  const [recentOrdersProduct, setRecentOrdersProduct] = useState<Product | null>(null);
 
-  // Mock data for products with transaction history
   const productsWithTransactions = ["1", "2", "4"];
 
-  // Form state for new product
   const [newProduct, setNewProduct] = useState<Product>({
     productName: "",
     description: "",
@@ -40,7 +44,7 @@ export function useProductOperations(initialProducts: Product[]) {
     unitOfMeasure: "pcs",
     isActive: true,
     additionalImages: [],
-    currentStock: null,
+    basestock: null,
     imageUrl: "",
     productId: null,
     showInPOS: true,
@@ -48,13 +52,16 @@ export function useProductOperations(initialProducts: Product[]) {
     storeId: null
   });
 
+  // Generate random SKU/barcode
   const generateBarcode = () => {
     setNewProduct(prev => ({
       ...prev,
-      barcode: Math.random().toString(36).substring(2, 10).toUpperCase()
+      barcode: Math.random().toString(36).substring(2, 10).toUpperCase(),
+      sku: Math.random().toString(36).substring(2, 10).toUpperCase()
     }));
   };
 
+  // Add product
   const handleAddProduct = () => {
     if (!newProduct.productName || !newProduct.basePrice || !newProduct.categoryId) {
       toast.error("Please fill in all required fields");
@@ -62,16 +69,16 @@ export function useProductOperations(initialProducts: Product[]) {
     }
 
     const product: Product = {
-      productId: Date.now(), // placeholder ID
+      productId: Date.now(),
       productName: newProduct.productName,
       description: newProduct.description,
       sku: newProduct.sku,
       barcode: newProduct.barcode || newProduct.sku,
       categoryId: newProduct.categoryId,
-      storeId: 1, // default store
+      storeId: 1,
       basePrice: Number(newProduct.basePrice),
       costPrice: newProduct.costPrice ? Number(newProduct.costPrice) : Number(newProduct.basePrice),
-      currentStock: 0,
+      basestock: 0,
       minimumStockLevel: Number(newProduct.minimumStockLevel),
       maximumStockLevel: Number(newProduct.maximumStockLevel),
       unitOfMeasure: newProduct.unitOfMeasure,
@@ -83,52 +90,51 @@ export function useProductOperations(initialProducts: Product[]) {
     };
 
     setProductList([...productList, product]);
-
-    // Reset form
     setNewProduct({
-    productName: "",
-    description: "",
-    sku: "",
-    barcode: "",
-    categoryId: null,
-    basePrice: null,
-    costPrice: null,
-    minimumStockLevel: null,
-    maximumStockLevel: null,
-    unitOfMeasure: "pcs",
-    isActive: true,
-    additionalImages: [],
-    currentStock: null,
-    imageUrl: "",
-    productId: null,
-    showInPOS: true,
-    showInWeb: true,
-    storeId: null
+      productName: "",
+      description: "",
+      sku: "",
+      barcode: "",
+      categoryId: null,
+      basePrice: null,
+      costPrice: null,
+      minimumStockLevel: null,
+      maximumStockLevel: null,
+      unitOfMeasure: "pcs",
+      isActive: true,
+      additionalImages: [],
+      basestock: null,
+      imageUrl: "",
+      productId: null,
+      showInPOS: true,
+      showInWeb: true,
+      storeId: null
     });
-
     setIsAddProductOpen(false);
     toast.success("Product added successfully");
   };
 
+  // Edit product
   const handleEditProduct = (product: Product) => setEditingProduct(product);
 
   const handleUpdateProduct = () => {
     if (!editingProduct) return;
-
-    setProductList(productList?.map(p => p.productId === editingProduct.productId ? editingProduct : p));
+    setProductList(productList.map(p => p.productId === editingProduct.productId ? editingProduct : p));
     setEditingProduct(null);
     toast.success("Product updated successfully");
   };
 
+  // Delete product
   const handleDeleteProduct = (productId: number) => {
     if (productsWithTransactions.includes(String(productId))) {
       toast.error("Cannot delete product with inventory transaction records");
       return;
     }
-    setProductList(productList?.filter(p => p.productId !== productId));
+    setProductList(productList.filter(p => p.productId !== productId));
     toast.success("Product deleted successfully");
   };
 
+  // Export CSV
   const handleExportData = (filteredProducts: Product[]) => {
     const csvContent = [
       ["Product Name", "Category ID", "Price", "Stock", "Status", "Barcode"],
@@ -136,7 +142,7 @@ export function useProductOperations(initialProducts: Product[]) {
         p.productName,
         p.categoryId,
         p.basePrice.toString(),
-        p.currentStock.toString(),
+        p.basestock.toString(),
         p.isActive ? "Active" : "Inactive",
         p.barcode || ""
       ])
@@ -152,20 +158,20 @@ export function useProductOperations(initialProducts: Product[]) {
     toast.success("Product data exported successfully");
   };
 
-  const handleViewStockByStore = (product: Product) => {
-    toast.info(`Viewing stock availability for ${product.productName} across all stores`);
-  };
+  // Dialog handlers
+  const handleViewStockByStore = (product: Product) => setStockByStoreProduct(product);
+  const handleAdjustStock = (product: Product) => setAdjustStockProduct(product);
+  const handleViewTransactionHistory = (product: Product) => setTransactionHistoryProduct(product);
+  const handleViewRecentOrders = (product: Product) => setRecentOrdersProduct(product);
+  const handleOpenRestock = (product: Product) => setRestockingProduct(product);
 
-  const handleAdjustStock = (product: Product) => {
-    toast.info(`Opening stock adjustment for ${product.productName}`);
-  };
-
-  const handleViewTransactionHistory = (product: Product) => {
-    toast.info(`Viewing transaction history for ${product.productName}`);
-  };
-
-  const handleViewRecentOrders = (product: Product) => {
-    toast.info(`Viewing recent orders for ${product.productName}`);
+  const handleRestockProduct = (productId: number, quantity: number) => {
+    setProductList(productList.map(p => {
+      if (p.productId === productId) return { ...p, basestock: (p.basestock || 0) + quantity };
+      return p;
+    }));
+    setRestockingProduct(null);
+    toast.success("Product restocked successfully");
   };
 
   return {
@@ -174,6 +180,16 @@ export function useProductOperations(initialProducts: Product[]) {
     setIsAddProductOpen,
     editingProduct,
     setEditingProduct,
+    restockingProduct,
+    setRestockingProduct,
+    stockByStoreProduct,
+    setStockByStoreProduct,
+    adjustStockProduct,
+    setAdjustStockProduct,
+    transactionHistoryProduct,
+    setTransactionHistoryProduct,
+    recentOrdersProduct,
+    setRecentOrdersProduct,
     newProduct,
     setNewProduct,
     productsWithTransactions,
@@ -185,7 +201,9 @@ export function useProductOperations(initialProducts: Product[]) {
     handleExportData,
     handleViewStockByStore,
     handleAdjustStock,
+    handleRestockProduct,
     handleViewTransactionHistory,
-    handleViewRecentOrders
+    handleViewRecentOrders,
+    handleOpenRestock
   };
 }

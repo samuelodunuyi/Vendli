@@ -1,29 +1,18 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { DollarSign, PiggyBank, Wallet, CreditCard, Receipt, Banknote } from "lucide-react";
-import { FinancialData } from "@/types/analytics";
+import { SalesStatistics } from "@/redux/services/stores.services";
 
 interface FinancialMetricsProps {
-  financialData: FinancialData;
-  dailyReceiptsData: Array<{
-    date: string;
-    inStore: number;
-    online: number;
-    wholesale: number;
-  }>;
-  cashRemittanceData: Array<{
-    store: string;
-    pending: number;
-    completed: number;
-    failed: number;
-  }>;
+  stats: SalesStatistics;
 }
 
-export function FinancialMetrics({ financialData, dailyReceiptsData, cashRemittanceData }: FinancialMetricsProps) {
-  const profitMargin = ((financialData.profit / financialData.revenue) * 100);
-  const todaysReceipts = dailyReceiptsData[6];
-  const totalDailyReceipts = todaysReceipts.inStore + todaysReceipts.online + todaysReceipts.wholesale;
-  const totalPendingRemittance = cashRemittanceData.reduce((sum, store) => sum + store.pending, 0);
+export function FinancialMetrics({ stats }: FinancialMetricsProps) {
+  // latest receipts (use last salesTrend value as proxy)
+  const latestReceipts = stats.salesTrend?.values?.slice(-1)[0] ?? 0;
+  const totalPendingRemit = (stats.cashRemittanceByStore ?? []).reduce((s, r) => s + (r.amount || 0), 0);
+
+  const profitMargin = stats.totalSales ? ((stats.totalSales - (stats.totalSales * 0.3)) / stats.totalSales) * 100 : 0; 
+  // NOTE: we don't have explicit expenses/profit in SalesStatistics; this is a fragile proxy — kept minimal
 
   return (
     <>
@@ -31,82 +20,50 @@ export function FinancialMetrics({ financialData, dailyReceiptsData, cashRemitta
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <DollarSign className="h-4 w-4" />
-              Total Revenue
+              <DollarSign className="h-4 w-4" /> Total Revenue
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₦{financialData.revenue.toLocaleString()}</div>
-            <div className="text-sm text-green-600 mt-1">This month</div>
+            <div className="text-2xl font-bold">₦{(stats.totalSales || 0).toLocaleString()}</div>
+            <div className="text-sm text-green-600 mt-1">Period total</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <PiggyBank className="h-4 w-4" />
-              Net Profit
+              <PiggyBank className="h-4 w-4" /> Avg. Order Value
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₦{financialData.profit.toLocaleString()}</div>
-            <div className="text-sm text-gray-500 mt-1">{profitMargin.toFixed(1)}% margin</div>
+            <div className="text-2xl font-bold">₦{Math.round(stats.averageOrderValue || 0).toLocaleString()}</div>
+            <div className="text-sm text-gray-500 mt-1">{profitMargin.toFixed(1)}% proxy margin</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Wallet className="h-4 w-4" />
-              Cash Flow
+              <Receipt className="h-4 w-4" /> Latest Receipts
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">₦{financialData.cashFlow.toLocaleString()}</div>
-            <div className="text-sm text-green-600 mt-1">Positive</div>
+            <div className="text-2xl font-bold">₦{(latestReceipts || 0).toLocaleString()}</div>
+            <div className="text-sm text-green-600 mt-1">Latest period</div>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <CreditCard className="h-4 w-4" />
-              Bank Balance
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₦{financialData.bankBalance.toLocaleString()}</div>
-            <div className="text-sm text-gray-500 mt-1">Available funds</div>
-          </CardContent>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Receipt className="h-4 w-4" />
-              Daily Receipts
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₦{totalDailyReceipts.toLocaleString()}</div>
-            <div className="text-sm text-green-600 mt-1">Today's total</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center gap-2">
-              <Banknote className="h-4 w-4" />
-              Pending Remittance
+              <Banknote className="h-4 w-4" /> Pending Remittance
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-orange-600">
-              ₦{totalPendingRemittance.toLocaleString()}
+              ₦{(totalPendingRemit || 0).toLocaleString()}
             </div>
-            <div className="text-sm text-gray-500 mt-1">Across all stores</div>
+            <div className="text-sm text-gray-500 mt-1">Across stores</div>
           </CardContent>
         </Card>
       </div>

@@ -12,6 +12,7 @@ interface CustomerFiltersProps {
   onClassificationChange: (value: string) => void;
   storeFilter: string;
   onStoreChange: (value: string) => void;
+  storeData: { storeId: number; storeName: string }[]; // <-- add this
   onAddCustomer: () => void;
   onExport: () => void;
 }
@@ -23,6 +24,7 @@ export function CustomerFilters({
   onClassificationChange,
   storeFilter,
   onStoreChange,
+  storeData,
   onAddCustomer,
   onExport
 }: CustomerFiltersProps) {
@@ -53,18 +55,20 @@ export function CustomerFilters({
               <SelectItem value="walk-in">Walk-in</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={storeFilter} onValueChange={onStoreChange}>
-            <SelectTrigger className="w-full sm:w-48">
-              <SelectValue placeholder="Store" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Stores</SelectItem>
-              <SelectItem value="Victoria Island Store">Victoria Island Store</SelectItem>
-              <SelectItem value="Ikeja Store">Ikeja Store</SelectItem>
-              <SelectItem value="Lekki Store">Lekki Store</SelectItem>
-              <SelectItem value="Ajah Store">Ajah Store</SelectItem>
-            </SelectContent>
-          </Select>
+<Select value={storeFilter} onValueChange={onStoreChange}>
+  <SelectTrigger className="w-full sm:w-48">
+    <SelectValue placeholder="Store" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">All Stores</SelectItem>
+    {storeData?.map((store) => (
+      <SelectItem key={store.storeId} value={store.storeId.toString()}>
+        {store.storeName}
+      </SelectItem>
+    ))}
+  </SelectContent>
+</Select>
+
           <div className="flex gap-2">
             <Button onClick={onAddCustomer}>
               Add Customer

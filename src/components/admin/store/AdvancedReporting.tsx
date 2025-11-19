@@ -29,11 +29,11 @@ const regionalTrends = [
 ];
 
 const predictiveData = [
-  { product: "Samsung Galaxy S24", currentStock: 45, predictedDemand: 67, recommendedReorder: 85 },
-  { product: "iPhone 15 Pro", currentStock: 32, predictedDemand: 89, recommendedReorder: 120 },
-  { product: "Nike Air Max", currentStock: 78, predictedDemand: 45, recommendedReorder: 30 },
-  { product: "Dell XPS 15", currentStock: 12, predictedDemand: 28, recommendedReorder: 40 },
-  { product: "Sony WH-1000XM5", currentStock: 56, predictedDemand: 72, recommendedReorder: 90 }
+  { product: "Samsung Galaxy S24", basestock: 45, predictedDemand: 67, recommendedReorder: 85 },
+  { product: "iPhone 15 Pro", basestock: 32, predictedDemand: 89, recommendedReorder: 120 },
+  { product: "Nike Air Max", basestock: 78, predictedDemand: 45, recommendedReorder: 30 },
+  { product: "Dell XPS 15", basestock: 12, predictedDemand: 28, recommendedReorder: 40 },
+  { product: "Sony WH-1000XM5", basestock: 56, predictedDemand: 72, recommendedReorder: 90 }
 ];
 
 const categoryColors = ["#3B82F6", "#10B981", "#F59E0B", "#EF4444", "#8B5CF6"];
@@ -177,15 +177,15 @@ export function AdvancedReporting({ stores }: AdvancedReportingProps) {
                       <div className="flex-1">
                         <div className="font-medium">{item.product}</div>
                         <div className="text-sm text-gray-600">
-                          Current: {item.currentStock} | Predicted Demand: {item.predictedDemand}
+                          Current: {item.basestock} | Predicted Demand: {item.predictedDemand}
                         </div>
                       </div>
                       <div className="text-right">
                         <div className="font-bold text-orange-600">
                           Reorder: {item.recommendedReorder} units
                         </div>
-                        <Badge variant={item.currentStock < item.predictedDemand ? 'destructive' : 'default'}>
-                          {item.currentStock < item.predictedDemand ? 'Low Stock Risk' : 'Adequate Stock'}
+                        <Badge variant={item.basestock < item.predictedDemand ? 'destructive' : 'default'}>
+                          {item.basestock < item.predictedDemand ? 'Low Stock Risk' : 'Adequate Stock'}
                         </Badge>
                       </div>
                     </div>

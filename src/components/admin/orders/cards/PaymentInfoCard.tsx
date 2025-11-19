@@ -8,6 +8,11 @@ interface PaymentInfoCardProps {
   order: Order;
 }
 
+enum PaymentOption {
+  "CASH" = 0,
+  "CARD" = 1,
+  "BANK TRANSFER" = 2,
+}
 export function PaymentInfoCard({ order }: PaymentInfoCardProps) {
   const getPaymentStatusColor = (status: number) => {
     switch (status) {
@@ -61,7 +66,7 @@ export function PaymentInfoCard({ order }: PaymentInfoCardProps) {
       <CardContent className="space-y-3">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium">Payment Method</span>
-          <span className="text-sm">{order.paymentOption}</span>
+          <span className="text-sm">{PaymentOption[order.paymentOption]}</span>
         </div>
 
         <div className="flex justify-between items-center">
@@ -102,9 +107,10 @@ export function PaymentInfoCard({ order }: PaymentInfoCardProps) {
         )}
 
         <div className="text-xs text-gray-500 pt-2">
-          Transaction processed via {order.paymentOption}
+          Transaction processed via: {PaymentOption[order.paymentOption]}
         </div>
       </CardContent>
     </Card>
   );
 }
+ 

@@ -36,7 +36,7 @@ export function ProductsSummaryCards({ productList, lowStockProducts, categories
         </CardHeader>
         <CardContent>
           <div className="text-2xl font-bold">
-            ₦{productList?.reduce((sum, p) => sum + (p.basePrice * p.currentStock), 0).toLocaleString()}
+            ₦{productList?.reduce((sum, p) => sum + (p.basePrice * p.basestock), 0).toLocaleString()}
           </div>
         </CardContent>
       </Card>

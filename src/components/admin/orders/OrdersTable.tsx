@@ -91,10 +91,10 @@ export function OrdersTable({
                   <td className="p-3 whitespace-nowrap">{order.id}</td>
                   <td className="p-3 whitespace-nowrap">
                     <div>
-                      {order.customer.firstName} {order.customer.lastName}
-                      <div className="text-sm text-gray-500">{order.customer.phoneNumber}</div>
-                      {order.customer.email && (
-                        <div className="text-xs text-blue-600">{order.customer.email}</div>
+                      {order?.customer?.firstName} {order?.customer?.lastName}
+                      <div className="text-sm text-gray-500">{order?.customer?.phoneNumber}</div>
+                      {order?.customer?.email && (
+                        <div className="text-xs text-blue-600">{order?.customer?.email}</div>
                       )}
                     </div>
                   </td>

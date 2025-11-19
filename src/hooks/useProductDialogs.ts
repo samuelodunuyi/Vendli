@@ -1,4 +1,3 @@
-
 import { Product } from "@/redux/services/products.services";
 import { useState } from "react";
 
@@ -7,6 +6,7 @@ export function useProductDialogs() {
   const [adjustStockProduct, setAdjustStockProduct] = useState<Product | null>(null);
   const [transactionHistoryProduct, setTransactionHistoryProduct] = useState<Product | null>(null);
   const [recentOrdersProduct, setRecentOrdersProduct] = useState<Product | null>(null);
+  const [restockProduct, setRestockProduct] = useState<Product | null>(null);
 
   return {
     stockByStoreProduct,
@@ -16,6 +16,8 @@ export function useProductDialogs() {
     transactionHistoryProduct,
     setTransactionHistoryProduct,
     recentOrdersProduct,
-    setRecentOrdersProduct
+    setRecentOrdersProduct,
+    restockProduct,
+    setRestockProduct
   };
 }

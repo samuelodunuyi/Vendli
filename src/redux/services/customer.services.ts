@@ -86,6 +86,7 @@ export interface Customer {
   preferredStore?: string | null;
   industryClass?: string | null;
   customerStatus: number;
+  notes: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -109,7 +110,7 @@ export interface CustomerAnalyticsParams {
 
 export interface CustomerAnalyticsResponse {
   period: { startDate: string; endDate: string };
-  storeFilter: number;
+  storeFilter: number | null; 
   demographics: {
     totalCustomers: number;
     byLoyaltyTier: { loyaltyTier: string; count: number }[];
@@ -144,15 +145,21 @@ export interface CustomerAnalyticsResponse {
   customerAcquisitionTrend: { date: string; newCustomers: number }[];
   ordersByLoyaltyTier: { loyaltyTier: string; orderCount: number }[];
   paymentMethodPreferences: { paymentMethod: string; count: number }[];
+  complaints: {
+    openComplaints: number;
+    inProgressComplaints: number;
+    resolvedComplaints: number;
+  };
+
   topCustomersByLifetimeValue: {
-    customerId: number;
+    customerUserId: number;
     customerName: string;
     email: string;
-    customerClassification: number;
+    customerClassification?: number; 
     totalSpent: number;
     loyaltyPoints: number;
     loyaltyTier: string;
-    lastTransactionDate: string;
+    lastTransactionDate: string | null; 
     customerSince: string;
   }[];
 }

@@ -1,13 +1,12 @@
-
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { SalesData } from "@/types/analytics";
+import { SalesStatistics, TopSellingProduct, RecentOrder } from "@/redux/services/stores.services";
 
 interface SalesDetailsProps {
-  salesData: SalesData;
+  stats: SalesStatistics;
 }
 
-export function SalesDetails({ salesData }: SalesDetailsProps) {
+export function SalesDetails({ stats }: SalesDetailsProps) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <Card>
@@ -16,19 +15,19 @@ export function SalesDetails({ salesData }: SalesDetailsProps) {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {salesData.topProducts.map((product, index) => (
-              <div key={product.name} className="flex items-center justify-between">
+            {(stats.topSellingProducts ?? []).map((product: TopSellingProduct, index: number) => (
+              <div key={product.productId} className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
                     <span className="text-blue-600 font-bold text-sm">{index + 1}</span>
                   </div>
                   <div>
-                    <div className="font-medium">{product.name}</div>
-                    <div className="text-sm text-gray-500">{product.sales} units sold</div>
+                    <div className="font-medium">{product.productName}</div>
+                    <div className="text-sm text-gray-500">{product.totalQuantity} units sold</div>
                   </div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold">₦{product.revenue.toLocaleString()}</div>
+                  <div className="font-bold">₦{(product.totalAmount || 0).toLocaleString()}</div>
                 </div>
               </div>
             ))}
@@ -38,20 +37,20 @@ export function SalesDetails({ salesData }: SalesDetailsProps) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Recent Transactions</CardTitle>
+          <CardTitle>Recent Orders</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {salesData.recentTransactions.map((transaction) => (
-              <div key={transaction.id} className="flex items-center justify-between">
+            {(stats.recentOrders ?? []).map((order: RecentOrder) => (
+              <div key={order.orderId} className="flex items-center justify-between">
                 <div>
-                  <div className="font-medium">{transaction.id}</div>
-                  <div className="text-sm text-gray-500">{transaction.time} • {transaction.items} item(s)</div>
+                  <div className="font-medium">{order.orderId}</div>
+                  <div className="text-sm text-gray-500">{new Date(order.orderDate).toLocaleString()} • {order.storeName}</div>
                 </div>
                 <div className="text-right">
-                  <div className="font-bold">₦{transaction.amount.toLocaleString()}</div>
-                  <Badge variant={transaction.method === 'Card' ? 'default' : 'secondary'}>
-                    {transaction.method}
+                  <div className="font-bold">₦{order.totalAmount.toLocaleString()}</div>
+                  <Badge variant={order.status?.toLowerCase() === "completed" ? "default" : "secondary"}>
+                    {order.status}
                   </Badge>
                 </div>
               </div>

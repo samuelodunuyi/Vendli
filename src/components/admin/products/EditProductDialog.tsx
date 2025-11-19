@@ -24,7 +24,7 @@ interface EditProductDialogProps {
   setEditingProduct: (product: Product | null) => void;
   categories: Category[];
   onUpdateProduct: () => void;
-  isUpdating: boolean
+  isUpdating: boolean;
 }
 
 export function EditProductDialog({
@@ -32,7 +32,7 @@ export function EditProductDialog({
   setEditingProduct,
   categories,
   onUpdateProduct,
-  isUpdating
+  isUpdating,
 }: EditProductDialogProps) {
   if (!editingProduct) return null;
 
@@ -148,23 +148,6 @@ export function EditProductDialog({
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <Label htmlFor="edit-stock" className="text-sm font-medium">
-                    Quantity in Stock
-                  </Label>
-                  <Input
-                    id="edit-stock"
-                    type="number"
-                    value={editingProduct.currentStock}
-                    onChange={(e) =>
-                      setEditingProduct({
-                        ...editingProduct,
-                        currentStock: parseInt(e.target.value),
-                      })
-                    }
-                    className="mt-1"
-                  />
-                </div>
-                <div>
                   <Label
                     htmlFor="edit-low-stock"
                     className="text-sm font-medium"
@@ -184,9 +167,7 @@ export function EditProductDialog({
                     className="mt-1"
                   />
                 </div>
-              </div>
 
-              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="edit-sku" className="text-sm font-medium">
                     SKU
@@ -203,6 +184,40 @@ export function EditProductDialog({
                     className="mt-1"
                   />
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                {/* Unit of Measurement */}
+                <div>
+                  <Label className="text-sm font-medium">
+                    Unit of Measurement (UoM)
+                  </Label>
+                  <Select
+                    value={editingProduct.unitOfMeasure || ""}
+                    onValueChange={(value) =>
+                      setEditingProduct({
+                        ...editingProduct,
+                        unitOfMeasure: value,
+                      })
+                    }
+                  >
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Select Unit" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="pcs">Pieces (pcs)</SelectItem>
+                      <SelectItem value="kg">Kilogram (kg)</SelectItem>
+                      <SelectItem value="g">Gram (g)</SelectItem>
+                      <SelectItem value="litre">Litre (L)</SelectItem>
+                      <SelectItem value="ml">Millilitre (ml)</SelectItem>
+                      <SelectItem value="pack">Pack</SelectItem>
+                      <SelectItem value="box">Box</SelectItem>
+                      <SelectItem value="dozen">Dozen</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Barcode */}
                 <div>
                   <Label className="text-sm font-medium">Barcode</Label>
                   <div className="flex gap-2 mt-1">
@@ -345,7 +360,7 @@ export function EditProductDialog({
                     Quantity Stocked
                   </span>
                   <span className="font-semibold text-gray-900">
-                    {editingProduct.currentStock + 45}
+                    {editingProduct.basestock + 45}
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -357,7 +372,7 @@ export function EditProductDialog({
                     Quantity Remaining
                   </span>
                   <span className="font-semibold text-orange-600">
-                    {editingProduct.currentStock}
+                    {editingProduct.basestock}
                   </span>
                 </div>
               </div>

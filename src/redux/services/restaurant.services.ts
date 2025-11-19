@@ -23,7 +23,7 @@ export interface RestaurantProduct {
   categoryId: number;
   storeId: number;
   basePrice: number;
-  currentStock: number;
+  basestock: number;
   unitOfMeasure: string;
   imageUrl: string;
   showInWeb: boolean;
@@ -47,7 +47,7 @@ export interface RestaurantProductRequest {
   categoryId: number;
   storeId: number;
   basePrice: number;
-  currentStock: number;
+  basestock: number;
   unitOfMeasure: string;
   imageUrl: string;
   showInWeb: boolean;

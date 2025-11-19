@@ -1,10 +1,12 @@
-import { useState } from "react";
-import { Shield, Users } from "lucide-react";
+import { useState, useMemo } from "react";
+import { Users } from "lucide-react";
 import {
   useGetUsersQuery,
   User,
   useCreateUserMutation,
+  useUpdateUserMutation,
   CreateUserRequest,
+  useSetUserStatusMutation, 
 } from "@/redux/services/user.services";
 import { useGetStoresQuery } from "@/redux/services/stores.services";
 import { UserSummaryCards } from "./user-management/UserSummaryCards";
@@ -20,27 +22,39 @@ export function UserManagement() {
   const [isEditUserOpen, setIsEditUserOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [selectedRole, setSelectedRole] = useState<string | undefined>();
+
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [selectedRole, setSelectedRole] = useState<string | undefined>();
+
   const [createUser] = useCreateUserMutation();
+  const [updateUser] = useUpdateUserMutation();
+  const [setUserStatus, { isLoading: isTogglingStatus }] = useSetUserStatusMutation();
 
-const { data: userListData, isLoading } = useGetUsersQuery({
-  role: selectedRole,
-  page: currentPage,
-  itemsPerPage: itemsPerPage,
-});
+  const { data: userListData, isLoading, refetch } = useGetUsersQuery({
+    role: selectedRole,
+    page: currentPage,
+    itemsPerPage,
+  });
 
+  const totalUsers = userListData?.pagination?.totalItems ?? 0;
+  const totalPages = userListData?.pagination?.totalPages ?? 1;
   const users = userListData?.users ?? [];
 
-  const {
-    data: storesList,
-    isLoading: loadingStores,
-    refetch: refetchStores,
-  } = useGetStoresQuery();
+  const { data: storesList } = useGetStoresQuery();
+
+  // client-side filtered list by searchQuery (within current page)
+  const filteredUsers = useMemo(() => {
+    if (!searchQuery) return users;
+    const q = searchQuery.toLowerCase();
+    return users.filter((u) =>
+      [u.username, u.email, u.firstName, u.lastName]
+        .some((f) => !!f && f.toLowerCase().includes(q))
+    );
+  }, [users, searchQuery]);
+
   const openEditDialog = (user: User) => {
     setSelectedUser(user);
-    console.log(user)
     setIsEditUserOpen(true);
   };
 
@@ -49,36 +63,30 @@ const { data: userListData, isLoading } = useGetUsersQuery({
     setIsDeleteDialogOpen(true);
   };
 
-  const filteredUsers = users.filter((user) =>
-    [user.username, user.email, user.firstName, user.lastName].some((f) =>
-      f?.toLowerCase().includes(searchQuery.toLowerCase())
-    )
-  );
-  
   const handleCreateUser = async (newUserData: CreateUserRequest) => {
     try {
       await createUser(newUserData).unwrap();
       toast.success("User created successfully!");
+      refetch();
     } catch (err) {
-      console.error(err);
-      toast.error("Failed to create user");
+      toast.error(err.message || "Failed to create user");
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="text-center">
-          <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-          <p className="text-gray-500">Loading users...</p>
-        </div>
-      </div>
-    );
-  }
+  const handleToggleStatus = async (user: User) => {
+    try {
+      await setUserStatus({ userId: user.id, isActive: !user.isActive }).unwrap();
+      toast.success(`${user.isActive ? "Disabled" : "Activated"} ${user.email}`);
+      refetch();
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.data?.message || "Failed to update user status");
+    }
+  };
 
   return (
     <div className="space-y-6">
-      <UserSummaryCards users={filteredUsers} />
+      <UserSummaryCards users={users} />
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <UserSearchBar
@@ -86,22 +94,34 @@ const { data: userListData, isLoading } = useGetUsersQuery({
           onSearchChange={setSearchQuery}
         />
 
-        <AddUserDialog
-          stores={storesList?.stores || []}
-          onUserAdded={handleCreateUser}
-        />
+        <div className="flex items-center gap-2">
+          <AddUserDialog
+            stores={storesList?.stores || []}
+            onUserAdded={handleCreateUser}
+          />
+        </div>
       </div>
 
       <UsersTable
         users={filteredUsers}
         onEditUser={openEditDialog}
-        onDisableUser={null}
+        onDisableUser={handleToggleStatus}
         onDeleteUser={openDeleteDialog}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => setCurrentPage(page)}
+        itemsPerPage={itemsPerPage}
+        onItemsPerPageChange={(n) => {
+          setItemsPerPage(n);
+          setCurrentPage(1);
+        }}
+        totalUsers={totalUsers}
+        isLoading={isLoading}
       />
 
       <EditUserDialog
         isOpen={isEditUserOpen}
-        stores={[]}
+        stores={storesList?.stores || []}
         onOpenChange={setIsEditUserOpen}
         user={selectedUser}
       />

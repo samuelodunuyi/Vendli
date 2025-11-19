@@ -24,7 +24,7 @@ export function ProductsLowStockAlert({ lowStockProducts }: ProductsLowStockAler
           {lowStockProducts?.slice(0, 3).map(product => (
             <div key={product.productId} className="flex justify-between items-center">
               <span className="text-red-700">{product.productName}</span>
-              <Badge variant="destructive">{product.currentStock} left</Badge>
+              <Badge variant="destructive">{product.basestock } left</Badge>
             </div>
           ))}
           {lowStockProducts?.length > 3 && (

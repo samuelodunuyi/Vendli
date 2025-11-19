@@ -1,6 +1,12 @@
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Table, TableBody, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Table,
+  TableBody,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { AddCustomerDialog } from "./AddCustomerDialog";
 import { EditCustomerDialog } from "./EditCustomerDialog";
 import { CustomerDetailsDialog } from "./CustomerDetailsDialog";
@@ -8,6 +14,7 @@ import { CustomerFilters } from "./CustomerFilters";
 import { CustomerTableRow } from "./CustomerTableRow";
 import { toast } from "@/components/ui/sonner";
 import { Pagination, Customer } from "@/redux/services/customer.services";
+import { Store } from "@/redux/services/stores.services";
 
 interface CustomerListProps {
   customers: Customer[];
@@ -21,6 +28,7 @@ interface CustomerListProps {
   setLoyaltyTier: React.Dispatch<React.SetStateAction<number | undefined>>;
   status: number | undefined;
   setStatus: React.Dispatch<React.SetStateAction<number | undefined>>;
+  storeData: Store[];
   refetch: () => void;
 }
 
@@ -36,22 +44,28 @@ export function CustomerList({
   setLoyaltyTier,
   status,
   setStatus,
+  storeData,
   refetch,
 }: CustomerListProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [showEditDialog, setShowEditDialog] = useState(false);
   const [showDetailsDialog, setShowDetailsDialog] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
+    null
+  );
 
   const filteredCustomers = customers.filter((customer) => {
     const matchesSearch =
       `${customer.userInfo.firstName} ${customer.userInfo.lastName}`
         .toLowerCase()
         .includes(searchQuery.toLowerCase()) ||
-      customer.userInfo.email?.toLowerCase().includes(searchQuery.toLowerCase());
+      customer.userInfo.email
+        ?.toLowerCase()
+        .includes(searchQuery.toLowerCase());
 
     const matchesClassification =
-      classification === undefined || customer.customerClassification === classification;
+      classification === undefined ||
+      customer.customerClassification === classification;
 
     const matchesLoyalty =
       loyaltyTier === undefined || customer.loyaltyTier === loyaltyTier;
@@ -59,7 +73,9 @@ export function CustomerList({
     const matchesStatus =
       status === undefined || customer.customerStatus === status;
 
-    return matchesSearch && matchesClassification && matchesLoyalty && matchesStatus;
+    return (
+      matchesSearch && matchesClassification && matchesLoyalty && matchesStatus
+    );
   });
 
   const handleViewCustomer = (customer: Customer) => {
@@ -96,6 +112,7 @@ export function CustomerList({
         }
         storeFilter="all"
         onStoreChange={() => {}}
+        storeData={storeData}
         onAddCustomer={() => setShowAddDialog(true)}
         onExport={handleExport}
       />
@@ -154,6 +171,7 @@ export function CustomerList({
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onCustomerAdded={handleCustomerAdded}
+        storeData={storeData}
       />
 
       <EditCustomerDialog
@@ -161,6 +179,7 @@ export function CustomerList({
         onOpenChange={setShowEditDialog}
         customer={selectedCustomer}
         onCustomerUpdated={handleCustomerUpdated}
+        storeData={storeData}
       />
 
       <CustomerDetailsDialog

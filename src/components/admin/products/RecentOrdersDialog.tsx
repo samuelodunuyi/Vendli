@@ -1,9 +1,21 @@
-
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
+} from "@/components/ui/dialog";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow
+} from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { ShoppingCart } from "lucide-react";
 import { Product } from "@/redux/services/products.services";
+import { useGetOrdersQuery } from "@/redux/services/orders.services";
 
 interface RecentOrdersDialogProps {
   open: boolean;
@@ -11,79 +23,72 @@ interface RecentOrdersDialogProps {
   product: Product | null;
 }
 
-// Mock order data
-const mockOrders = [
-  {
-    id: "ORD-2024-001",
-    date: "2024-01-15",
-    customer: "John Doe",
-    customerPhone: "+234 801 234 5678",
-    quantity: 2,
-    unitPrice: 750000,
-    total: 1500000,
-    status: "Completed",
-    paymentMethod: "Card"
-  },
-  {
-    id: "ORD-2024-002",
-    date: "2024-01-14",
-    customer: "Jane Smith",
-    customerPhone: "+234 802 345 6789",
-    quantity: 1,
-    unitPrice: 750000,
-    total: 750000,
-    status: "Completed",
-    paymentMethod: "Transfer"
-  },
-  {
-    id: "ORD-2024-003",
-    date: "2024-01-12",
-    customer: "Mike Johnson",
-    customerPhone: "+234 803 456 7890",
-    quantity: 1,
-    unitPrice: 750000,
-    total: 750000,
-    status: "Pending",
-    paymentMethod: "Cash"
-  },
-  {
-    id: "ORD-2024-004",
-    date: "2024-01-10",
-    customer: "Sarah Wilson",
-    customerPhone: "+234 804 567 8901",
-    quantity: 3,
-    unitPrice: 750000,
-    total: 2250000,
-    status: "Completed",
-    paymentMethod: "Card"
-  },
-  {
-    id: "ORD-2024-005",
-    date: "2024-01-08",
-    customer: "David Brown",
-    customerPhone: "+234 805 678 9012",
-    quantity: 1,
-    unitPrice: 750000,
-    total: 750000,
-    status: "Cancelled",
-    paymentMethod: "Transfer"
-  }
-];
+export function RecentOrdersDialog({
+  open,
+  onOpenChange,
+  product
+}: RecentOrdersDialogProps) {
+  const { data, isLoading, isError } = useGetOrdersQuery(
+    {
+      productId: product?.productId ?? undefined,
+      page: 1,
+      itemsPerPage: 100
+    },
+    { skip: !product }
+  );
 
-export function RecentOrdersDialog({ open, onOpenChange, product }: RecentOrdersDialogProps) {
   if (!product) return null;
 
-  const getStatusColor = (status: string) => {
+  const orders = data?.orders ?? [];
+
+  const getStatusColor = (status: number) => {
     switch (status) {
-      case "Completed": return "bg-green-100 text-green-800";
-      case "Pending": return "bg-yellow-100 text-yellow-800";
-      case "Cancelled": return "bg-red-100 text-red-800";
-      default: return "bg-gray-100 text-gray-800";
+      case 1:
+        return "bg-blue-100 text-blue-800";
+      case 2:
+        return "bg-green-100 text-green-800";
+      case 3:
+        return "bg-yellow-100 text-yellow-800";
+      case 4:
+        return "bg-purple-100 text-purple-800";
+      case 5:
+        return "bg-red-100 text-red-800";
+      case 6:
+        return "bg-gray-100 text-gray-800";
+      case 7:
+        return "bg-red-200 text-red-900"; 
+      default:
+        return "bg-gray-100 text-gray-800";
     }
   };
 
-  const totalQuantity = mockOrders.reduce((sum, order) => sum + order.quantity, 0);
-  const totalValue = mockOrders.filter(order => order.status === 'Completed').reduce((sum, order) => sum + order.total, 0);
+  const calcOrderTotal = (order) => {
+    const items = Array.isArray(order.orderItems) ? order.orderItems : [];
+    return items.reduce((sum, item) => {
+      const qty = Number(item.quantity) || 0;
+      const price = Number(item.priceAtOrder) || 0;
+      const line = qty * price;
+      return sum + (Number.isFinite(line) ? line : 0);
+    }, 0);
+  };
+
+  // Sum of all orders
+  const totalValueAll = orders.reduce((sum, o) => sum + calcOrderTotal(o), 0);
+
+  // Sum of completed + delivered
+  const totalValueCompleted = orders.reduce((sum, o) => {
+    return o.status === 2 || o.status === 4
+      ? sum + calcOrderTotal(o)
+      : sum;
+  }, 0);
+
+  const totalQuantity = orders.reduce((sum, o) => {
+    const items = Array.isArray(o.orderItems) ? o.orderItems : [];
+    return (
+      sum +
+      items.reduce((x, i) => x + (Number(i.quantity) || 0), 0)
+    );
+  }, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -91,32 +96,45 @@ export function RecentOrdersDialog({ open, onOpenChange, product }: RecentOrders
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <ShoppingCart className="h-5 w-5" />
-            Recent Orders - {product.productName}
+            Recent Orders — {product.productName}
           </DialogTitle>
         </DialogHeader>
-        
+
         <div className="space-y-4">
+          {/* Stats */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg">
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{mockOrders.length}</div>
+              <div className="text-2xl font-bold text-blue-600">
+                {orders.length}
+              </div>
               <div className="text-sm text-gray-600">Total Orders</div>
             </div>
+
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{totalQuantity}</div>
+              <div className="text-2xl font-bold text-green-600">
+                {totalQuantity}
+              </div>
               <div className="text-sm text-gray-600">Units Ordered</div>
             </div>
+
             <div className="text-center">
-              <div className="text-2xl font-bold text-purple-600">₦{totalValue.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Value</div>
+              <div className="text-2xl font-bold text-purple-600">
+                ₦{totalValueCompleted.toLocaleString()}
+              </div>
+              <div className="text-sm text-gray-600">
+                Completed & Delivered Value
+              </div>
             </div>
+
             <div className="text-center">
               <div className="text-2xl font-bold text-orange-600">
-                {mockOrders.filter(o => o.status === 'Completed').length}
+                ₦{totalValueAll.toLocaleString()}
               </div>
-              <div className="text-sm text-gray-600">Completed</div>
+              <div className="text-sm text-gray-600">Total Value (All)</div>
             </div>
           </div>
 
+          {/* Table */}
           <Table>
             <TableHeader>
               <TableRow>
@@ -124,31 +142,66 @@ export function RecentOrdersDialog({ open, onOpenChange, product }: RecentOrders
                 <TableHead>Date</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Phone</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
+                <TableHead className="text-right">Items</TableHead>
                 <TableHead className="text-right">Total</TableHead>
                 <TableHead>Payment</TableHead>
                 <TableHead>Status</TableHead>
               </TableRow>
             </TableHeader>
+
             <TableBody>
-              {mockOrders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell className="font-medium">{order.id}</TableCell>
-                  <TableCell>{new Date(order.date).toLocaleDateString()}</TableCell>
-                  <TableCell>{order.customer}</TableCell>
-                  <TableCell>{order.customerPhone}</TableCell>
-                  <TableCell className="text-right">{order.quantity}</TableCell>
-                  <TableCell className="text-right">₦{order.unitPrice.toLocaleString()}</TableCell>
-                  <TableCell className="text-right">₦{order.total.toLocaleString()}</TableCell>
-                  <TableCell>{order.paymentMethod}</TableCell>
-                  <TableCell>
-                    <Badge className={getStatusColor(order.status)}>
-                      {order.status}
-                    </Badge>
-                  </TableCell>
-                </TableRow>
-              ))}
+              {orders.map((order) => {
+                const itemCount = order.orderItems?.reduce(
+                  (sum: number, x) => sum + (Number(x.quantity) || 0),
+                  0
+                );
+
+                const orderTotal = calcOrderTotal(order);
+
+                return (
+                  <TableRow key={order.id}>
+                    <TableCell className="font-medium">ORD - {order.id}</TableCell>
+                    <TableCell>
+                      {new Date(order.orderDate).toLocaleDateString()}
+                    </TableCell>
+
+                    <TableCell>
+                      {order?.customer?.firstName} {order?.customer?.lastName}
+                    </TableCell>
+
+                    <TableCell>{order?.customer?.phoneNumber ?? "-"}</TableCell>
+
+                    <TableCell className="text-right">{itemCount}</TableCell>
+
+                    <TableCell className="text-right">
+                      ₦{orderTotal?.toLocaleString()}
+                    </TableCell>
+
+                    <TableCell>
+                      {order.paymentOption === 1
+                        ? "Card"
+                        : order.paymentOption === 2
+                        ? "Transfer"
+                        : "Cash"}
+                    </TableCell>
+
+                    <TableCell>
+                      <Badge className={getStatusColor(order.status)}>
+                        {[
+                          "Pending",
+                          "Confirmed",
+                          "Completed",
+                          "Awaiting Delivery",
+                          "Delivered",
+                          "Failed",
+                          "Returned",
+                          "Cancelled"
+                        ][order.status] ?? "Unknown"}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
           </Table>
         </div>

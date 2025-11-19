@@ -35,9 +35,9 @@ export function ProductCard({ product, isPOS = false }: ProductCardProps) {
           alt={product.productName}
           className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
         />
-        {product.currentStock < 5 && (
+        {product.basestock < 5 && (
           <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md">
-            Low Stock: {product.currentStock}
+            Low Stock: {product.basestock}
           </div>
         )}
       </div>

@@ -1,6 +1,6 @@
 // src/store/users.services.ts
-import { createApi } from '@reduxjs/toolkit/query/react';
-import { baseQueryWithReauth } from './baseQueryWithReauth';
+import { createApi } from "@reduxjs/toolkit/query/react";
+import { baseQueryWithReauth } from "./baseQueryWithReauth";
 
 // Request types
 export interface CreateUserRequest {
@@ -9,23 +9,24 @@ export interface CreateUserRequest {
   password: string;
   roleId: number;
   role: string;
+  joinedDate: string;
   phoneNumber: string;
   firstName: string;
   lastName: string;
   storeId?: number;
-  notes?: string;
-  customerClassification?: string;
 }
 
 export interface UpdateUserRequest {
   id: number;
   firstName?: string;
   lastName?: string;
+  username: string;
   email?: string;
+  joinedDate: string;
   phoneNumber?: string;
   isActive?: boolean;
-  notes?: string;
-  customerClassification?: string;
+  roleId: number;
+  storeId: number;
 }
 
 export interface AssignStoreAdminRequest {
@@ -65,14 +66,12 @@ export interface User {
   email: string;
   firstName: string;
   lastName: string;
-  role: string;
+  phoneNumber: string;
+  joinedDate: string;
   roleId: number;
   roleName: string;
   isActive: boolean;
-  joinedDate: string;
-  phoneNumber: string;
-  notes?: string;
-  customerClassification?: string;
+  createdAt: string;
   storeId?: number;
   storeName?: string;
 }
@@ -85,13 +84,13 @@ export interface GetUsersResponse {
 
 // Users API
 export const usersApi = createApi({
-  reducerPath: 'usersApi',
+  reducerPath: "usersApi",
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getUsers: builder.query<GetUsersResponse, GetUsersRequest>({
       query: (params) => ({
-        url: '/UserManagement/get-users',
-        method: 'GET',
+        url: "/UserManagement/get-users",
+        method: "GET",
         params: {
           ...(params.role && { role: params.role }),
           ...(params.page && { page: params.page }),
@@ -102,8 +101,8 @@ export const usersApi = createApi({
 
     createUser: builder.mutation<MessageResponse, CreateUserRequest>({
       query: (body) => ({
-        url: '/UserManagement/create-user',
-        method: 'POST',
+        url: "/UserManagement/create-user",
+        method: "POST",
         body,
       }),
     }),
@@ -111,7 +110,7 @@ export const usersApi = createApi({
     updateUser: builder.mutation<MessageResponse, UpdateUserRequest>({
       query: ({ id, ...body }) => ({
         url: `/UserManagement/edit/${id}`,
-        method: 'PUT',
+        method: "PUT",
         body,
       }),
     }),
@@ -119,22 +118,25 @@ export const usersApi = createApi({
     deleteUser: builder.mutation<MessageResponse, { id: number }>({
       query: ({ id }) => ({
         url: `/UserManagement/delete-user/${id}`,
-        method: 'DELETE',
+        method: "DELETE",
       }),
     }),
 
-    assignStoreAdmin: builder.mutation<MessageResponse, AssignStoreAdminRequest>({
+    assignStoreAdmin: builder.mutation<
+      MessageResponse,
+      AssignStoreAdminRequest
+    >({
       query: (body) => ({
-        url: '/UserManagement/assign-store-admin',
-        method: 'POST',
+        url: "/UserManagement/assign-store-admin",
+        method: "POST",
         body,
       }),
     }),
 
     setUserStatus: builder.mutation<MessageResponse, SetUserStatusRequest>({
       query: ({ userId, isActive }) => ({
-        url: '/UserManagement/set-user-status',
-        method: 'PUT',
+        url: "/UserManagement/set-user-status",
+        method: "PUT",
         params: { userId, isActive },
       }),
     }),

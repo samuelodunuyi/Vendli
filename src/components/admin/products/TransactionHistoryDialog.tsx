@@ -1,9 +1,8 @@
-
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { History } from "lucide-react";
-import { Product } from "@/redux/services/products.services";
+import { Product, useGetInventoryTransactionsQuery } from "@/redux/services/products.services";
 
 interface TransactionHistoryDialogProps {
   open: boolean;
@@ -11,61 +10,12 @@ interface TransactionHistoryDialogProps {
   product: Product | null;
 }
 
-// Mock transaction data
-const mockTransactions = [
-  {
-    id: "TXN-001",
-    date: "2024-01-15",
-    type: "Sale",
-    quantity: -2,
-    unitPrice: 750000,
-    customer: "John Doe",
-    reference: "INV-2024-001",
-    store: "Main Store"
-  },
-  {
-    id: "TXN-002",
-    date: "2024-01-14",
-    type: "Stock Adjustment",
-    quantity: +5,
-    unitPrice: 0,
-    customer: "System",
-    reference: "ADJ-2024-001",
-    store: "Main Store"
-  },
-  {
-    id: "TXN-003",
-    date: "2024-01-12",
-    type: "Purchase",
-    quantity: +10,
-    unitPrice: 650000,
-    customer: "Supplier ABC",
-    reference: "PO-2024-005",
-    store: "Main Store"
-  },
-  {
-    id: "TXN-004",
-    date: "2024-01-10",
-    type: "Transfer Out",
-    quantity: -3,
-    unitPrice: 0,
-    customer: "Abuja Branch",
-    reference: "TRN-2024-002",
-    store: "Main Store"
-  },
-  {
-    id: "TXN-005",
-    date: "2024-01-08",
-    type: "Sale",
-    quantity: -1,
-    unitPrice: 750000,
-    customer: "Jane Smith",
-    reference: "INV-2024-002",
-    store: "Main Store"
-  }
-];
-
 export function TransactionHistoryDialog({ open, onOpenChange, product }: TransactionHistoryDialogProps) {
+  const { data, isLoading, isError } = useGetInventoryTransactionsQuery(
+    { productId: product?.productId, page: 1, itemsPerPage: 100 },
+    { skip: !product }
+  );
+
   if (!product) return null;
 
   const getTransactionTypeColor = (type: string) => {
@@ -88,67 +38,72 @@ export function TransactionHistoryDialog({ open, onOpenChange, product }: Transa
             Transaction History - {product.productName}
           </DialogTitle>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="p-4 bg-gray-50 rounded-lg">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-              <div>
-                <span className="text-gray-600">Product Code:</span>
-                <div className="font-medium">{product.barcode}</div>
-              </div>
-              <div>
-                <span className="text-gray-600">Current Stock:</span>
-                <div className="font-medium">{product.currentStock} units</div>
-              </div>
-              <div>
-                <span className="text-gray-600">Category:</span>
-                <div className="font-medium">{product.categoryId}</div>
-              </div>
-              <div>
-                <span className="text-gray-600">Status:</span>
-                <Badge variant={product.isActive === true ? 'default' : 'secondary'}>
-                  {product.isActive}
-                </Badge>
-              </div>
-            </div>
-          </div>
 
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Type</TableHead>
-                <TableHead className="text-right">Quantity</TableHead>
-                <TableHead className="text-right">Unit Price</TableHead>
-                <TableHead>Customer/Supplier</TableHead>
-                <TableHead>Reference</TableHead>
-                <TableHead>Store</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {mockTransactions.map((transaction) => (
-                <TableRow key={transaction.id}>
-                  <TableCell>{new Date(transaction.date).toLocaleDateString()}</TableCell>
-                  <TableCell>
-                    <Badge className={getTransactionTypeColor(transaction.type)}>
-                      {transaction.type}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className={`text-right font-medium ${
-                    transaction.quantity > 0 ? 'text-green-600' : 'text-red-600'
-                  }`}>
-                    {transaction.quantity > 0 ? '+' : ''}{transaction.quantity}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    {transaction.unitPrice > 0 ? `₦${transaction.unitPrice.toLocaleString()}` : '-'}
-                  </TableCell>
-                  <TableCell>{transaction.customer}</TableCell>
-                  <TableCell>{transaction.reference}</TableCell>
-                  <TableCell>{transaction.store}</TableCell>
+        {/* Product Summary */}
+        <div className="p-4 bg-gray-50 rounded-lg grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+          <div>
+            <span className="text-gray-600">Product Code:</span>
+            <div className="font-medium">{product.productId}</div>
+          </div>
+          <div>
+            <span className="text-gray-600">Current Stock:</span>
+            <div className="font-medium">{product.basestock} units</div>
+          </div>
+          <div>
+            <span className="text-gray-600">Category:</span>
+            <div className="font-medium">{product.categoryId}</div>
+          </div>
+          <div>
+            <span className="text-gray-600">Status: </span>
+            <Badge variant={product.isActive ? "default" : "secondary"}>
+              {product.isActive ? "Active" : "Inactive"}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Transaction Table */}
+        <div className="mt-4 space-y-4">
+          {isLoading && <div className="p-4 text-center text-gray-600">Loading transactions...</div>}
+          {isError && <div className="p-4 text-center text-red-600">Failed to load transactions</div>}
+
+          {!isLoading && !isError && data?.items && data.items.length > 0 && (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead className="text-right">Quantity</TableHead>
+                  <TableHead className="text-right">Unit Price</TableHead>
+                  <TableHead>Customer/Supplier</TableHead>
+                  <TableHead>Reference</TableHead>
+                  <TableHead>Store</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {data.items.map(txn => (
+                  <TableRow key={txn.id}>
+                    <TableCell>{new Date(txn.createdOn).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <Badge className={getTransactionTypeColor(txn.type)}>
+                        {txn.type}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className={`text-right font-medium ${txn.quantity > 0 ? "text-green-600" : "text-red-600"}`}>
+                      {txn.quantity > 0 ? "+" : ""}{txn.quantity}
+                    </TableCell>
+                    <TableCell className="text-right">-</TableCell>
+                    <TableCell>{txn.createdBy?.username || "-"}</TableCell>
+                    <TableCell>{txn.reference || txn.reason || "-"}</TableCell>
+                    <TableCell>{txn.store.name}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+
+          {!isLoading && !isError && (!data?.items || data.items.length === 0) && (
+            <div className="p-4 text-center text-gray-500">No transactions found for this product.</div>
+          )}
         </div>
       </DialogContent>
     </Dialog>
