@@ -66,7 +66,6 @@ interface InventoryTransaction {
 
 export function InventoryTracking() {
   const [selectedStoreId, setSelectedStoreId] = useState("all");
-  const [selectedProductId, setSelectedProductId] = useState("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
   const [userFilter, setUserFilter] = useState<string>("all");
@@ -85,27 +84,19 @@ export function InventoryTracking() {
   });
 
   const [createTransaction] = useCreateTransactionsMutation();
-interface TransactionsQueryParams {
-  storeId: number;
-  productId: number;
-  type: string;
-  startDate: string;
-  endDate: string;
-  createdBy: string;
-  page?: number;
-  itemsPerPage?: number;
-}
+  const queryParams: any = {};
 
-const queryParams: TransactionsQueryParams = {
-  storeId: selectedStoreId !== "all" ? Number(selectedStoreId) : 0, 
-  productId: selectedProductId !== "all" ? Number(selectedProductId) : 0,
-  type: typeFilter !== "all" ? typeFilter : "",
-  createdBy: userFilter !== "all" ? userFilter : "",
-  startDate: dateRange.from ? dateRange.from.toISOString() : new Date().toISOString(),
-  endDate: dateRange.to ? dateRange.to.toISOString() : new Date().toISOString(),
-};
+  if (selectedStoreId !== "all") queryParams.storeId = Number(selectedStoreId);
+  if (typeFilter !== "all") queryParams.type = typeFilter;
+  if (userFilter !== "all") queryParams.createdBy = userFilter;
+  if (dateRange.from) queryParams.startDate = dateRange.from.toISOString();
+  if (dateRange.to) queryParams.endDate = dateRange.to.toISOString();
 
-const { data: txData, isError } = useGetTransactionsQuery(queryParams);
+  const {
+    data: txData,
+    isLoading,
+    isError,
+  } = useGetTransactionsQuery(queryParams);
 
   const transactions: InventoryTransaction[] =
     txData?.transactions?.map((tx) => ({
