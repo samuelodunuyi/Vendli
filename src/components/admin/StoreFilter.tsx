@@ -13,7 +13,7 @@ interface StoreFilterProps {
 
 export function StoreFilter({ filters, onFiltersChange }: StoreFilterProps) {
   const { data: storeResponse, isLoading: storesLoading } = useGetStoresQuery();
-  const { data: categoriesResponse, isLoading: categoriesLoading } = useGetCategoriesQuery();
+  const { data: categoriesResponse, isLoading: categoriesLoading } = useGetCategoriesQuery({});
 
   const storeList = storeResponse?.stores ?? [];
   const categoryList = categoriesResponse?.categories ?? [];
@@ -95,11 +95,11 @@ export function StoreFilter({ filters, onFiltersChange }: StoreFilterProps) {
             <label className="text-sm font-medium mb-2 block">Date Range</label>
 
             <Select
-              value={filters.dateRangeTimeline || "last30days"}
+              value={filters.timeline || "last30days"}
               onValueChange={(value) =>
                 onFiltersChange({
                   ...filters,
-                  dateRangeTimeline: value as 
+                  timeline: value as 
                     | "last7days" 
                     | "last30days" 
                     | "last90days" 
