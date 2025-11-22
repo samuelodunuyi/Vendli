@@ -1,9 +1,10 @@
-
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useGetSalesStatisticsQuery, useGetStatisticsQuery } from "@/redux/services/stores.services";
 import { 
   BarChart3, 
   TrendingUp, 
@@ -11,9 +12,7 @@ import {
   DollarSign, 
   ShoppingCart, 
   Users, 
-  Package,
-  Clock,
-  Target
+  Package
 } from "lucide-react";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 
@@ -24,32 +23,61 @@ interface StoreAnalyticsDialogProps {
   storeName?: string;
 }
 
-const salesData = [
-  { month: "Jan", revenue: 2400000, orders: 156 },
-  { month: "Feb", revenue: 2800000, orders: 189 },
-  { month: "Mar", revenue: 3200000, orders: 201 },
-  { month: "Apr", revenue: 2900000, orders: 178 },
-  { month: "May", revenue: 3500000, orders: 234 },
-  { month: "Jun", revenue: 3750000, orders: 245 }
-];
-
-const categoryData = [
-  { name: "Electronics", value: 35, color: "#8884d8" },
-  { name: "Fashion", value: 28, color: "#82ca9d" },
-  { name: "Home & Garden", value: 20, color: "#ffc658" },
-  { name: "Sports", value: 12, color: "#ff7300" },
-  { name: "Books", value: 5, color: "#00ff00" }
-];
-
-const topProducts = [
-  { name: "Dell XPS 13 Laptop", sales: 45, revenue: 2250000 },
-  { name: "Samsung Galaxy S23", sales: 38, revenue: 1520000 },
-  { name: "iPhone 15 Pro", sales: 32, revenue: 1920000 },
-  { name: "MacBook Air M2", sales: 28, revenue: 1680000 },
-  { name: "Sony WH-1000XM4", sales: 56, revenue: 560000 }
-];
-
 export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }: StoreAnalyticsDialogProps) {
+  const { data: statsData, isLoading: statsLoading, isError: statsError } = useGetStatisticsQuery({ store: storeId });
+  const { data: salesDataAPI, isLoading: salesLoading, isError: salesError } = useGetSalesStatisticsQuery({ storeId });
+
+  // Prepare key metrics
+  const totalRevenue = statsData?.totalSales ?? 0;
+  const totalOrders = statsData?.totalOrders ?? 0;
+  const activeCustomers = statsData?.activeCustomers ?? 0;
+  const inventoryItems = statsData?.totalProducts ?? 0;
+
+  // Prepare sales trend chart
+  const salesTrendData = useMemo(() => {
+    if (!salesDataAPI?.salesTrend) return [];
+    return salesDataAPI.salesTrend.labels.map((label, index) => ({
+      month: label,
+      revenue: salesDataAPI.salesTrend.values[index] ?? 0,
+      orders: salesDataAPI.salesByCategory?.[index]?.totalSales ?? 0
+    }));
+  }, [salesDataAPI]);
+
+  // Prepare top products
+  const topProducts = statsData?.topSellingProducts?.map(p => ({
+    name: p.productName,
+    sales: p.totalSales,
+    revenue: p.totalAmount
+  })) ?? [];
+
+  // Prepare sales by category
+  const categoryData = statsData?.topSellingCategories?.map(cat => ({
+    name: cat.categoryName,
+    value: cat.totalSales,
+    color: `#${Math.floor(Math.random()*16777215).toString(16)}` // random color for simplicity
+  })) ?? [];
+
+  // Loading or error fallback
+  if (statsLoading || salesLoading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto flex items-center justify-center">
+          <p>Loading analytics...</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
+  if (statsError || salesError) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto flex items-center justify-center">
+          <p>Error loading analytics. Please try again.</p>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[900px] max-h-[80vh] overflow-y-auto">
@@ -68,22 +96,17 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
             <TabsTrigger value="customers">Customers</TabsTrigger>
           </TabsList>
 
+          {/* OVERVIEW */}
           <TabsContent value="overview" className="space-y-4">
-            {/* Key Metrics */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               <Card>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Monthly Revenue</p>
-                      <p className="text-2xl font-bold text-green-600">₦3.75M</p>
+                      <p className="text-2xl font-bold text-green-600">₦{totalRevenue.toLocaleString()}</p>
                     </div>
                     <DollarSign className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+15.2%</span>
-                    <span className="text-gray-500 ml-1">vs last month</span>
                   </div>
                 </CardContent>
               </Card>
@@ -93,14 +116,9 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Total Orders</p>
-                      <p className="text-2xl font-bold">245</p>
+                      <p className="text-2xl font-bold">{totalOrders}</p>
                     </div>
                     <ShoppingCart className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+8.5%</span>
-                    <span className="text-gray-500 ml-1">vs last month</span>
                   </div>
                 </CardContent>
               </Card>
@@ -110,14 +128,9 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Active Customers</p>
-                      <p className="text-2xl font-bold">189</p>
+                      <p className="text-2xl font-bold">{activeCustomers}</p>
                     </div>
                     <Users className="h-8 w-8 text-purple-600" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingUp className="h-4 w-4 text-green-500 mr-1" />
-                    <span className="text-green-600">+12.1%</span>
-                    <span className="text-gray-500 ml-1">vs last month</span>
                   </div>
                 </CardContent>
               </Card>
@@ -127,14 +140,9 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm text-gray-600">Inventory Items</p>
-                      <p className="text-2xl font-bold">1,240</p>
+                      <p className="text-2xl font-bold">{inventoryItems}</p>
                     </div>
                     <Package className="h-8 w-8 text-orange-600" />
-                  </div>
-                  <div className="flex items-center mt-2 text-sm">
-                    <TrendingDown className="h-4 w-4 text-red-500 mr-1" />
-                    <span className="text-red-600">-3.2%</span>
-                    <span className="text-gray-500 ml-1">vs last month</span>
                   </div>
                 </CardContent>
               </Card>
@@ -148,7 +156,7 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
                 </CardHeader>
                 <CardContent>
                   <ResponsiveContainer width="100%" height={200}>
-                    <LineChart data={salesData}>
+                    <LineChart data={salesTrendData}>
                       <CartesianGrid strokeDasharray="3 3" />
                       <XAxis dataKey="month" />
                       <YAxis />
@@ -178,7 +186,7 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
                           <Cell key={`cell-${index}`} fill={entry.color} />
                         ))}
                       </Pie>
-                      <Tooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                      <Tooltip formatter={(value) => [`${value}`, 'Units Sold']} />
                     </PieChart>
                   </ResponsiveContainer>
                 </CardContent>
@@ -186,6 +194,7 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
             </div>
           </TabsContent>
 
+          {/* SALES */}
           <TabsContent value="sales" className="space-y-4">
             <Card>
               <CardHeader>
@@ -193,7 +202,7 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
               </CardHeader>
               <CardContent>
                 <ResponsiveContainer width="100%" height={300}>
-                  <BarChart data={salesData}>
+                  <BarChart data={salesTrendData}>
                     <CartesianGrid strokeDasharray="3 3" />
                     <XAxis dataKey="month" />
                     <YAxis />
@@ -206,6 +215,7 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
             </Card>
           </TabsContent>
 
+          {/* PRODUCTS */}
           <TabsContent value="products" className="space-y-4">
             <Card>
               <CardHeader>
@@ -233,23 +243,28 @@ export function StoreAnalyticsDialog({ open, onOpenChange, storeId, storeName }:
             </Card>
           </TabsContent>
 
+          {/* CUSTOMERS */}
           <TabsContent value="customers" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <Card>
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-blue-600">189</div>
+                  <div className="text-2xl font-bold text-blue-600">{activeCustomers}</div>
                   <div className="text-sm text-gray-600">Active Customers</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-green-600">₦19,841</div>
+                  <div className="text-2xl font-bold text-green-600">
+₦{Number((totalRevenue / Math.max(totalOrders, 1)).toFixed(2)).toLocaleString()}
+                  </div>
                   <div className="text-sm text-gray-600">Avg. Order Value</div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4 text-center">
-                  <div className="text-2xl font-bold text-purple-600">2.3</div>
+                  <div className="text-2xl font-bold text-purple-600">
+                    {(totalOrders / Math.max(activeCustomers, 1)).toFixed(1)}
+                  </div>
                   <div className="text-sm text-gray-600">Avg. Orders/Customer</div>
                 </CardContent>
               </Card>

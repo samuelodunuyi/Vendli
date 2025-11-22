@@ -7,7 +7,7 @@ import { Store } from "@/redux/services/stores.services";
 interface StoreGridProps {
   stores: Store[];
   activeStoreId: number;
-  onStoreSwitch: (storeId: number) => void;
+  onStoreSwitch?: (storeId: number, storeName?: string) => void;
 }
 
 export function StoreGrid({ stores, activeStoreId, onStoreSwitch }: StoreGridProps) {

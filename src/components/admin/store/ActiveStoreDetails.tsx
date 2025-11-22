@@ -26,8 +26,8 @@ export function ActiveStoreDetails({
             <StoreIcon className="h-6 w-6 text-blue-600" />
             <CardTitle className="text-xl">{store.storeName}</CardTitle>
           </div>
-          <Badge variant={store.status === 'active' ? 'default' : 'secondary'}>
-            {store.status}
+          <Badge variant={store.isActive === true ? 'default' : 'secondary'}>
+            {store.isActive}
           </Badge>
         </div>
       </CardHeader>

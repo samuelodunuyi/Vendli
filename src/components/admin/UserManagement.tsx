@@ -40,10 +40,10 @@ export function UserManagement() {
   const totalUsers = userListData?.pagination?.totalItems ?? 0;
   const totalPages = userListData?.pagination?.totalPages ?? 1;
   const users = userListData?.users ?? [];
-
+  const userSummary = userListData?.tiles;
+  console.log("User data in UserManagement:", userSummary);
   const { data: storesList } = useGetStoresQuery();
 
-  // client-side filtered list by searchQuery (within current page)
   const filteredUsers = useMemo(() => {
     if (!searchQuery) return users;
     const q = searchQuery.toLowerCase();
@@ -86,7 +86,7 @@ export function UserManagement() {
 
   return (
     <div className="space-y-6">
-      <UserSummaryCards users={users} />
+      <UserSummaryCards users={userSummary} totalUsers={userListData?.pagination?.totalItems} />
 
       <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
         <UserSearchBar

@@ -68,7 +68,16 @@ export interface Pagination {
 export interface GetOrdersResponse {
   orders: Order[];
   pagination: Pagination;
+  tiles: Tiles;
 }
+
+export interface Tiles {
+  pending: number;
+  delivered: number;
+  cancelled: number;
+  completed: number;
+  averageRating: number;
+} 
 
 // Create Order Request
 export interface CreateOrderRequest {

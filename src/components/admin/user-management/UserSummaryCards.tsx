@@ -1,21 +1,20 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { User } from "@/redux/services/user.services";
+import { Tiles } from "@/redux/services/user.services";
 
 interface UserSummaryCardsProps {
-  users: User[];
+  users: Tiles;
+  totalUsers: number;
 }
 
-export function UserSummaryCards({ users }: UserSummaryCardsProps) {
-  const totalUsers = users.length;
-  const activeUsers = users.filter(u => u.isActive === true).length;
-
-  const superAdmins = users.filter(u => u.role === "SuperAdmin").length;
-  const storeAdmins = users.filter(u => u.role === "StoreAdmin").length;
-  const employees = users.filter(u => u.role === "Employee").length;
-  const customers = users.filter(u => u.role === "Customer").length;
+export function UserSummaryCards({ users, totalUsers}: UserSummaryCardsProps) {
+  const activeUsers = users?.activeUsers;
+  const superAdmins = users?.superAdmins;
+  const storeAdmins = users?.storeAdmins;
+  const employees = users?.employees;
+  const customers = users?.customers;
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
       <Card>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium text-gray-600">Total Users</CardTitle>

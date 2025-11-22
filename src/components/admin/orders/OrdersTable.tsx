@@ -2,7 +2,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Order } from "@/redux/services/orders.services";
-import { Eye } from "lucide-react";
+import { Eye, Star, Zap } from "lucide-react";
 
 interface OrdersTableProps {
   orders: Order[];
@@ -10,6 +10,7 @@ interface OrdersTableProps {
   onViewEnhancedOrder: (order: Order) => void;
   onViewDeliveryTracking: (order: Order) => void;
 }
+
 
 // Map numeric status to label
 const STATUS_LABELS: Record<number, string> = {
@@ -46,6 +47,9 @@ export function OrdersTable({
     }
   };
 
+
+console.log("OrdersTable component loaded", orders);
+
   const formatDate = (dateString: string) => {
     return (
       new Date(dateString).toLocaleDateString("en-GB") +
@@ -69,9 +73,9 @@ export function OrdersTable({
         <table className="min-w-[900px] table-auto border-collapse">
           <thead>
             <tr className="border-b bg-gray-50">
-              <th className="text-left p-3 text-sm font-semibold text-gray-600">Order ID</th>
+<th className="text-left p-3 text-sm font-semibold text-gray-600 whitespace-nowrap">Order ID</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Customer</th>
-              <th className="text-left p-3 text-sm font-semibold text-gray-600">Store & Rep</th>
+              <th className="text-left p-3 text-sm font-semibold text-gray-600">Store</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Items</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Total</th>
               <th className="text-left p-3 text-sm font-semibold text-gray-600">Status</th>
@@ -98,17 +102,18 @@ export function OrdersTable({
                       )}
                     </div>
                   </td>
-                  <td className="p-3 whitespace-nowrap">{order.createdBy}</td>
+                  <td className="p-3 whitespace-nowrap">{order?.store?.storeName}</td>
                   <td className="p-3 whitespace-nowrap">
-                    <ul className="list-disc list-inside text-sm space-y-1">
-                      {order.orderItems.map((item) => (
-                        <li key={item.id}>
-                          {item.productName} x {item.quantity} (₦{item.priceAtOrder})
-                        </li>
-                      ))}
-                    </ul>
+   <ul className="list-disc list-inside text-sm space-y-2">
+  {order.orderItems.map((item) => (
+    <li key={item.id}>
+      {item.productName} x {item.quantity}
+      <div className="text-xs text-gray-500 ml-4">₦{item.priceAtOrder.toLocaleString()}</div>
+    </li>
+  ))}
+</ul>
                   </td>
-                  <td className="p-3 font-medium whitespace-nowrap">₦{totalPrice}</td>
+                  <td className="p-3 font-medium whitespace-nowrap">₦{totalPrice.toLocaleString()}</td>
                   <td className="p-3 whitespace-nowrap">
                     <Badge variant={getStatusColor(order.status)}>
                       {STATUS_LABELS[order.status] || "Unknown"}
@@ -120,14 +125,15 @@ export function OrdersTable({
                       <Button variant="outline" size="sm" onClick={() => onViewOrderDetails(order)}>
                         <Eye className="h-4 w-4" />
                       </Button>
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => onViewEnhancedOrder(order)}
-                        className="bg-purple-600 hover:bg-purple-700"
-                      >
-                        Enhanced
-                      </Button>
+<Button
+  variant="default"
+  size="sm"
+  onClick={() => onViewEnhancedOrder(order)}
+  className="bg-purple-600 hover:bg-purple-700 flex items-center gap-1"
+>
+  Full
+</Button>
+
                     </div>
                   </td>
                 </tr>

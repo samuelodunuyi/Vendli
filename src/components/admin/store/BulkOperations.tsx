@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,58 +6,76 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Package, DollarSign, Users, Calendar } from "lucide-react";
+import { Package, Calendar } from "lucide-react";
 import { toast } from "@/components/ui/sonner";
 import { Store } from "@/redux/services/stores.services";
+import { useGetProductsQuery } from "@/redux/services/products.services";
+import { useCreateTransactionsMutation } from "@/redux/services/inventory.services";
 
 interface BulkOperationsProps {
   stores: Store[];
 }
 
 export function BulkOperations({ stores }: BulkOperationsProps) {
-  const [selectedStores, setSelectedStores] = useState<string[]>([]);
-  const [bulkInventory, setBulkInventory] = useState({ productId: "", quantity: 0, operation: "add" });
+  const [selectedStores, setSelectedStores] = useState<number[]>([]);
+  const [bulkInventory, setBulkInventory] = useState({ productId: "", quantity: 0, transactionType: 0 }); // 0 = In
   const [bulkPricing, setBulkPricing] = useState({ productId: "", price: 0, discount: 0 });
   const [bulkPromotion, setBulkPromotion] = useState({ name: "", startDate: "", endDate: "", discount: 0 });
 
-  const handleStoreSelection = (storeId: string, checked: boolean) => {
-    if (checked) {
-      setSelectedStores([...selectedStores, storeId]);
-    } else {
-      setSelectedStores(selectedStores.filter(id => id !== storeId));
+  const { data: products, refetch } = useGetProductsQuery({ page: 1, itemsPerPage: 1000 });
+  const [createTransaction, { isLoading }] = useCreateTransactionsMutation();
+
+  const handleStoreSelection = (storeId: number, checked: boolean) => {
+    setSelectedStores(prev => checked ? [...prev, storeId] : prev.filter(id => id !== storeId));
+  };
+
+  const selectedProduct = products?.products?.find(p => p.productId.toString() === bulkInventory.productId);
+  const basestock = selectedProduct?.basestock ?? 0;
+
+  const handleBulkInventoryUpdate = async () => {
+    if (selectedStores.length === 0) return toast.error("Please select at least one store");
+    if (!bulkInventory.productId) return toast.error("Please select a product");
+    if (bulkInventory.quantity === 0) return toast.error("Quantity must be non-zero");
+    if (bulkInventory.transactionType === 1 && bulkInventory.quantity > basestock) {
+      return toast.error(`Cannot remove more than available basestock (${basestock})`);
+    }
+
+    try {
+      for (const storeId of selectedStores) {
+        await createTransaction({
+          transactionType: bulkInventory.transactionType,
+          productId: Number(bulkInventory.productId),
+          storeId,
+          quantity: bulkInventory.quantity,
+          reference: `INV-${new Date().getFullYear()}-${storeId}`,
+          reason: "Bulk inventory operation"
+        }).unwrap();
+      }
+      refetch();
+      toast.success(`Inventory updated for ${selectedStores.length} store(s)`);
+    } catch (err) {
+      console.error(err);
+      toast.error(err?.data?.message || "Failed to create transaction");
     }
   };
 
-  const handleBulkInventoryUpdate = () => {
-    if (selectedStores.length === 0) {
-      toast.error("Please select at least one store");
-      return;
-    }
-    toast.success(`Inventory ${bulkInventory.operation} operation applied to ${selectedStores.length} stores`);
-  };
-
-  const handleBulkPriceUpdate = () => {
-    if (selectedStores.length === 0) {
-      toast.error("Please select at least one store");
-      return;
-    }
-    toast.success(`Price updates applied to ${selectedStores.length} stores`);
+  const handleBulkPricingUpdate = () => {
+    if (selectedStores.length === 0) return toast.error("Please select at least one store");
+    if (!bulkPricing.productId) return toast.error("Please select a product");
+    toast.success(`Price updates applied to ${selectedStores.length} store(s)`);
   };
 
   const handleBulkPromotionDeploy = () => {
-    if (selectedStores.length === 0) {
-      toast.error("Please select at least one store");
-      return;
-    }
-    toast.success(`Promotion "${bulkPromotion.name}" deployed to ${selectedStores.length} stores`);
+    if (selectedStores.length === 0) return toast.error("Please select at least one store");
+    if (!bulkPromotion.name) return toast.error("Please enter a promotion name");
+    toast.success(`Promotion "${bulkPromotion.name}" deployed to ${selectedStores.length} store(s)`);
   };
 
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
-          <Package className="h-5 w-5" />
-          Bulk Operations
+          <Package className="h-5 w-5" /> Bulk Operations
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -66,109 +83,75 @@ export function BulkOperations({ stores }: BulkOperationsProps) {
         <div>
           <Label className="text-base font-medium">Select Stores</Label>
           <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-2">
-            {stores.map((store) => (
+            {stores.map(store => (
               <div key={store.storeId} className="flex items-center space-x-2">
                 <Checkbox
-                  id={store.storeName}
-                  checked={selectedStores.includes(store.storeName)}
-                  onCheckedChange={(checked) => handleStoreSelection(store.storeName, checked as boolean)}
+                  id={`store-${store.storeId}`}
+                  checked={selectedStores.includes(store.storeId)}
+                  onCheckedChange={(checked) => handleStoreSelection(store.storeId, checked as boolean)}
                 />
-                <Label htmlFor={store.storeName} className="text-sm font-normal">
-                  {store.storeName}
-                </Label>
+                <Label htmlFor={`store-${store.storeId}`} className="text-sm font-normal">{store.storeName}</Label>
               </div>
             ))}
           </div>
-          <p className="text-sm text-gray-500 mt-2">
-            {selectedStores.length} store(s) selected
-          </p>
+          <p className="text-sm text-gray-500 mt-2">{selectedStores.length} store(s) selected</p>
         </div>
 
         <Tabs defaultValue="inventory" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="inventory">Inventory</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing</TabsTrigger>
             <TabsTrigger value="promotions">Promotions</TabsTrigger>
           </TabsList>
 
+          {/* Inventory Tab */}
           <TabsContent value="inventory" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <Label htmlFor="product">Product ID</Label>
-                <Input
-                  id="product"
+                <Label htmlFor="product">Product</Label>
+                <Select
                   value={bulkInventory.productId}
-                  onChange={(e) => setBulkInventory({...bulkInventory, productId: e.target.value})}
-                  placeholder="Enter product ID"
-                />
+                  onValueChange={(v) => setBulkInventory({...bulkInventory, productId: v})}
+                >
+                  <SelectTrigger><SelectValue placeholder="Select product" /></SelectTrigger>
+                  <SelectContent>
+                    {products?.products?.map(p => (
+                      <SelectItem key={p.productId} value={p.productId.toString()}>
+                        {p.productName} (Stock: {p.basestock})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div>
-                <Label htmlFor="quantity">Quantity</Label>
+                <Label htmlFor="quantity">Quantity {bulkInventory.transactionType === 1 && selectedProduct ? `(Max: ${basestock})` : ""}</Label>
                 <Input
                   id="quantity"
                   type="number"
                   value={bulkInventory.quantity}
-                  onChange={(e) => setBulkInventory({...bulkInventory, quantity: parseInt(e.target.value) || 0})}
+                  onChange={(e) => setBulkInventory({...bulkInventory, quantity: Number(e.target.value) || 0})}
                 />
               </div>
               <div>
-                <Label htmlFor="operation">Operation</Label>
+                <Label htmlFor="transactionType">Transaction Type</Label>
                 <Select
-                  value={bulkInventory.operation}
-                  onValueChange={(value) => setBulkInventory({...bulkInventory, operation: value})}
+                  value={bulkInventory.transactionType.toString()}
+                  onValueChange={(v) => setBulkInventory({...bulkInventory, transactionType: Number(v)})}
                 >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="add">Add Stock</SelectItem>
-                    <SelectItem value="remove">Remove Stock</SelectItem>
-                    <SelectItem value="set">Set Stock Level</SelectItem>
+                    <SelectItem value="0">In</SelectItem>
+                    <SelectItem value="1">Out</SelectItem>
+                    <SelectItem value="2">Adjustment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             </div>
-            <Button onClick={handleBulkInventoryUpdate} className="w-full">
+            <Button onClick={handleBulkInventoryUpdate} className="w-full" disabled={isLoading}>
               Apply Inventory Changes
             </Button>
           </TabsContent>
 
-          <TabsContent value="pricing" className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="priceProduct">Product ID</Label>
-                <Input
-                  id="priceProduct"
-                  value={bulkPricing.productId}
-                  onChange={(e) => setBulkPricing({...bulkPricing, productId: e.target.value})}
-                  placeholder="Enter product ID"
-                />
-              </div>
-              <div>
-                <Label htmlFor="price">New Price (₦)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  value={bulkPricing.price}
-                  onChange={(e) => setBulkPricing({...bulkPricing, price: parseFloat(e.target.value) || 0})}
-                />
-              </div>
-              <div>
-                <Label htmlFor="discount">Discount (%)</Label>
-                <Input
-                  id="discount"
-                  type="number"
-                  value={bulkPricing.discount}
-                  onChange={(e) => setBulkPricing({...bulkPricing, discount: parseFloat(e.target.value) || 0})}
-                />
-              </div>
-            </div>
-            <Button onClick={handleBulkPriceUpdate} className="w-full">
-              <DollarSign className="h-4 w-4 mr-2" />
-              Apply Price Changes
-            </Button>
-          </TabsContent>
-
+          {/* Promotions Tab */}
           <TabsContent value="promotions" className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -186,7 +169,7 @@ export function BulkOperations({ stores }: BulkOperationsProps) {
                   id="promoDiscount"
                   type="number"
                   value={bulkPromotion.discount}
-                  onChange={(e) => setBulkPromotion({...bulkPromotion, discount: parseFloat(e.target.value) || 0})}
+                  onChange={(e) => setBulkPromotion({...bulkPromotion, discount: Number(e.target.value) || 0})}
                 />
               </div>
               <div>
@@ -209,8 +192,7 @@ export function BulkOperations({ stores }: BulkOperationsProps) {
               </div>
             </div>
             <Button onClick={handleBulkPromotionDeploy} className="w-full">
-              <Calendar className="h-4 w-4 mr-2" />
-              Deploy Promotion
+              <Calendar className="h-4 w-4 mr-2" /> Deploy Promotion
             </Button>
           </TabsContent>
         </Tabs>

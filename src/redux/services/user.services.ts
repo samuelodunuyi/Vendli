@@ -13,7 +13,7 @@ export interface CreateUserRequest {
   phoneNumber: string;
   firstName: string;
   lastName: string;
-  storeId?: number;
+  storeId: number;
 }
 
 export interface UpdateUserRequest {
@@ -42,6 +42,7 @@ export interface SetUserStatusRequest {
 export interface GetUsersRequest {
   role?: string;
   page?: number;
+  storeId?: number;
   itemsPerPage?: number;
 }
 
@@ -60,6 +61,14 @@ export interface Pagination {
   hasPreviousPage: boolean;
 }
 
+export interface Tiles {
+  activeUsers: number;
+  customers: number;
+  employees: number;
+  storeAdmins: number;
+  superAdmins: boolean;
+}
+
 export interface User {
   id: number;
   username: string;
@@ -68,6 +77,7 @@ export interface User {
   lastName: string;
   phoneNumber: string;
   joinedDate: string;
+  role?: string;
   roleId: number;
   roleName: string;
   isActive: boolean;
@@ -80,6 +90,7 @@ export interface User {
 export interface GetUsersResponse {
   users: User[];
   pagination: Pagination;
+  tiles: Tiles
 }
 
 // Users API
@@ -88,15 +99,16 @@ export const usersApi = createApi({
   baseQuery: baseQueryWithReauth,
   endpoints: (builder) => ({
     getUsers: builder.query<GetUsersResponse, GetUsersRequest>({
-      query: (params) => ({
-        url: "/UserManagement/get-users",
-        method: "GET",
-        params: {
-          ...(params.role && { role: params.role }),
-          ...(params.page && { page: params.page }),
-          ...(params.itemsPerPage && { itemsPerPage: params.itemsPerPage }),
-        },
-      }),
+query: (params) => ({
+  url: "/UserManagement/get-users",
+  method: "GET",
+  params: {
+    ...(params.storeId && { storeId: params.storeId }),
+    ...(params.role && { role: params.role }),
+    ...(params.page && { page: params.page }),
+    ...(params.itemsPerPage && { itemsPerPage: params.itemsPerPage }),
+  },
+}),
     }),
 
     createUser: builder.mutation<MessageResponse, CreateUserRequest>({

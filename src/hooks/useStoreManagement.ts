@@ -81,10 +81,11 @@ export function useStoreManagement() {
     }
   ];
 
-  const handleStoreSwitch = (storeId: number) => {
-    setActiveStoreId(storeId);
-    toast.success(`Switched to ${getStoreName(storeId)}`);
-  };
+const handleStoreSwitch = (storeId: number, storeName?: string) => {
+  setActiveStoreId(storeId);
+  console.log(storeName)
+  toast.success(`Switched to ${storeName}`);
+};
 
   const toggleCompareMode = () => {
     setCompareMode((prev) => !prev);

@@ -47,70 +47,73 @@ export function CustomerOverview({ timeline, storeId, startDate, endDate }: Cust
   return (
     <div className="space-y-6">
       {/* Key Metrics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <Card>
-          <CardHeader className="flex justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{totalCustomers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              +{newCustomersThisMonth} new this period
-            </p>
-          </CardContent>
-        </Card>
+<div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+  {/* Summary Cards */}
+  <Card>
+    <CardHeader className="flex justify-between pb-2">
+      <CardTitle className="text-sm font-medium">Total Customers</CardTitle>
+      <Users className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{totalCustomers.toLocaleString()}</div>
+      <p className="text-xs text-muted-foreground">
+        +{newCustomersThisMonth} new this period
+      </p>
+    </CardContent>
+  </Card>
 
-        <Card>
-          <CardHeader className="flex justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{activeCustomers.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">{customerRetentionRate.toFixed(2)}% retention</p>
-          </CardContent>
-        </Card>
+  <Card>
+    <CardHeader className="flex justify-between pb-2">
+      <CardTitle className="text-sm font-medium">Active Customers</CardTitle>
+      <TrendingUp className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{activeCustomers.toLocaleString()}</div>
+      <p className="text-xs text-muted-foreground">
+        {customerRetentionRate.toFixed(2)}% retention
+      </p>
+    </CardContent>
+  </Card>
 
-        <Card>
-          <CardHeader className="flex justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Revenue per Customer</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₦{averageLifetimeValue.toLocaleString()}</div>
-          </CardContent>
-        </Card>
+  <Card>
+    <CardHeader className="flex justify-between pb-2">
+      <CardTitle className="text-sm font-medium">Avg. Revenue per Customer</CardTitle>
+      <Star className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">₦{averageLifetimeValue.toLocaleString()}</div>
+    </CardContent>
+  </Card>
 
-        <Card>
-          <CardHeader className="flex justify-between pb-2">
-            <CardTitle className="text-sm font-medium">Open Complaints</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{openComplaints.toLocaleString()}</div>
-          </CardContent>
-        </Card>
-      </div>
+  <Card>
+    <CardHeader className="flex justify-between pb-2">
+      <CardTitle className="text-sm font-medium">Open Complaints</CardTitle>
+      <AlertCircle className="h-4 w-4 text-muted-foreground" />
+    </CardHeader>
+    <CardContent>
+      <div className="text-2xl font-bold">{openComplaints.toLocaleString()}</div>
+    </CardContent>
+  </Card>
 
-      {/* Customer Classification Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {classificationCounts.map((cls) => (
-          <Card key={cls.classification}>
-            <CardHeader>
-              <CardTitle className="text-base">{cls.classification}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className={`text-xl font-bold text-${CustomerClassificationEnum[cls.classification]}`}>
-                {cls.count.toLocaleString()}
-              </div>
-              <p className="text-sm text-muted-foreground">
-                {((cls.count / totalCustomers) * 100).toFixed(2)}% of total customers
-              </p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
+  {/* Customer Classification Cards */}
+  {classificationCounts.map((cls) => (
+    <Card key={cls.classification}>
+      <CardHeader>
+        <CardTitle className="text-base">{cls.classification}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div
+          className={`text-xl font-bold text-${CustomerClassificationEnum[cls.classification]}`}
+        >
+          {cls.count.toLocaleString()}
+        </div>
+        <p className="text-sm text-muted-foreground">
+          {((cls.count / totalCustomers) * 100).toFixed(2)}% of total customers
+        </p>
+      </CardContent>
+    </Card>
+  ))}
+</div>
 
       {/* Recent High-Value Customers */}
       <Card>

@@ -1,10 +1,7 @@
-
+// StoreOverviewTab.tsx
 import { StoreSelectionBar } from "./StoreSelectionBar";
 import { ActiveStoreDetails } from "./ActiveStoreDetails";
 import { StoreGrid } from "./StoreGrid";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Truck, DollarSign, Clock, TrendingUp, Package } from "lucide-react";
 import { Store } from "@/redux/services/stores.services";
 
 interface StoreOverviewTabProps {
@@ -13,7 +10,7 @@ interface StoreOverviewTabProps {
   activeStoreId: number;
   compareMode: boolean;
   selectedStoresForComparison: number[];
-  onStoreSwitch: (storeId: number) => void;
+  onStoreSwitch: (storeId: number, storeName?: string) => void;
   onStoreSelect: (storeId: number) => void;
   onEditStore: (storeId: number) => void;
   onViewAnalytics: (storeId: number) => void;
@@ -30,18 +27,8 @@ export function StoreOverviewTab({
   onStoreSelect,
   onEditStore,
   onViewAnalytics,
-  onManageStaff
+  onManageStaff,
 }: StoreOverviewTabProps) {
-  // Mock delivery metrics for the active store
-  const deliveryMetrics = {
-    totalOrders: 245,
-    averageDeliveryCost: 2150,
-    costSavings: 18500,
-    topProvider: "GIG Logistics",
-    onTimeDeliveryRate: 94.2,
-    activeProviders: 4
-  };
-
   return (
     <div className="space-y-6">
       <StoreSelectionBar
@@ -49,27 +36,30 @@ export function StoreOverviewTab({
         activeStoreId={activeStoreId}
         compareMode={compareMode}
         selectedStoresForComparison={selectedStoresForComparison}
-        onStoreSwitch={onStoreSwitch}
+        onStoreSwitch={(storeId) => {
+          const store = stores.find((s) => s.storeId === storeId);
+          onStoreSwitch(storeId, store?.storeName);
+        }}
         onStoreSelect={onStoreSelect}
       />
 
       {activeStore && !compareMode && (
-        <>
-          <ActiveStoreDetails
-            store={activeStore}
-            onEditStore={onEditStore}
-            onViewAnalytics={onViewAnalytics}
-            onManageStaff={onManageStaff}
-          />
-
-        </>
+        <ActiveStoreDetails
+          store={activeStore}
+          onEditStore={onEditStore}
+          onViewAnalytics={onViewAnalytics}
+          onManageStaff={onManageStaff}
+        />
       )}
 
       {!compareMode && (
         <StoreGrid
           stores={stores}
           activeStoreId={activeStoreId}
-          onStoreSwitch={onStoreSwitch}
+          onStoreSwitch={(storeId) => {
+            const store = stores.find((s) => s.storeId === storeId);
+            onStoreSwitch(storeId, store?.storeName);
+          }}
         />
       )}
     </div>

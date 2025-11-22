@@ -22,6 +22,7 @@ export function OrdersManagement() {
   const [showDeliveryTracking, setShowDeliveryTracking] = useState(false);
   const { data: ordersData, isLoading } = useGetOrdersQuery({});
   const orders = ordersData?.orders ?? [];
+  const orderTiles = ordersData?.tiles;
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
       order.id.toString().includes(searchQuery.toLowerCase()) ||
@@ -38,13 +39,12 @@ export function OrdersManagement() {
   });
 
   const orderStats = {
-    total: orders?.length,
-    pending: orders?.filter((o) => o.status === 0).length,
-    processing: orders?.filter((o) => o.status === 1).length,
-    completed: orders?.filter((o) => o.status === 2).length,
-    cancelled: orders?.filter((o) => o.status === 7).length,
+    total: ordersData?.pagination.totalItems || 0,
+    pending: orderTiles?.delivered,
+    completed: orderTiles?.completed,
+    cancelled: orderTiles?.cancelled,
     totalRevenue: orders
-      ?.filter((o) => o.status === 4) // delivered orders
+      ?.filter((o) => o.status === 4) 
       .reduce((sum, o) => {
         const orderTotal = o.orderItems?.reduce(
           (itemSum, item) => itemSum + item.priceAtOrder * item.quantity,
@@ -52,8 +52,7 @@ export function OrdersManagement() {
         );
         return sum + orderTotal;
       }, 0),
-    // avgRating: orders.filter(o => o.feedbackRating).reduce((sum, o) => sum + (o.feedbackRating || 0), 0) / orders.filter(o => o.feedbackRating).length || 0
-    avgRating: 0,
+    avgRating: orderTiles?.averageRating ?? 0,
   };
 
   const handleViewEnhancedOrder = (order: Order) => {

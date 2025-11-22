@@ -54,11 +54,10 @@ export function CustomerAnalytics({ stores }: CustomerAnalyticsProps) {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="behavior" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="behavior">Customer Behavior</TabsTrigger>
             <TabsTrigger value="migration">Store Migration</TabsTrigger>
             <TabsTrigger value="preferences">Regional Preferences</TabsTrigger>
-            <TabsTrigger value="loyalty">Loyalty Program</TabsTrigger>
           </TabsList>
 
           <TabsContent value="behavior" className="space-y-6">
@@ -206,66 +205,6 @@ export function CustomerAnalytics({ stores }: CustomerAnalyticsProps) {
                 </div>
               </CardContent>
             </Card>
-          </TabsContent>
-
-          <TabsContent value="loyalty" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Loyalty Program Growth</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ResponsiveContainer width="100%" height={250}>
-                    <LineChart data={loyaltyTrends}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="month" />
-                      <YAxis />
-                      <Tooltip />
-                      <Line type="monotone" dataKey="tier1" stroke="#3B82F6" strokeWidth={2} name="Bronze Tier" />
-                      <Line type="monotone" dataKey="tier2" stroke="#10B981" strokeWidth={2} name="Silver Tier" />
-                      <Line type="monotone" dataKey="tier3" stroke="#F59E0B" strokeWidth={2} name="Gold Tier" />
-                    </LineChart>
-                  </ResponsiveContainer>
-                </CardContent>
-              </Card>
-
-              <Card>
-                <CardHeader>
-                  <CardTitle className="text-lg">Current Loyalty Distribution</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Heart className="h-4 w-4 text-yellow-500" />
-                        <span>Gold Tier</span>
-                      </div>
-                      <Badge variant="default">185 members</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Heart className="h-4 w-4 text-gray-400" />
-                        <span>Silver Tier</span>
-                      </div>
-                      <Badge variant="secondary">358 members</Badge>
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Heart className="h-4 w-4 text-orange-400" />
-                        <span>Bronze Tier</span>
-                      </div>
-                      <Badge variant="outline">615 members</Badge>
-                    </div>
-                    <div className="pt-4 border-t">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-green-600">1,158</div>
-                        <div className="text-sm text-gray-600">Total Active Members</div>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
           </TabsContent>
         </Tabs>
       </CardContent>
