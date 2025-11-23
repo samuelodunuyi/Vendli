@@ -1,7 +1,7 @@
 // src/store/apiSlice.ts
-import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { baseUrl } from '../baseUrl';
-import type { RootState } from '../store';
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { baseUrl } from "../baseUrl";
+import type { RootState } from "../store";
 
 // ================== TYPES ==================
 
@@ -39,11 +39,10 @@ export interface AuthResponse {
   store: Store;
 }
 
-export interface Store{
+export interface Store {
   storeId: number;
-  storeName: string
+  storeName: string;
 }
-
 
 export interface RefreshTokenRequest {
   accessToken: string;
@@ -61,75 +60,76 @@ export interface LogoutResponse {
 // ================== API ==================
 
 export const authApi = createApi({
-  reducerPath: 'authApi',
+  reducerPath: "authApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${baseUrl}`,
     prepareHeaders: (headers, { getState }) => {
       const { accessToken } = (getState() as RootState).auth;
-      if (accessToken) headers.set('Authorization', `Bearer ${accessToken}`);
-      headers.set('Content-Type', 'application/json');
+      if (accessToken) headers.set("Authorization", `Bearer ${accessToken}`);
+      headers.set("Content-Type", "application/json");
       return headers;
     },
   }),
-  tagTypes: ['Auth'],
+  tagTypes: ["Auth"],
   endpoints: (builder) => ({
     // ================== AUTH ENDPOINTS ==================
     register: builder.mutation<AuthResponse, RegisterRequest>({
       query: (body) => ({
-        url: 'Auth/register',
-        method: 'POST',
+        url: "Auth/register",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Auth'],
+      invalidatesTags: ["Auth"],
     }),
 
     // Login
     login: builder.mutation<AuthResponse, LoginRequest>({
       query: (body) => ({
-        url: 'Auth/login',
-        method: 'POST',
+        url: "Auth/login",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Auth'],
+      invalidatesTags: ["Auth"],
     }),
 
     // Refresh Token
     refreshToken: builder.mutation<AuthResponse, RefreshTokenRequest>({
       query: (body) => ({
-        url: 'Auth/refresh-token',
-        method: 'POST',
+        url: "Auth/refresh-token",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Auth'],
+      invalidatesTags: ["Auth"],
     }),
 
-       changePassword: builder.mutation<ChangePasswordResponse, ChangePasswordRequest>({
+    changePassword: builder.mutation<
+      ChangePasswordResponse,
+      ChangePasswordRequest
+    >({
       query: (body) => ({
-        url: 'Auth/change-password',
-        method: 'POST',
+        url: "Auth/change-password",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Auth'],
+      invalidatesTags: ["Auth"],
     }),
 
-    // Logout
-    logout: builder.mutation<LogoutResponse, LogoutRequest>({
+    logout: builder.mutation<LogoutResponse, { refreshToken: string }>({
       query: (body) => ({
-        url: 'Auth/logout',
-        method: 'POST',
+        url: "Auth/logout",
+        method: "POST",
         body,
       }),
-      invalidatesTags: ['Auth'],
+      invalidatesTags: ["Auth"],
     }),
   }),
 });
 
 // ================== EXPORT HOOKS ==================
-
 export const {
   useRegisterMutation,
   useLoginMutation,
   useRefreshTokenMutation,
   useLogoutMutation,
-  useChangePasswordMutation
+  useChangePasswordMutation,
 } = authApi;
