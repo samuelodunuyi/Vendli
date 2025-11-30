@@ -34,6 +34,8 @@ import { customersApi } from "@/redux/services/customer.services";
 import { usersApi } from "@/redux/services/user.services";
 import { restaurantApi } from "@/redux/services/restaurant.services";
 import { inventoryApi } from "./services/inventory.services";
+import { promotionsApi } from "./services/promotions.services";
+import { analyticsApi } from "./services/analytics.services";
 
 // ================== SLICES ==================
 import authReducer from "./slices/authSlice";
@@ -58,6 +60,8 @@ const rootReducer = combineReducers({
   [usersApi.reducerPath]: usersApi.reducer,
   [restaurantApi.reducerPath]: restaurantApi.reducer,
   [inventoryApi.reducerPath]: inventoryApi.reducer,
+  [promotionsApi.reducerPath]: promotionsApi.reducer,
+  [analyticsApi.reducerPath]: analyticsApi.reducer,
 });
 
 const persistedReducer = persistReducer(
@@ -82,6 +86,8 @@ export const store = configureStore({
       usersApi.middleware,
       restaurantApi.middleware,
       inventoryApi.middleware,
+      promotionsApi.middleware,
+      analyticsApi.middleware,
     ]),
 });
 

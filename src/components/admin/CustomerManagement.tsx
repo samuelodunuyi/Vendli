@@ -86,7 +86,7 @@ export function CustomerManagement() {
   setLoyaltyTier={setLoyaltyTier}
   status={status}
   setStatus={setStatus}
-  storeData={storeData.stores || []}
+  storeData={storeData?.stores || []}
   refetch={refetch}
 />
         </TabsContent>
@@ -104,7 +104,7 @@ export function CustomerManagement() {
         open={showAddDialog}
         onOpenChange={setShowAddDialog}
         onCustomerAdded={handleCustomerAdded}
-        storeData={storeData.stores || []}
+        storeData={storeData?.stores || []}
       />
     </div>
   );

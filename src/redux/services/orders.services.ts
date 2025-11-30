@@ -146,11 +146,27 @@ export interface StatisticsResponse {
   salesChart: SalesChart;
 }
 
+// -------------------- Loyalty Activity --------------------
+export interface LoyaltyActivity {
+  id: number;
+  customerId: number;
+  pointsEarned: number;
+  pointsRedeemed: number;
+  orderId: number;
+  createdAt: string;
+}
+
+export interface LoyaltyActivityQueryParams {
+  customer_id?: number;
+  from?: string; // ISO string
+  to?: string;   // ISO string
+}
+
 // -------------------- API --------------------
 export const orderApi = createApi({
   reducerPath: 'orderApi',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Orders', 'Order'],
+  tagTypes: ['Orders', 'Order', 'LoyaltyActivity'],
   endpoints: (builder) => ({
     getOrders: builder.query<
       GetOrdersResponse,
@@ -163,7 +179,7 @@ export const orderApi = createApi({
         userId?: string;
         storeId?: number;
         productId?: number;
-        customerEmail?: string
+        customerEmail?: string;
       }
     >({
       query: (params) => ({
@@ -179,19 +195,16 @@ export const orderApi = createApi({
           : [{ type: 'Orders', id: 'LIST' }],
     }),
 
-    // Fetch order by ID
     getOrderById: builder.query<Order, number>({
       query: (id) => `/Order/${id}`,
       providesTags: (result, error, id) => [{ type: 'Order', id }],
     }),
 
-    // Create order
     createOrder: builder.mutation<Order, CreateOrderRequest>({
       query: (body) => ({ url: '/Order', method: 'POST', body }),
       invalidatesTags: [{ type: 'Orders', id: 'LIST' }],
     }),
 
-    // Update order status
     updateOrderStatus: builder.mutation<
       { message: string },
       { id: number; body: UpdateOrderStatusRequest }
@@ -201,10 +214,12 @@ export const orderApi = createApi({
         method: 'PUT',
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }, { type: 'Orders', id: 'LIST' }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Order', id },
+        { type: 'Orders', id: 'LIST' },
+      ],
     }),
 
-    // Update estimated delivery date
     updateEstimatedDeliveryDate: builder.mutation<
       { message: string },
       { id: number; body: UpdateEstimatedDeliveryDateRequest }
@@ -214,10 +229,12 @@ export const orderApi = createApi({
         method: 'PUT',
         body,
       }),
-      invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }, { type: 'Orders', id: 'LIST' }],
+      invalidatesTags: (result, error, { id }) => [
+        { type: 'Order', id },
+        { type: 'Orders', id: 'LIST' },
+      ],
     }),
 
-    // Rate an order
     rateOrder: builder.mutation<
       { message: string; rating: number },
       { id: number; body: RateOrderRequest }
@@ -230,12 +247,27 @@ export const orderApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }],
     }),
 
-    // -------------------- Statistics --------------------
     getStatistics: builder.query<
       StatisticsResponse,
       { timeline?: string; storeId?: number; startDate?: string; endDate?: string }
     >({
       query: (params) => ({ url: '/Statistics', params }),
+    }),
+
+    // -------------------- Loyalty Activity --------------------
+    getLoyaltyActivity: builder.query<LoyaltyActivity[], LoyaltyActivityQueryParams>({
+      query: (params) => ({
+        url: '/LoyaltyActivity',
+        method: 'GET',
+        params,
+      }),
+      providesTags: (result) =>
+        result
+          ? [
+              ...result.map((activity) => ({ type: 'LoyaltyActivity' as const, id: activity.id })),
+              { type: 'LoyaltyActivity', id: 'LIST' },
+            ]
+          : [{ type: 'LoyaltyActivity', id: 'LIST' }],
     }),
   }),
 });
@@ -249,4 +281,5 @@ export const {
   useUpdateEstimatedDeliveryDateMutation,
   useRateOrderMutation,
   useGetStatisticsQuery,
+  useGetLoyaltyActivityQuery,
 } = orderApi;

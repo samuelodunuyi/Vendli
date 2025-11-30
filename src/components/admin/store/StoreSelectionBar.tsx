@@ -28,7 +28,7 @@ export function StoreSelectionBar({
       </CardHeader>
       <CardContent>
         <div className="flex flex-wrap gap-2">
-          {stores.map((store) => (
+          {stores?.map((store) => (
             <Button
               key={store.storeId}
               variant={activeStoreId === store.storeId ? "default" : "outline"}
