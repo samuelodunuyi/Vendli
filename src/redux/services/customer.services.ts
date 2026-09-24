@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 // src/store/customers.services.ts
 import { createApi } from "@reduxjs/toolkit/query/react";
 import { baseQueryWithReauth } from "./baseQueryWithReauth";
@@ -31,6 +30,7 @@ export interface CreateCustomerRequest {
   industryClass?: string | null;
   notes?: string;
   customerStatus?: number;
+  preferredStoreId?: number;
 }
 
 export interface UpdateCustomerRequest {

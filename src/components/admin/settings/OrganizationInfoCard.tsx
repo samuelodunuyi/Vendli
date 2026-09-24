@@ -18,7 +18,7 @@ export function OrganizationInfoCard() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="store-name">Organization Name</Label>
-            <Input id="store-name" defaultValue="CW Retail POS" />
+            <Input id="store-name" defaultValue="Vendli POS" />
           </div>
           <div>
             <Label htmlFor="store-phone">Phone Number</Label>

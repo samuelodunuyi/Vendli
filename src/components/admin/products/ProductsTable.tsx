@@ -1,282 +1,120 @@
-// ProductsTable.tsx
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { History, MapPin, MoreHorizontal, PackagePlus, Pencil, ShoppingCart, Split, Trash2 } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Edit,
-  Trash2,
-  MapPin,
-  TrendingUp,
-  History,
-  ShoppingCart,
-  Package,
-} from "lucide-react";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
-import { StockByStoreDialog } from "./StockByStoreDialog";
-import { AdjustStockDialog } from "./AdjustStockDialog";
-import { TransactionHistoryDialog } from "./TransactionHistoryDialog";
-import { RecentOrdersDialog } from "./RecentOrdersDialog";
-import { Product } from "@/redux/services/products.services";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ProductImage } from "@/components/common/ProductImage";
+import { Pager } from "@/components/common/Pager";
+import type { Product } from "@/redux/services/products.services";
+import { useAuth } from "@/hooks/useAuth";
+import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
+
+export type ProductAction = "edit" | "restock" | "distribute" | "stock" | "movements" | "orders" | "delete";
 
 interface ProductsTableProps {
-  filteredProducts: Product[];
-  productsWithTransactions: string[];
-  onEditProduct: (product: Product) => void;
-  onDeleteProduct: (productId: number) => void;
-  onViewStockByStore: (product: Product) => void;
-  onAdjustStock: (product: Product) => void;
-  onViewTransactionHistory: (product: Product) => void;
-  onViewRecentOrders: (product: Product) => void;
-  onOpenRestock: (product: Product) => void;
-
-  stockByStoreProduct: Product | null;
-  setStockByStoreProduct: (product: Product | null) => void;
-
-  adjustStockProduct: Product | null;
-  setAdjustStockProduct: (product: Product | null) => void;
-
-  transactionHistoryProduct: Product | null;
-  setTransactionHistoryProduct: (product: Product | null) => void;
-
-  recentOrdersProduct: Product | null;
-  setRecentOrdersProduct: (product: Product | null) => void;
-
-  restockingProduct: Product | null;
-  setRestockingProduct: (product: Product | null) => void;
+  products: Product[];
+  loading: boolean;
+  page: number;
+  totalPages: number;
+  totalItems?: number;
+  onPageChange: (page: number) => void;
+  onAction: (action: ProductAction, product: Product) => void;
 }
 
-export function ProductsTable({
-  filteredProducts,
-  productsWithTransactions,
-  onEditProduct,
-  onDeleteProduct,
-  onViewStockByStore,
-  onAdjustStock,
-  onViewTransactionHistory,
-  onViewRecentOrders,
-  onOpenRestock,
-  stockByStoreProduct,
-  setStockByStoreProduct,
-  adjustStockProduct,
-  setAdjustStockProduct,
-  transactionHistoryProduct,
-  setTransactionHistoryProduct,
-  recentOrdersProduct,
-  setRecentOrdersProduct,
-  restockingProduct,
-  setRestockingProduct,
-}: ProductsTableProps) {
-  const canDelete = (productId: number) =>
-    !productsWithTransactions.includes(String(productId));
+const stockTone = (p: Product) =>
+  p.basestock <= 0 ? "text-red-600" : p.basestock <= p.minimumStockLevel ? "text-amber-600" : "text-foreground";
 
-  const getStockColor = (stock: number, lowStockAlert: number = 10) => {
-    return stock <= lowStockAlert
-      ? "text-red-600 font-semibold"
-      : "text-green-600 font-semibold";
-  };
+export function ProductsTable({ products, loading, page, totalPages, totalItems, onPageChange, onAction }: ProductsTableProps) {
+  const { isSuperAdmin } = useAuth();
+
+  const menu = (p: Product) => (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant="ghost" size="icon" aria-label={`Actions for ${p.productName}`}><MoreHorizontal className="h-4 w-4" /></Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="end">
+        {isSuperAdmin && <DropdownMenuItem onClick={() => onAction("edit", p)}><Pencil className="mr-2 h-4 w-4" />Edit details</DropdownMenuItem>}
+        <DropdownMenuItem onClick={() => onAction("restock", p)}><PackagePlus className="mr-2 h-4 w-4" />Add / remove stock</DropdownMenuItem>
+        {isSuperAdmin && <DropdownMenuItem onClick={() => onAction("distribute", p)}><Split className="mr-2 h-4 w-4" />Distribute to stores</DropdownMenuItem>}
+        <DropdownMenuSeparator />
+        {isSuperAdmin && <DropdownMenuItem onClick={() => onAction("stock", p)}><MapPin className="mr-2 h-4 w-4" />Stock by store</DropdownMenuItem>}
+        <DropdownMenuItem onClick={() => onAction("movements", p)}><History className="mr-2 h-4 w-4" />Stock movements</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onAction("orders", p)}><ShoppingCart className="mr-2 h-4 w-4" />Recent orders</DropdownMenuItem>
+        {isSuperAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => onAction("delete", p)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+
+  const identity = (p: Product) => (
+    <div className="flex min-w-0 items-center gap-3">
+      <ProductImage src={p.imageUrl} name={p.productName} className="h-10 w-10 shrink-0 rounded-md text-xs" />
+      <div className="min-w-0">
+        <p className="truncate font-medium">{p.productName}</p>
+        <p className="truncate text-xs text-muted-foreground">{p.sku} · {p.categoryName}</p>
+      </div>
+    </div>
+  );
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <CardTitle>Product Inventory</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-2">Product</th>
-                  <th className="text-left p-2">Category</th>
-                  <th className="text-left p-2">Price</th>
-                  <th className="text-left p-2">Stock</th>
-                  <th className="text-left p-2">Status</th>
-                  <th className="text-left p-2">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredProducts.map((product) => (
-                  <tr key={product.productId} className="border-b hover:bg-gray-50">
-                    <td className="p-2">
-                      <div className="flex items-center gap-3">
-                        <img
-                          src={product.imageUrl || "/placeholder.svg"}
-                          alt={product.productName}
-                          className="w-10 h-10 rounded object-cover"
-                        />
-                        <div>
-                          <div className="font-medium">{product.productName}</div>
-                          <div className="text-sm text-gray-500">{product.barcode}</div>
-                        </div>
+    <Card className="overflow-hidden">
+      {loading ? (
+        <div className="space-y-2 p-4">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}</div>
+      ) : !products.length ? (
+        <p className="p-10 text-center text-muted-foreground">No products match your search.</p>
+      ) : (
+        <>
+          <ul className="divide-y md:hidden">
+            {products.map((p) => (
+              <li key={p.productId} className="flex items-center gap-2 p-3">
+                <div className="min-w-0 flex-1">{identity(p)}</div>
+                <div className="text-right text-sm">
+                  <p className="font-medium">{formatCurrency(p.basePrice)}</p>
+                  <p className={cn("text-xs font-medium", stockTone(p))}>{p.basestock} in stock</p>
+                </div>
+                {menu(p)}
+              </li>
+            ))}
+          </ul>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Product</TableHead>
+                  <TableHead className="text-right">Price</TableHead>
+                  <TableHead className="text-right">Stock</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="w-12" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {products.map((p) => (
+                  <TableRow key={p.productId} className={p.isActive ? undefined : "opacity-60"}>
+                    <TableCell>{identity(p)}</TableCell>
+                    <TableCell className="text-right tabular-nums">{formatCurrency(p.basePrice)}</TableCell>
+                    <TableCell className={cn("text-right font-medium tabular-nums", stockTone(p))}>{p.basestock}</TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap gap-1">
+                        <Badge variant={p.isActive ? "secondary" : "outline"}>{p.isActive ? "Active" : "Archived"}</Badge>
+                        {!p.showInPOS && <Badge variant="outline">Not on POS</Badge>}
                       </div>
-                    </td>
-                    <td className="p-2">{product.categoryId}</td>
-                    <td className="p-2">₦{product?.basePrice?.toLocaleString()}</td>
-                    <td className="p-2">
-                      <span className={getStockColor(product.basestock, product.minimumStockLevel)}>
-                        {product.basestock}
-                      </span>
-                    </td>
-                    <td className="p-2">
-                      <Button
-                        size="sm"
-                        className={`h-6 px-3 text-xs font-medium ${
-                          product.isActive
-                            ? "bg-green-500 hover:bg-green-600 text-white"
-                            : "bg-red-500 hover:bg-red-600 text-white"
-                        }`}
-                      >
-                        {product.isActive ? "Active" : "Inactive"}
-                      </Button>
-                    </td>
-                    <td className="p-2">
-                      <div className="flex gap-1 flex-wrap">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onEditProduct(product)}
-                          title="Edit Product"
-                        >
-                          <Edit className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setStockByStoreProduct(product);
-                            onViewStockByStore(product);
-                          }}
-                          title="View Stock by Store"
-                        >
-                          <MapPin className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setAdjustStockProduct(product);
-                            onAdjustStock(product);
-                          }}
-                          title="Adjust Stock Balance"
-                        >
-                          <TrendingUp className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setTransactionHistoryProduct(product);
-                            onViewTransactionHistory(product);
-                          }}
-                          title="View Transaction History"
-                        >
-                          <History className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => {
-                            setRecentOrdersProduct(product);
-                            onViewRecentOrders(product);
-                          }}
-                          title="View Recent Orders"
-                        >
-                          <ShoppingCart className="h-4 w-4" />
-                        </Button>
-
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => onOpenRestock(product)}
-                          title="Restock Product"
-                        >
-                          <Package className="h-4 w-4" />
-                        </Button>
-
-                        {canDelete(product.productId) ? (
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button
-                                variant="outline"
-                                size="sm"
-                                className="text-red-600 hover:text-red-700"
-                                title="Delete Product"
-                              >
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Delete Product</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Are you sure you want to delete "{product.productName}"? This
-                                  action cannot be undone.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction
-                                  onClick={() => onDeleteProduct(product.productId)}
-                                >
-                                  Delete
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            disabled
-                            title="Cannot delete product with transaction history"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
+                    </TableCell>
+                    <TableCell>{menu(p)}</TableCell>
+                  </TableRow>
                 ))}
-              </tbody>
-            </table>
+              </TableBody>
+            </Table>
           </div>
-        </CardContent>
-      </Card>
-
-      {/* Dialogs */}
-      <StockByStoreDialog
-        open={!!stockByStoreProduct}
-        onOpenChange={(open) => !open && setStockByStoreProduct(null)}
-        product={stockByStoreProduct}
-      />
-      <AdjustStockDialog
-        open={!!adjustStockProduct}
-        onOpenChange={(open) => !open && setAdjustStockProduct(null)}
-        product={adjustStockProduct}
-      />
-      <TransactionHistoryDialog
-        open={!!transactionHistoryProduct}
-        onOpenChange={(open) => !open && setTransactionHistoryProduct(null)}
-        product={transactionHistoryProduct}
-      />
-      <RecentOrdersDialog
-        open={!!recentOrdersProduct}
-        onOpenChange={(open) => !open && setRecentOrdersProduct(null)}
-        product={recentOrdersProduct}
-      />
-    </>
+        </>
+      )}
+      <Pager page={page} totalPages={totalPages} totalItems={totalItems} onPageChange={onPageChange} />
+    </Card>
   );
 }

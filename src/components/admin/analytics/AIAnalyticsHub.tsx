@@ -18,7 +18,7 @@ export function AIAnalyticsHub({ storeFilter }: AIAnalyticsHubProps) {
       </div>
 
       <Tabs defaultValue="forecasting" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
           <TabsTrigger value="forecasting" className="flex items-center gap-2">
             <Brain className="h-4 w-4" />
             Sales Forecasting

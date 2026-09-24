@@ -1,437 +1,162 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-"use client";
-import React, { useState } from "react";
-import {
-  Box,
-  Flex,
-  Text,
-  Button,
-  Input,
-  Table,
-  Thead,
-  Tbody,
-  Tr,
-  Th,
-  Td,
-  Badge,
-  SimpleGrid,
-  useBreakpointValue,
-  Modal,
-  ModalOverlay,
-  ModalContent,
-  ModalHeader,
-  ModalCloseButton,
-  ModalBody,
-  ModalFooter,
-  Image,
-  VStack,
-  HStack,
-  Select,
-} from "@chakra-ui/react";
-import { ArrowLeft, Search, ShoppingCart } from "lucide-react";
+import { useState } from "react";
+import { Search } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { POSHeader } from "@/components/pos/POSHeader";
-import { Order, useGetOrdersQuery } from "@/redux/services/orders.services";
-import { useAppSelector } from "@/redux/store";
-import { ReturnDialog } from "@/components/ReturnDialog";
-import { useNavigate } from "react-router-dom";
+import { ReverseSaleDialog } from "@/components/ReverseSaleDialog";
+import { ProductImage } from "@/components/common/ProductImage";
+import { Pager } from "@/components/common/Pager";
+import { OrderStatusBadge, PaymentStatusBadge } from "@/components/common/StatusBadges";
+import { useGetOrdersQuery, type Order } from "@/redux/services/orders.services";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { PAYMENT_OPTION, PAYMENT_STATUS, orderTotal } from "@/lib/enums";
+import { formatCurrency, formatDateTime, fullName } from "@/lib/format";
 
-enum PaymentStatus {
-  Pending = 0,
-  Paid = 1,
-  Failed = 2,
-  Refunded = 3,
-  Partial = 4,
-}
-
-enum PaymentOption {
-  "CASH" = 0,
-  "CARD" = 1,
-  "BANK TRANSFER" = 2,
-}
+const ALL = "all";
+const REVERSIBLE = [1, 2, 4];
 
 const POSOrders = () => {
-  const currentTime = new Date().toLocaleTimeString();
-  const storeId = useAppSelector((state) => state.auth.user?.storeId);
-  const { data } = useGetOrdersQuery({ storeId }, { skip: !storeId });
-  const isMobile = useBreakpointValue({ base: true, md: false });
+  const [search, setSearch] = useState("");
+  const [paymentStatus, setPaymentStatus] = useState(ALL);
+  const [page, setPage] = useState(1);
+  const [viewing, setViewing] = useState<Order | null>(null);
+  const [returning, setReturning] = useState<Order | null>(null);
+  const debounced = useDebouncedValue(search);
 
-  const [showReturnDialog, setShowReturnDialog] = useState(false);
-  const [selectedTransaction, setSelectedTransaction] = useState<Order | null>(null);
-  const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const navigate = useNavigate();
-  // Filter states
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [paymentStatusFilter, setPaymentStatusFilter] = useState<PaymentStatus | "">("");
-
-  const openModal = (order: any) => {
-    setSelectedOrder(order);
-    setIsModalOpen(true);
-  };
-
-  const handleReturnTransaction = (txnId: number, reason: string, approver: string) => {
-    console.log(txnId, reason, approver);
-  };
-
-  const closeModal = () => {
-    setSelectedOrder(null);
-    setIsModalOpen(false);
-  };
-
-  const getPaymentStatusColor = (status: PaymentStatus) => {
-    switch (status) {
-      case PaymentStatus.Pending:
-        return "yellow";
-      case PaymentStatus.Paid:
-        return "green";
-      case PaymentStatus.Failed:
-        return "red";
-      case PaymentStatus.Refunded:
-        return "blue";
-      case PaymentStatus.Partial:
-        return "orange";
-      default:
-        return "gray";
-    }
-  };
-
-  const filteredOrders = data?.orders?.filter((order: any) => {
-    const orderTime = new Date(order.orderDate).setHours(0, 0, 0, 0);
-    const start = startDate ? new Date(startDate).getTime() : null;
-    const end = endDate ? new Date(endDate).getTime() : null;
-
-    if (start && end && (orderTime < start || orderTime > end)) return false;
-    if (start && !end && orderTime < start) return false;
-    if (end && !start && orderTime > end) return false;
-    if (paymentStatusFilter !== "" && order.paymentStatus !== paymentStatusFilter) return false;
-
-    // Search logic
-    const query = searchQuery.toLowerCase();
-    const matchId = order.id?.toString().includes(query);
-    const matchCustomer =
-      order.customer?.firstName?.toLowerCase().includes(query) ||
-      order.customer?.lastName?.toLowerCase().includes(query);
-    const matchStatus = PaymentStatus[order.paymentStatus]?.toLowerCase().includes(query);
-
-    return matchId || matchCustomer || matchStatus;
+  // The API pins store-scoped users to their own store, so no storeId is needed here.
+  const { data, isFetching } = useGetOrdersQuery({
+    page,
+    itemsPerPage: 20,
+    search: debounced || undefined,
+    paymentStatus: paymentStatus === ALL ? undefined : paymentStatus,
   });
+  const orders = data?.orders ?? [];
+
+  const actions = (o: Order) => (
+    <div className="flex gap-2">
+      <Button size="sm" variant="outline" onClick={() => setViewing(o)}>View</Button>
+      {REVERSIBLE.includes(o.status) && (
+        <Button size="sm" variant="ghost" className="text-destructive" onClick={() => setReturning(o)}>Return</Button>
+      )}
+    </div>
+  );
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
-      <POSHeader currentTime={currentTime} isOffline={false} />
-
-      <Box p={{ base: 4, md: 6 }} bg="gray.50" minH="100vh">
-        {/* Header */}
-          <Button 
-        variant="outline"
-        size="md"
-        mb={4}
-        bgColor="white"
-        onClick={() => navigate(-1)}
-        leftIcon={<ArrowLeft className="h-4 w-4" />}
-        className="flex items-center gap-2"
-      >
-        Back
-      </Button>
-        <Flex justify="space-between" align="center" mb={6} flexWrap="wrap" gap={3}>
-          <Flex align="center" gap={3}>
-            <ShoppingCart size={24} color="#2563eb" />
-            <Text fontSize="xl" fontWeight="bold">
-              Orders
-            </Text>
-          </Flex>
-          <Flex align="center" gap={3} flex="1" justify="flex-end">
-            <Input
-              placeholder="Search orders by ID, customer, or status..."
-              width={{ base: "100%", md: "300px" }}
-              borderRadius="8px"
-              fontSize="sm"
-              bg="white"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-            />
-            <Button colorScheme="blue" display={{ base: "none", md: "inline-flex" }}>
-              <Search size={16} />
-            </Button>
-          </Flex>
-        </Flex>
-
-        {/* Filters */}
-        <Flex gap={3} flexWrap="wrap" mb={6} align="center">
-          <Input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-            placeholder="Start Date"
-            width={{ base: "100%", md: "150px" }}
-            bg="white"
-          />
-          <Input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-            placeholder="End Date"
-            width={{ base: "100%", md: "150px" }}
-            bg="white"
-          />
-          <Select
-            placeholder="Payment Status"
-            value={paymentStatusFilter === "" ? "" : paymentStatusFilter}
-            onChange={(e) =>
-              setPaymentStatusFilter(e.target.value === "" ? "" : Number(e.target.value) as PaymentStatus)
-            }
-            width={{ base: "100%", md: "180px" }}
-            bg="white"
-          >
-            <option value={PaymentStatus.Pending}>Pending</option>
-            <option value={PaymentStatus.Paid}>Paid</option>
-            <option value={PaymentStatus.Failed}>Failed</option>
-            <option value={PaymentStatus.Refunded}>Refunded</option>
-            <option value={PaymentStatus.Partial}>Partial</option>
+    <div className="min-h-screen bg-muted/30">
+      <POSHeader active="orders" />
+      <main className="mx-auto max-w-6xl space-y-4 p-3 sm:p-6">
+        <div className="flex flex-col gap-2 sm:flex-row">
+          <div className="relative flex-1">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Input placeholder="Search order #, customer or phone…" className="pl-9" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
+          </div>
+          <Select value={paymentStatus} onValueChange={(v) => { setPaymentStatus(v); setPage(1); }}>
+            <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All payments</SelectItem>
+              {Object.entries(PAYMENT_STATUS).map(([k, s]) => <SelectItem key={k} value={k}>{s.label}</SelectItem>)}
+            </SelectContent>
           </Select>
-          <Button
-            variant="outline"
-            onClick={() => {
-              setStartDate("");
-              setEndDate("");
-              setPaymentStatusFilter("");
-              setSearchQuery("");
-            }}
-          >
-            Reset
-          </Button>
-        </Flex>
+        </div>
 
-        {/* Orders List */}
-        {isMobile ? (
-          <SimpleGrid columns={{ base: 1, sm: 2 }} spacing={4}>
-            {filteredOrders?.map((order: any) => (
-              <Box
-                key={order.id}
-                bg="white"
-                p={4}
-                borderRadius="12px"
-                boxShadow="sm"
-                _hover={{ boxShadow: "md" }}
-              >
-                <Flex justify="space-between" align="center" mb={2}>
-                  <Text fontWeight="600" color="blue.600">
-                    ORD-{order.id}
-                  </Text>
-                  <Badge
-                    colorScheme={getPaymentStatusColor(order.paymentStatus)}
-                    borderRadius="10px"
-                    px={3}
-                    py={1}
-                    fontSize="sm"
-                    fontWeight="600"
-                  >
-                    {PaymentStatus[order.paymentStatus]}
-                  </Badge>
-                </Flex>
-                <Text fontSize="sm" color="gray.600">
-                  Customer: <strong>{order.customer?.firstName} {order.customer?.lastName}</strong>
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  Payment: {PaymentOption[order.paymentOption]}
-                </Text>
-                <Text fontSize="sm" color="gray.600">
-                  Total: ₦
-                  {order.orderItems
-                    .reduce((acc: number, item: any) => acc + item.priceAtOrder * item.quantity, 0)
-                    .toLocaleString()}
-                </Text>
-                <Text fontSize="xs" color="gray.500" mt={1}>
-                  {new Date(order.orderDate).toLocaleDateString()}
-                </Text>
-                <Flex mt={3} gap={2}>
-                  <Button
-                    size="sm"
-                    colorScheme="blue"
-                    variant="outline"
-                    flex="1"
-                    onClick={() => openModal(order)}
-                  >
-                    View Details
-                  </Button>
-                  <Button
-                    size="sm"
-                    colorScheme="red"
-                    variant="outline"
-                    flex="1"
-                    onClick={() => {
-                      setSelectedTransaction(order);
-                      setShowReturnDialog(true);
-                    }}
-                  >
-                    Return
-                  </Button>
-                </Flex>
-              </Box>
+        <Card className="overflow-hidden">
+          {/* Cards on phones, table from md up. */}
+          <ul className="divide-y md:hidden">
+            {orders.map((o) => (
+              <li key={o.id} className="space-y-2 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="font-semibold">#{o.id}</span>
+                  <span className="font-semibold tabular-nums">{formatCurrency(orderTotal(o))}</span>
+                </div>
+                <p className="text-sm text-muted-foreground">{fullName(o.customer)} · {formatDateTime(o.orderDate)}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <OrderStatusBadge status={o.status} />
+                  <PaymentStatusBadge status={o.paymentStatus} />
+                  <div className="ml-auto">{actions(o)}</div>
+                </div>
+              </li>
             ))}
-          </SimpleGrid>
-        ) : (
-          <Box bg="white" borderRadius="12px" boxShadow="sm" p={4}>
-            <Table variant="simple">
-              <Thead bg="gray.100">
-                <Tr>
-                  <Th>Order ID</Th>
-                  <Th>Customer</Th>
-                  <Th isNumeric>Total (₦)</Th>
-                  <Th>Payment</Th>
-                  <Th>Payment Status</Th>
-                  <Th>Date</Th>
-                  <Th>Action</Th>
-                </Tr>
-              </Thead>
-              <Tbody>
-                {filteredOrders?.map((order: any) => (
-                  <Tr key={order.id} _hover={{ bg: "gray.50" }}>
-                    <Td fontWeight="500" color="blue.600">
-                      ORD-{order.id}
-                    </Td>
-                    <Td>
-                      {order.customer
-                        ? `${order.customer.firstName} ${order.customer.lastName}`
-                        : "N/A"}
-                    </Td>
-                    <Td isNumeric>
-                      {order.orderItems
-                        .reduce(
-                          (acc: number, item: any) =>
-                            acc + item.priceAtOrder * item.quantity,
-                          0
-                        )
-                        .toLocaleString()}
-                    </Td>
-                    <Td>{PaymentOption[order.paymentOption]}</Td>
-                    <Td>
-                      <Badge
-                        colorScheme={getPaymentStatusColor(order.paymentStatus)}
-                        borderRadius="8px"
-                        px={3}
-                        py={1}
-                        fontSize="sm"
-                        fontWeight="600"
-                      >
-                        {PaymentStatus[order.paymentStatus]}
-                      </Badge>
-                    </Td>
-                    <Td>{new Date(order.orderDate).toLocaleDateString()}</Td>
-                    <Td>
-                      <Button
-                        size="sm"
-                        colorScheme="blue"
-                        variant="outline"
-                        mr={2}
-                        onClick={() => openModal(order)}
-                      >
-                        View
-                      </Button>
-                      <Button
-                        size="sm"
-                        colorScheme="red"
-                        variant="outline"
-                        onClick={() => {
-                          setSelectedTransaction(order);
-                          setShowReturnDialog(true);
-                        }}
-                      >
-                        Return
-                      </Button>
-                    </Td>
-                  </Tr>
+          </ul>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Order</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Payment</TableHead>
+                  <TableHead className="text-right">Total</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {orders.map((o) => (
+                  <TableRow key={o.id}>
+                    <TableCell className="font-medium">#{o.id}</TableCell>
+                    <TableCell>{fullName(o.customer)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateTime(o.orderDate)}</TableCell>
+                    <TableCell><OrderStatusBadge status={o.status} /></TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <PaymentStatusBadge status={o.paymentStatus} />
+                        <span className="text-xs text-muted-foreground">{PAYMENT_OPTION[o.paymentOption]}</span>
+                      </div>
+                    </TableCell>
+                    <TableCell className="text-right font-medium tabular-nums">{formatCurrency(orderTotal(o))}</TableCell>
+                    <TableCell>{actions(o)}</TableCell>
+                  </TableRow>
                 ))}
-              </Tbody>
+              </TableBody>
             </Table>
-          </Box>
-        )}
+          </div>
+          {isFetching && !orders.length && <div className="space-y-2 p-4">{Array.from({ length: 5 }, (_, i) => <Skeleton key={i} className="h-12" />)}</div>}
+          {!isFetching && !orders.length && <p className="p-10 text-center text-muted-foreground">No orders match your filters.</p>}
+          <Pager page={page} totalPages={data?.pagination.totalPages ?? 1} totalItems={data?.pagination.totalItems} onPageChange={setPage} />
+        </Card>
+      </main>
 
-        {/* Order Details Modal */}
-        <Modal isOpen={isModalOpen} onClose={closeModal} size="xl">
-          <ModalOverlay />
-          <ModalContent>
-            <ModalHeader>Order Details</ModalHeader>
-            <ModalCloseButton />
-            <ModalBody>
-              {selectedOrder && (
-                <VStack align="start" spacing={4}>
-                  <Text>
-                    <strong>Order ID:</strong> ORD-{selectedOrder.storeId}
-                  </Text>
-                  <Text>
-                    <strong>Customer:</strong>{" "}
-                    {selectedOrder.customer
-                      ? `${selectedOrder.customer.firstName} ${selectedOrder.customer.lastName}`
-                      : "N/A"}
-                  </Text>
-                  <Text>
-                    <strong>Payment:</strong>{" "}
-                    {PaymentOption[selectedOrder.paymentOption]}
-                  </Text>
-                  <Text>
-                    <strong>Payment Status:</strong>{" "}
-                    {PaymentStatus[selectedOrder.paymentStatus]}
-                  </Text>
-                  <Text>
-                    <strong>Status:</strong>{" "}
-                    {selectedOrder.status === 0
-                      ? "Pending"
-                      : selectedOrder.status === 1
-                      ? "Completed"
-                      : "Cancelled"}
-                  </Text>
-                  <Text>
-                    <strong>Order Date:</strong>{" "}
-                    {new Date(selectedOrder.orderDate).toLocaleString()}
-                  </Text>
+      <Dialog open={!!viewing} onOpenChange={(o) => !o && setViewing(null)}>
+        <DialogContent className="max-w-lg">
+          {viewing && (
+            <>
+              <DialogHeader>
+                <DialogTitle>Order #{viewing.id}</DialogTitle>
+              </DialogHeader>
+              <div className="flex flex-wrap gap-2">
+                <OrderStatusBadge status={viewing.status} />
+                <PaymentStatusBadge status={viewing.paymentStatus} />
+              </div>
+              <dl className="grid grid-cols-2 gap-2 text-sm">
+                <dt className="text-muted-foreground">Customer</dt><dd>{fullName(viewing.customer)}</dd>
+                <dt className="text-muted-foreground">Date</dt><dd>{formatDateTime(viewing.orderDate)}</dd>
+                <dt className="text-muted-foreground">Payment</dt><dd>{PAYMENT_OPTION[viewing.paymentOption]}</dd>
+                <dt className="text-muted-foreground">Cashier</dt><dd>{viewing.createdBy}</dd>
+              </dl>
+              <ul className="divide-y rounded-md border">
+                {viewing.orderItems.map((it) => (
+                  <li key={it.id} className="flex items-center gap-3 p-2">
+                    <ProductImage src={it.productImageUrl} name={it.productName} className="h-10 w-10 rounded text-xs" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-sm font-medium">{it.productName}</p>
+                      <p className="text-xs text-muted-foreground">{it.quantity} × {formatCurrency(it.priceAtOrder)}</p>
+                    </div>
+                    <span className="text-sm font-medium tabular-nums">{formatCurrency(it.quantity * it.priceAtOrder)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="text-right font-semibold">Total {formatCurrency(orderTotal(viewing))}</p>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
 
-                  <Box>
-                    <Text fontWeight="600" mb={2}>
-                      Items:
-                    </Text>
-                    <VStack spacing={3} align="start">
-                      {selectedOrder.orderItems.map((item: any) => (
-                        <HStack key={item.id} spacing={3}>
-                          <Image
-                            boxSize="50px"
-                            objectFit="cover"
-                            src={item.productImageUrl}
-                            alt={item.productName}
-                          />
-                          <Box>
-                            <Text fontWeight="500">{item.productName}</Text>
-                            <Text fontSize="sm">
-                              Qty: {item.quantity} | ₦
-                              {item.priceAtOrder.toLocaleString()}
-                            </Text>
-                          </Box>
-                        </HStack>
-                      ))}
-                    </VStack>
-                  </Box>
-                </VStack>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button colorScheme="blue" mr={3} onClick={closeModal}>
-                Close
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-
-        {/* Return Dialog */}
-        <ReturnDialog
-          open={showReturnDialog}
-          onOpenChange={setShowReturnDialog}
-          transaction={selectedTransaction}
-          type="return"
-          onApprove={handleReturnTransaction}
-        />
-      </Box>
+      <ReverseSaleDialog order={returning} type="return" onOpenChange={(o) => !o && setReturning(null)} />
     </div>
   );
 };

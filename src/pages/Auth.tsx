@@ -1,119 +1,106 @@
-import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAppDispatch, useAppSelector } from '@/redux/store';
-import { useRegisterMutation, useLoginMutation } from '@/redux/services/auth.services';
-import { setTokens } from '@/redux/slices/authSlice';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { AuthHeader } from '@/components/auth/AuthHeader';
-import { SignInForm } from '@/components/auth/SignInForm';
-import { SignUpForm } from '@/components/auth/SignUpForm';
-import { ForgotPasswordDialog } from '@/components/auth/ForgotPasswordDialog';
+import { useState } from "react";
+import { Navigate, useLocation, useNavigate } from "react-router-dom";
+import { Eye, EyeOff, Loader2, ShieldCheck, Store, MonitorSmartphone } from "lucide-react";
+import { toast } from "sonner";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { AuthHeader } from "@/components/auth/AuthHeader";
+import { useAuth } from "@/hooks/useAuth";
+import { homePathFor } from "@/lib/roles";
+import { apiErrorMessage } from "@/lib/errors";
+import { USE_MOCK_API } from "@/config";
+
+const DEMO_ACCOUNTS = [
+  { label: "Super Admin", email: "superadmin@vendli.ng", hint: "All stores, users & settings", icon: ShieldCheck },
+  { label: "Store Admin", email: "storeadmin@vendli.ng", hint: "Victoria Island Store only", icon: Store },
+  { label: "POS User", email: "pos@vendli.ng", hint: "Till at Victoria Island", icon: MonitorSmartphone },
+];
+const DEMO_PASSWORD = "Demo@123";
 
 export default function Auth() {
   const navigate = useNavigate();
-  const dispatch = useAppDispatch();
-  const [isLoading, setIsLoading] = useState(false);
-  const [showForgotPassword, setShowForgotPassword] = useState(false);
+  const location = useLocation();
+  const { user, signIn, signingIn } = useAuth();
+  const [form, setForm] = useState({ email: "", password: "" });
+  const [showPassword, setShowPassword] = useState(false);
 
-  const user = useAppSelector((state) => state.auth.user);
-  const [signInMutation] = useLoginMutation();
-  const [signUpMutation] = useRegisterMutation();
+  if (user) return <Navigate to={homePathFor(user.role)} replace />;
 
-  useEffect(() => {
-    if (user?.role==0 || user?.role==1) {
-      navigate('/admin');
-    }
-    else if (user?.role==2){
-      navigate('/POS');
-    }
-  }, [user, navigate]);
-
-  const handleSignIn = async (email: string, password: string) => {
-    setIsLoading(true);
+  const submit = async (email: string, password: string) => {
     try {
-      const response = await signInMutation({ email: email, password }).unwrap();
-
-      localStorage.setItem('accessToken', response.accessToken);
-      localStorage.setItem('refreshToken', response.refreshToken);
-
-      dispatch(
-        setTokens({
-          accessToken: response.accessToken,
-          refreshToken: response.refreshToken,
-          user: {
-            firstName: response.firstName,
-            lastName: response.lastName,
-            email: response.email,
-            role: response.role,
-            username: response.username,
-            storeId: response?.store?.storeId,
-            storeName: response?.store?.storeName
-          },
-        })
-      );
-      navigate('/admin');
-    } catch (error) {
-      console.error('Sign in failed:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const handleSignUp = async (
-    email: string,
-    password: string,
-    firstName: string,
-    lastName: string,
-    username: string
-  ) => {
-    setIsLoading(true);
-    try {
-      await signUpMutation({ email, password, firstName, lastName, username }).unwrap();
-      console.log('Sign-up successful');
-    } catch (error) {
-      console.error('Sign up failed:', error);
-    } finally {
-      setIsLoading(false);
+      const home = await signIn(email, password);
+      const from = (location.state as { from?: string } | null)?.from;
+      // Only honour the redirect if it's inside the user's own area.
+      navigate(from && from.startsWith(home) ? from : home, { replace: true });
+    } catch (err) {
+      toast.error(apiErrorMessage(err, "Sign in failed"));
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen bg-muted/40 flex items-center justify-center p-4">
+      <div className="w-full max-w-md space-y-6">
         <AuthHeader />
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-center">Welcome Back</CardTitle>
+          <CardHeader className="text-center">
+            <CardTitle>Welcome back</CardTitle>
+            <CardDescription>Sign in with your staff account</CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="signin" className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="signin">
-                <SignInForm
-                  onSubmit={handleSignIn}
-                  onForgotPassword={() => setShowForgotPassword(true)}
-                  isLoading={isLoading}
-                />
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <SignUpForm onSubmit={handleSignUp} isLoading={isLoading} />
-              </TabsContent>
-            </Tabs>
+            <form
+              className="space-y-4"
+              onSubmit={(e) => {
+                e.preventDefault();
+                submit(form.email.trim(), form.password);
+              }}
+            >
+              <div className="space-y-1.5">
+                <Label htmlFor="email">Email</Label>
+                <Input id="email" type="email" autoComplete="username" required value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="password">Password</Label>
+                <div className="relative">
+                  <Input id="password" type={showPassword ? "text" : "password"} autoComplete="current-password" required className="pr-10" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} />
+                  <Button type="button" variant="ghost" size="icon" className="absolute right-0 top-0 h-full" onClick={() => setShowPassword((v) => !v)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  </Button>
+                </div>
+                <p className="text-xs text-muted-foreground">Forgot your password? Ask your store admin to reset it.</p>
+              </div>
+              <Button type="submit" className="w-full" disabled={signingIn}>
+                {signingIn && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                Sign in
+              </Button>
+            </form>
           </CardContent>
         </Card>
-      </div>
 
-      <ForgotPasswordDialog
-        open={showForgotPassword}
-        onOpenChange={setShowForgotPassword}
-      />
+        {USE_MOCK_API && (
+          <Card>
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base">Demo accounts</CardTitle>
+              <CardDescription>
+                Password for all: <code className="font-mono">{DEMO_PASSWORD}</code>
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid gap-2">
+              {DEMO_ACCOUNTS.map(({ label, email, hint, icon: Icon }) => (
+                <Button key={email} variant="outline" className="h-auto justify-start py-3 text-left" disabled={signingIn} onClick={() => submit(email, DEMO_PASSWORD)}>
+                  <Icon className="h-5 w-5 mr-3 shrink-0 text-primary" />
+                  <span className="min-w-0">
+                    <span className="block font-medium">{label}</span>
+                    <span className="block text-xs text-muted-foreground truncate">{email} · {hint}</span>
+                  </span>
+                </Button>
+              ))}
+            </CardContent>
+          </Card>
+        )}
+      </div>
     </div>
   );
 }

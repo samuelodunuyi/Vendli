@@ -133,7 +133,7 @@ export function DeliveryServicesSettings() {
           </p>
           
           <Tabs value={activeProvider} onValueChange={setActiveProvider} className="w-full">
-            <TabsList className="grid w-full grid-cols-3 mb-6">
+            <TabsList className="w-full justify-start overflow-x-auto sm:w-auto mb-6">
               <TabsTrigger value="gig-logistics" className="flex items-center gap-2">
                 <MapPin className="h-3 w-3" />
                 Local Carriers

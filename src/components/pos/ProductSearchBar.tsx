@@ -1,75 +1,38 @@
-import { Search, Barcode } from "lucide-react";
+import { ScanBarcode, Search } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import React from "react";
 
 interface ProductSearchBarProps {
-  searchQuery: string;
-  barcodeInput: string;
-  onSearchChange: (query: string) => void;
-  onBarcodeInputChange: (barcode: string) => void;
-  onBarcodeSubmit: (code: string) => void;
+  value: string;
+  onChange: (query: string) => void;
+  /** Called on Enter: lets a hand-held scanner (which "types" the code) add items directly. */
+  onSubmit: (query: string) => void;
   onScannerOpen: () => void;
-  loading?: boolean
 }
 
-export function ProductSearchBar({
-  searchQuery,
-  barcodeInput,
-  onSearchChange,
-  onBarcodeInputChange,
-  onBarcodeSubmit,
-  onScannerOpen,
-  loading
-}: ProductSearchBarProps) {
-  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    onBarcodeSubmit(barcodeInput); 
-  };
-
+export function ProductSearchBar({ value, onChange, onSubmit, onScannerOpen }: ProductSearchBarProps) {
   return (
-    <Card className="shadow-md">
-      <CardContent className="p-4">
-        <div className="flex flex-col md:flex-row gap-4">
-          {/* Search Input */}
-          <div className="flex-1 relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-            <Input
-              placeholder="Search products by name, category, or barcode..."
-              className="pl-10 h-11 text-base border-2 focus:border-primary"
-              value={searchQuery}
-              onChange={(e) => onSearchChange(e.target.value)}
-            />
-          </div>
-
-          {/* Barcode Section */}
-          <div className="flex gap-2">
-            <form onSubmit={handleSubmit} className="flex gap-2">
-              <div className="relative">
-                <Barcode className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-                <Input
-                  placeholder="Scan barcode..."
-                  className="pl-10 w-44 h-11 border-2"
-                  value={barcodeInput}
-                  onChange={(e) => onBarcodeInputChange(e.target.value)}
-                />
-              </div>
-              <Button type="submit" className="h-11 px-6">
-                Add Item
-              </Button>
-            </form>
-
-            <Button
-              variant="outline"
-              className="h-11 px-4"
-              onClick={onScannerOpen}
-            >
-              <Barcode className="h-5 w-5" />
-            </Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <form
+      className="flex gap-2"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(value.trim());
+      }}
+    >
+      <div className="relative flex-1">
+        <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+        <Input
+          autoFocus
+          placeholder="Search name, SKU or scan a barcode…"
+          className="h-11 pl-9"
+          value={value}
+          onChange={(e) => onChange(e.target.value)}
+        />
+      </div>
+      <Button type="button" variant="outline" className="h-11 shrink-0 px-3" onClick={onScannerOpen} aria-label="Open barcode scanner">
+        <ScanBarcode className="h-5 w-5" />
+        <span className="ml-2 hidden sm:inline">Scan</span>
+      </Button>
+    </form>
   );
 }

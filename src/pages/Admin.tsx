@@ -1,110 +1,41 @@
-
-import { useState } from "react";
+import { Suspense } from "react";
+import { Navigate, useParams } from "react-router-dom";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import { AdminSidebar } from "@/components/admin/AdminSidebar";
 import { AdminHeader } from "@/components/admin/layout/AdminHeader";
-import { AdminDashboard } from "@/components/admin/AdminDashboard";
-import { SalesAnalytics } from "@/components/admin/SalesAnalytics";
-import { UserManagement } from "@/components/admin/UserManagement";
-import { SystemSettings } from "@/components/admin/SystemSettings";
-import { ProductsManagement } from "@/components/admin/ProductsManagement";
-import { OrdersManagement } from "@/components/admin/OrdersManagement";
-import { InventoryTracking } from "@/components/admin/InventoryTracking";
-import { EnhancedStoreManagement } from "@/components/admin/EnhancedStoreManagement";
-import { CustomerManagement } from "@/components/admin/CustomerManagement";
-import { SidebarProvider, SidebarInset, SidebarTrigger } from "@/components/ui/sidebar";
-import { AIAnalyticsHub } from "@/components/admin/analytics/AIAnalyticsHub";
-
-export type AdminSection = "dashboard" | "sales" | "users" | "settings" | "products" | "orders" | "tracking" | "stores" | "customers" | "ai-analytics";
+import { PageLoader } from "@/components/common/PageLoader";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { sectionsFor } from "@/components/admin/sections";
+import { useAuth } from "@/hooks/useAuth";
 
 const Admin = () => {
-  const [activeSection, setActiveSection] = useState<AdminSection>("dashboard");
+  const { section = "dashboard" } = useParams();
+  const { role } = useAuth();
+  const sections = sectionsFor(role);
+  const active = sections.find((s) => s.id === section);
 
-  const renderActiveSection = () => {
-    switch (activeSection) {
-      case "dashboard":
-        return <AdminDashboard />;
-      case "sales":
-        return <SalesAnalytics />;
-      case "users":
-        return <UserManagement />;
-      case "settings":
-        return <SystemSettings />;
-      case "products":
-        return <ProductsManagement />;
-      case "orders":
-        return <OrdersManagement />;
-      case "tracking":
-        return <InventoryTracking />;
-      case "stores":
-        return <EnhancedStoreManagement />;
-      case "customers":
-        return <CustomerManagement />;
-      case "ai-analytics":
-        return <AIAnalyticsHub />;
-      default:
-        return <AdminDashboard />;
-    }
-  };
-
-  const getSectionTitle = () => {
-    switch (activeSection) {
-      case "dashboard":
-        return "Dashboard";
-      case "sales":
-        return "Sales Analytics";
-      case "users":
-        return "User Management";
-      case "settings":
-        return "System Settings";
-      case "products":
-        return "Products Management";
-      case "orders":
-        return "Orders Management";
-      case "tracking":
-        return "Inventory Tracking";
-      case "stores":
-        return "Multi-Store Management";
-      case "customers":
-        return "Customer Management";
-      case "ai-analytics":
-        return "AI Analytics Hub";
-      default:
-        return "Dashboard";
-    }
-  };
+  // Unknown section, or one this role can't see: fall back to the dashboard.
+  if (!active) return <Navigate to="/admin" replace />;
+  const Section = active.component;
 
   return (
-    <div className="min-h-screen flex flex-col w-full">
-      <AdminHeader />
-      <SidebarProvider defaultOpen={true}>
-        <div className="flex flex-1 w-full">
-          <AdminSidebar 
-            activeSection={activeSection} 
-            onSectionChange={setActiveSection} 
-          />
-          <SidebarInset className="flex-1">
-            <header className="flex h-16 shrink-0 items-center gap-2 border-b px-4">
-              <SidebarTrigger className="-ml-1" />
-              <div className="flex flex-1 items-center gap-2">
-                <h1 className="text-xl font-semibold">
-                  {getSectionTitle()}
-                </h1>
-              </div>
-            </header>
-            <main className="flex-1 p-6 bg-gray-50">
-              <div className="max-w-7xl mx-auto">
-                <div className="mb-4">
-                  <p className="text-gray-600">
-                    Manage your store operations and monitor performance
-                  </p>
-                </div>
-                {renderActiveSection()}
-              </div>
-            </main>
-          </SidebarInset>
-        </div>
-      </SidebarProvider>
-    </div>
+    // The header sits inside the content column, so the sidebar runs full height.
+    <SidebarProvider style={{ "--header-height": "0px" } as React.CSSProperties}>
+      <AdminSidebar sections={sections} activeId={active.id} />
+      <SidebarInset className="min-w-0">
+        <AdminHeader title={active.title} />
+        <main className="flex-1 bg-muted/30 p-4 md:p-6">
+          <div className="mx-auto max-w-7xl space-y-4">
+            <p className="text-sm text-muted-foreground">{active.description}</p>
+            <ErrorBoundary resetKey={active.id}>
+              <Suspense fallback={<PageLoader className="min-h-[50vh]" />}>
+                <Section />
+              </Suspense>
+            </ErrorBoundary>
+          </div>
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
   );
 };
 

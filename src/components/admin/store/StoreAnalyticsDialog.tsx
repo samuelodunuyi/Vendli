@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { useEffect, useMemo } from "react";
+import { useMemo } from "react";
 import {
   Dialog,
   DialogContent,
@@ -83,12 +83,6 @@ const {
 } = useGetPromotionsQuery(
   storeId ? { storeId, includeDeleted: false } : skipToken
 );
-useEffect(() => {
-  if (promotionsData) {
-    console.log("Store promotions LOADED:", promotionsData);
-  }
-}, [promotionsData]);
-
   const storePromotions = promotionsData ?? [];
   // Metrics
   const totalRevenue = statsData?.totalSales ?? 0;
@@ -155,7 +149,7 @@ useEffect(() => {
         </DialogHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-5">
+          <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="sales">Sales</TabsTrigger>
             <TabsTrigger value="products">Products</TabsTrigger>

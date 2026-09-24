@@ -41,12 +41,10 @@ class MockPaymentDevice implements PaymentDevice {
   async connect(): Promise<void> {
     await new Promise(resolve => setTimeout(resolve, 1000));
     this.connected = true;
-    console.log("Payment device connected");
   }
 
   disconnect(): void {
     this.connected = false;
-    console.log("Payment device disconnected");
   }
 
   async processPayment(amount: number, method: PaymentMethod): Promise<PaymentResult> {
@@ -75,7 +73,6 @@ class MockPaymentDevice implements PaymentDevice {
   }
 
   async cancelPayment(): Promise<void> {
-    console.log("Payment cancelled");
   }
 }
 

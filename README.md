@@ -1,73 +1,67 @@
-# Welcome to your Lovable project
+# Vendli
 
-## Project info
+Retail management and point of sale for multi-store businesses. React + TypeScript + Vite, Redux Toolkit / RTK Query, shadcn/ui.
 
-**URL**: https://lovable.dev/projects/ed09fb55-be6e-4263-8d58-3fdc20341069
-
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/ed09fb55-be6e-4263-8d58-3fdc20341069) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
+## Getting started
 
 ```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+npm install
+cp .env.example .env   # defaults to demo mode, no backend needed
+npm run dev            # http://localhost:8080
 ```
 
-**Edit a file directly in GitHub**
+`.env` is git-ignored. For deployments, set the same variables in the host's environment settings (e.g. Vercel → Project → Settings → Environment Variables).
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+## Roles
 
-**Use GitHub Codespaces**
+| Role | Lands on | Can do |
+|---|---|---|
+| **Super Admin** | `/admin` | Everything, across all stores: catalogue, stores, staff of any role, stock transfers, settings. |
+| **Store Admin** | `/admin` | Their own store only: dashboard, orders, stock, customers, POS staff. Can also use the POS and approve voids/returns. |
+| **POS User** | `/pos` | Ring up sales and view their store's orders. Voids and returns need a store admin's approval. |
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+Store scoping is enforced by the API, not just the UI. `StoreSelect` locks to the user's store for store-scoped roles.
 
-## What technologies are used for this project?
+## Demo mode
 
-This project is built with:
+With `VITE_USE_MOCK_API=true` (the default in `.env.example`), every API call is served in the browser from `src/mocks/db.json`: 5 stores, 45 products, 64 customers and roughly 500 orders over the past year. Dates are shifted on load so "today" always has activity. Changes persist in `localStorage` under `vendli-mock-db`; clear that key to reset the data.
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+Demo accounts (password `Demo@123`), also available as one-click buttons on the sign-in page:
 
-## How can I deploy this project?
+- `superadmin@vendli.ng`
+- `storeadmin@vendli.ng` (Victoria Island Store)
+- `pos@vendli.ng` (Victoria Island Store)
 
-Simply open [Lovable](https://lovable.dev/projects/ed09fb55-be6e-4263-8d58-3fdc20341069) and click on Share -> Publish.
+Set `VITE_USE_MOCK_API=false` to use the real API at `VITE_API_URL`. The mock code and seed are lazy-loaded, so they aren't downloaded when mock mode is off.
 
-## Can I connect a custom domain to my Lovable project?
+## Scripts
 
-Yes, you can!
+| Command | |
+|---|---|
+| `npm run dev` | Dev server |
+| `npm run build` | Production build |
+| `npm run lint` | ESLint |
+| `npm run test:mock` | Smoke-tests the mock API, including role and permission rules |
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## Layout
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+```
+src/
+  lib/          roles, enums, pricing, formatting, csv, error helpers
+  redux/        store, auth + cart slices, RTK Query services
+  mocks/        demo API: router, handlers per domain, JSON seed
+  hooks/        useAuth, useCart, useNotifications, ...
+  components/
+    common/     shared building blocks (StatCard, StoreSelect, Pager, FormField, ...)
+    admin/      admin sections (registered in admin/sections.ts)
+    pos/        till UI
+  pages/        route-level pages (lazy loaded)
+```
+
+## Backend notes
+
+The mock follows the existing API contract, plus one endpoint the real backend will need:
+
+- `POST /Order/{id}/reverse` with `{ type: "void" | "return", reason, approverEmail, approverPassword }`. The server checks that the approver is a store admin for that store (or a super admin), then restores stock and refunds loyalty points.
+
+It also expects the backend to enforce the same rules: store-scoped roles are pinned to their own store, prices and discounts are taken from the catalogue rather than the client, and only super admins can edit the catalogue or transfer stock.

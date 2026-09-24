@@ -1,96 +1,55 @@
-
-import { Home, LayoutDashboard, Users, Settings, ShoppingBag, Package, Truck, Store, UserPlus, Brain } from "lucide-react";
+import { Link } from "react-router-dom";
+import { MonitorSmartphone } from "lucide-react";
+import { Logo } from "@/components/common/Logo";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarGroup,
   SidebarGroupContent,
+  SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarHeader,
+  useSidebar,
 } from "@/components/ui/sidebar";
-import { AdminSection } from "@/pages/Admin";
+import type { AdminSection } from "./sections";
+import { useAuth } from "@/hooks/useAuth";
+import { roleLabel } from "@/lib/roles";
 
 interface AdminSidebarProps {
-  activeSection: AdminSection;
-  onSectionChange: (section: AdminSection) => void;
+  sections: AdminSection[];
+  activeId: string;
 }
 
-const menuItems = [
-  {
-    title: "Dashboard",
-    icon: LayoutDashboard,
-    section: "dashboard" as AdminSection,
-  },
-  {
-    title: "Sales Analytics",
-    icon: ShoppingBag,
-    section: "sales" as AdminSection,
-  },
-  {
-    title: "User Management",
-    icon: Users,
-    section: "users" as AdminSection,
-  },
-  {
-    title: "Products",
-    icon: ShoppingBag,
-    section: "products" as AdminSection,
-  },
-  {
-    title: "Orders",
-    icon: Truck,
-    section: "orders" as AdminSection,
-  },
-  {
-    title: "Inventory",
-    icon: Package,
-    section: "tracking" as AdminSection,
-  },
-  {
-    title: "Stores",
-    icon: Store,
-    section: "stores" as AdminSection,
-  },
-  {
-    title: "Customers",
-    icon: UserPlus,
-    section: "customers" as AdminSection,
-  },
-  {
-    title: "AI Analytics",
-    icon: Brain,
-    section: "ai-analytics" as AdminSection,
-  },
-  {
-    title: "Settings",
-    icon: Settings,
-    section: "settings" as AdminSection,
-  },
-];
+export function AdminSidebar({ sections, activeId }: AdminSidebarProps) {
+  const { setOpenMobile } = useSidebar();
+  const { user, role, isStoreAdmin } = useAuth();
+  const close = () => setOpenMobile(false);
 
-export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarProps) {
   return (
     <Sidebar>
       <SidebarHeader className="border-b border-sidebar-border">
-        <div className="p-4">
-          <h2 className="text-lg font-semibold text-sidebar-foreground">Admin Dashboard</h2>
-        </div>
+        <Link to="/admin" onClick={close} className="flex items-center gap-3 px-2 py-2">
+          <Logo />
+          <div className="min-w-0">
+            <p className="font-bold leading-tight">Vendli</p>
+            <p className="truncate text-xs text-muted-foreground">{user?.storeName ?? "All stores"}</p>
+          </div>
+        </Link>
       </SidebarHeader>
+
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <SidebarMenuItem key={item.section}>
-                  <SidebarMenuButton 
-                    onClick={() => onSectionChange(item.section)}
-                    isActive={activeSection === item.section}
-                    className="w-full justify-start"
-                  >
-                    <item.icon className="h-4 w-4" />
-                    <span>{item.title}</span>
+              {sections.map((s) => (
+                <SidebarMenuItem key={s.id}>
+                  <SidebarMenuButton asChild isActive={s.id === activeId}>
+                    <Link to={s.id === "dashboard" ? "/admin" : `/admin/${s.id}`} onClick={close}>
+                      <s.icon className="h-4 w-4" />
+                      <span>{s.title}</span>
+                    </Link>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
@@ -98,6 +57,24 @@ export function AdminSidebar({ activeSection, onSectionChange }: AdminSidebarPro
           </SidebarGroupContent>
         </SidebarGroup>
       </SidebarContent>
+
+      <SidebarFooter className="border-t border-sidebar-border">
+        {isStoreAdmin && (
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton asChild>
+                <Link to="/pos" onClick={close}>
+                  <MonitorSmartphone className="h-4 w-4" />
+                  <span>Open POS</span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
+        )}
+        <div className="px-2 py-1 text-xs text-muted-foreground">
+          Signed in as <span className="font-medium text-foreground">{roleLabel(role)}</span>
+        </div>
+      </SidebarFooter>
     </Sidebar>
   );
 }

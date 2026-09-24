@@ -32,7 +32,6 @@ export function CustomerOverview({ timeline, storeId, startDate, endDate }: Cust
   if (isError || !data) return <p>Error loading customer overview</p>;
 
   const { demographics, activityMetrics, financialMetrics, topCustomersByLifetimeValue, complaints} = data;
-  console.log(data)
   // Metrics
   const totalCustomers = demographics?.totalCustomers ?? 0;
   const newCustomersThisMonth = activityMetrics?.newCustomersInPeriod ?? 0;

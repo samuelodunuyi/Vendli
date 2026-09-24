@@ -1,224 +1,75 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Award, Mail, Phone, Store } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { User, Phone, Mail, MapPin, TrendingUp } from "lucide-react";
-import { Customer } from "@/redux/services/customer.services";
-import { useGetOrdersQuery, useGetLoyaltyActivityQuery } from "@/redux/services/orders.services";
-import { skipToken } from "@reduxjs/toolkit/query/react";
+import { StatCard } from "@/components/common/StatCard";
+import { OrderStatusBadge } from "@/components/common/StatusBadges";
+import type { Customer } from "@/redux/services/customer.services";
+import { useGetLoyaltyActivityQuery, useGetOrdersQuery } from "@/redux/services/orders.services";
+import { CUSTOMER_CLASSIFICATION, CUSTOMER_STATUS, KYC_STATUS, LOYALTY_TIER, orderTotal } from "@/lib/enums";
+import { formatCompactCurrency, formatCurrency, formatDate, formatNumber } from "@/lib/format";
 
 interface CustomerDetailsDialogProps {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   customer: Customer | null;
+  onOpenChange: (open: boolean) => void;
 }
 
-// Enums
-const CustomerClassificationEnum = { 0: "Corporate", 1: "VIP", 2: "Regular", 3: "Walk-in" } as const;
-const CustomerStatusEnum = { 0: "Inactive", 1: "Active", 2: "Suspended" } as const;
-const LoyaltyTierEnum = { 0: "Bronze", 1: "Silver", 2: "Gold", 3: "Platinum" } as const;
-const KycStatusEnum = { 0: "Pending", 1: "Verified", 2: "Rejected" } as const;
-
-// Badge variants
-const classificationBadgeVariant = { 0: "default", 1: "secondary", 2: "outline", 3: "outline" };
-const statusBadgeVariant = { 0: "secondary", 1: "default", 2: "destructive" };
-const loyaltyTierBadgeVariant = { 0: "outline", 1: "secondary", 2: "default", 3: "default" };
-const kycStatusBadgeVariant = { 0: "secondary", 1: "default", 2: "destructive" };
-
-export function CustomerDetailsDialog({ open, onOpenChange, customer }: CustomerDetailsDialogProps) {
-  // Always call hooks
-  const { data: ordersData, isLoading: ordersLoading } = useGetOrdersQuery({});
-  const { data: loyaltyData, isLoading: loyaltyLoading } = useGetLoyaltyActivityQuery(
-    customer ? { customer_id: customer.id } : skipToken
-  );
-
+export function CustomerDetailsDialog({ customer, onOpenChange }: CustomerDetailsDialogProps) {
+  const skip = !customer;
+  const { data: orders } = useGetOrdersQuery({ userId: String(customer?.userId), itemsPerPage: 8 }, { skip });
+  const { data: loyalty } = useGetLoyaltyActivityQuery({ customer_id: customer?.userId }, { skip });
   if (!customer) return null;
 
-  // Compute total loyalty points for the tab
-  const totalPointsEarned = loyaltyData?.reduce((sum, a) => sum + (a.pointsEarned || 0), 0) ?? 0;
-  const totalPointsRedeemed = loyaltyData?.reduce((sum, a) => sum + (a.pointsRedeemed || 0), 0) ?? 0;
+  const u = customer.userInfo;
+  const redeemed = loyalty?.reduce((s, a) => s + a.pointsRedeemed, 0) ?? 0;
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+    <Dialog open onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>
-            Customer Details - {customer.userInfo.firstName} {customer.userInfo.lastName}
-          </DialogTitle>
+          <DialogTitle>{u.firstName} {u.lastName}</DialogTitle>
+          <DialogDescription className="flex flex-wrap gap-1.5 pt-1">
+            <Badge>{LOYALTY_TIER[customer.loyaltyTier]}</Badge>
+            <Badge variant="outline">{CUSTOMER_CLASSIFICATION[customer.customerClassification]}</Badge>
+            <Badge variant={customer.customerStatus === 1 ? "secondary" : "destructive"}>{CUSTOMER_STATUS[customer.customerStatus]}</Badge>
+            <Badge variant="outline">KYC: {KYC_STATUS[customer.kycStatus]}</Badge>
+          </DialogDescription>
         </DialogHeader>
 
-        <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="transactions">Transactions</TabsTrigger>
-            <TabsTrigger value="loyalty">Loyalty</TabsTrigger>
-          </TabsList>
+        <div className="grid gap-2 text-sm sm:grid-cols-3">
+          {u.email && <p className="flex items-center gap-2 truncate"><Mail className="h-4 w-4 shrink-0 text-muted-foreground" />{u.email}</p>}
+          {u.phoneNumber && <p className="flex items-center gap-2"><Phone className="h-4 w-4 text-muted-foreground" />{u.phoneNumber}</p>}
+          {customer.preferredStore && <p className="flex items-center gap-2"><Store className="h-4 w-4 text-muted-foreground" />{customer.preferredStore}</p>}
+        </div>
 
-          {/* Overview Tab */}
-          <TabsContent value="overview" className="space-y-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Personal Info */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <User className="h-4 w-4" /> Personal Information
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div>
-                    <p className="font-medium">{customer.userInfo.firstName} {customer.userInfo.lastName}</p>
-                    {customer.companyName && <p className="text-sm text-muted-foreground">{customer.companyName}</p>}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-3 w-3" /> {customer.userInfo.email}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-3 w-3" /> {customer.userInfo.phoneNumber}
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-3 w-3" /> {customer.preferredStore}
-                  </div>
-                  <div className="flex gap-2 mt-3">
-                    <Badge variant={classificationBadgeVariant[customer.customerClassification]}>
-                      {CustomerClassificationEnum[customer.customerClassification]}
-                    </Badge>
-                    <Badge variant={statusBadgeVariant[customer.customerStatus]}>
-                      {CustomerStatusEnum[customer.customerStatus]}
-                    </Badge>
-                  </div>
-                </CardContent>
-              </Card>
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <StatCard label="Lifetime spend" value={formatCompactCurrency(customer.totalSpent)} />
+          <StatCard label="Orders" value={formatNumber(orders?.pagination.totalItems)} loading={!orders} />
+          <StatCard label="Points balance" value={formatNumber(customer.loyaltyPoints)} icon={Award} />
+          <StatCard label="Points redeemed" value={formatNumber(redeemed)} loading={!loyalty} />
+        </div>
 
-              {/* Customer Metrics */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <TrendingUp className="h-4 w-4" /> Customer Metrics
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-2xl font-bold text-green-600">₦{customer.totalSpent.toLocaleString()}</p>
-                      <p className="text-sm text-muted-foreground">Total Spent</p>
-                    </div>
-                    <div>
-                      <p className="text-2xl font-bold text-blue-600">{customer.loyaltyPoints}</p>
-                      <p className="text-sm text-muted-foreground">Loyalty Points</p>
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Badge variant={loyaltyTierBadgeVariant[customer.loyaltyTier]}>
-                        {LoyaltyTierEnum[customer.loyaltyTier]}
-                      </Badge>
-                      <p className="text-sm text-muted-foreground mt-1">Loyalty Tier</p>
-                    </div>
-                    <div>
-                      <Badge variant={kycStatusBadgeVariant[customer.kycStatus]}>
-                        {KycStatusEnum[customer.kycStatus]}
-                      </Badge>
-                      <p className="text-sm text-muted-foreground mt-1">KYC Status</p>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="text-sm font-medium">Last Transaction</p>
-                    <p className="text-sm text-muted-foreground">{customer.lastTransactionDate || "N/A"}</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
+        {customer.companyName && (
+          <p className="text-sm"><span className="text-muted-foreground">Company:</span> {customer.companyName}{customer.industryClass && ` · ${customer.industryClass}`}</p>
+        )}
+        {customer.notes && <p className="rounded-md bg-muted p-3 text-sm">{customer.notes}</p>}
 
-          {/* Transactions Tab */}
-          <TabsContent value="transactions" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Recent Transactions</CardTitle>
-              </CardHeader>
-              <CardContent>
-                {ordersLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading transactions...</p>
-                ) : !ordersData?.orders?.length ? (
-                  <p className="text-sm text-muted-foreground">No transactions found.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {ordersData.orders
-                      ?.filter((order) => order?.customer?.id === customer?.id)
-                      .map((order) => (
-                        <div key={order.id} className="p-4 border rounded-lg">
-                          <div className="flex justify-between items-start">
-                            <div>
-                              <p className="font-semibold text-sm">Order #{order.id}</p>
-                              <p className="text-xs text-muted-foreground">{new Date(order.orderDate).toLocaleString()}</p>
-                              <p className="text-xs text-muted-foreground">{order.store?.storeName}</p>
-                            </div>
-                            <div className="text-right">
-                              <Badge variant="outline">
-                                ₦
-                                {order.orderItems
-                                  ?.reduce((sum, item) => sum + item.priceAtOrder * item.quantity, 0)
-                                  .toLocaleString()}
-                              </Badge>
-                            </div>
-                          </div>
-                          <div className="mt-3 border-t pt-3 space-y-2">
-                            {order.orderItems?.map((item) => (
-                              <div key={item.id} className="flex items-center justify-between text-sm">
-                                <div className="flex items-center gap-3">
-                                  <img src={item.productImageUrl} alt={item.productName} className="w-10 h-10 rounded object-cover" />
-                                  <div>
-                                    <p className="font-medium">{item.productName}</p>
-                                    <p className="text-xs text-muted-foreground">{item.quantity} × ₦{item.priceAtOrder.toLocaleString()}</p>
-                                  </div>
-                                </div>
-                                <p className="font-semibold">₦{(item.priceAtOrder * item.quantity).toLocaleString()}</p>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          {/* Loyalty Tab */}
-          <TabsContent value="loyalty" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Loyalty Program Activity</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Total Earned: {totalPointsEarned} pts | Total Redeemed: {totalPointsRedeemed} pts
-                </p>
-              </CardHeader>
-              <CardContent>
-                {loyaltyLoading ? (
-                  <p className="text-sm text-muted-foreground">Loading loyalty activity...</p>
-                ) : !loyaltyData?.length ? (
-                  <p className="text-sm text-muted-foreground">No loyalty activity found.</p>
-                ) : (
-                  <div className="space-y-4">
-                    {loyaltyData.map((activity) => (
-                      <div key={activity.id} className="flex items-center justify-between p-4 border rounded-lg">
-                        <div>
-                          <p className="font-medium">Order #{activity.orderId}</p>
-                          <p className="text-sm text-muted-foreground">{new Date(activity.createdAt).toLocaleString()}</p>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-medium text-blue-600">
-                            +{activity.pointsEarned} / -{activity.pointsRedeemed} pts
-                          </p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        <div>
+          <h3 className="mb-2 font-medium">Recent orders</h3>
+          {!orders?.orders.length ? (
+            <p className="text-sm text-muted-foreground">No orders yet. Customer since {formatDate(u.joinedDate)}.</p>
+          ) : (
+            <ul className="divide-y rounded-md border">
+              {orders.orders.map((o) => (
+                <li key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 p-3 text-sm">
+                  <span className="font-medium">#{o.id}</span>
+                  <span className="text-muted-foreground">{formatDate(o.orderDate)} · {o.store.storeName}</span>
+                  <OrderStatusBadge status={o.status} />
+                  <span className="ml-auto font-medium tabular-nums">{formatCurrency(orderTotal(o))}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
       </DialogContent>
     </Dialog>
   );

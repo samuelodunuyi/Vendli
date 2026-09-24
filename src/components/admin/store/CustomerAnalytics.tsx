@@ -61,7 +61,7 @@ const { data: migrationData, isLoading: migrationLoading, isError: migrationErro
 
       <CardContent>
         <Tabs defaultValue="behavior" className="w-full">
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
             <TabsTrigger value="behavior">Customer Behavior</TabsTrigger>
             <TabsTrigger value="migration">Store Migration</TabsTrigger>
             <TabsTrigger value="preferences">Regional Preferences</TabsTrigger>

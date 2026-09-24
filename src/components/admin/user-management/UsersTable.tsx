@@ -1,361 +1,149 @@
 import { useState } from "react";
+import { MoreHorizontal, Pencil, Trash2, UserCheck, UserX } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Edit, Trash2, MoreHorizontal, UserX, UserCheck } from "lucide-react";
-import { User } from "@/redux/services/user.services";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { Pager } from "@/components/common/Pager";
+import type { User } from "@/redux/services/user.services";
+import { useAuth } from "@/hooks/useAuth";
+import { UserRole } from "@/lib/roles";
+import { formatDate, fullName, initials } from "@/lib/format";
 
 interface UsersTableProps {
   users: User[];
-  onEditUser: (user: User) => void;
-  onDisableUser: (user: User) => void;
-  onDeleteUser: (user: User) => void;
-  currentPage: number;
+  loading: boolean;
+  page: number;
   totalPages: number;
+  totalItems?: number;
   onPageChange: (page: number) => void;
-  itemsPerPage?: number;
-  onItemsPerPageChange?: (n: number) => void;
-  totalUsers?: number;
-  isLoading?: boolean;
+  onEdit: (user: User) => void;
+  onToggleStatus: (user: User) => void;
+  onDelete: (user: User) => void;
 }
 
-function nameToColorClass(name?: string) {
-  if (!name) return "bg-gray-100 text-gray-700";
-  const colors = [
-    "bg-amber-100 text-amber-800",
-    "bg-emerald-100 text-emerald-800",
-    "bg-sky-100 text-sky-800",
-    "bg-rose-100 text-rose-800",
-    "bg-violet-100 text-violet-800",
-    "bg-lime-100 text-lime-800",
-    "bg-indigo-100 text-indigo-800",
-  ];
-  let h = 0;
-  for (let i = 0; i < name.length; i++) h = (h << 5) - h + name.charCodeAt(i);
-  const idx = Math.abs(h) % colors.length;
-  return colors[idx];
-}
+type Pending = { user: User; kind: "status" | "delete" } | null;
 
-export function UsersTable({
-  users,
-  onEditUser,
-  onDisableUser,
-  onDeleteUser,
-  currentPage,
-  totalPages,
-  onPageChange,
-  itemsPerPage = 10,
-  onItemsPerPageChange,
-  totalUsers = 0,
-  isLoading = false,
-}: UsersTableProps) {
-  const [userToToggle, setUserToToggle] = useState<User | null>(null);
-  const [userToDelete, setUserToDelete] = useState<User | null>(null);
+export function UsersTable({ users, loading, page, totalPages, totalItems, onPageChange, onEdit, onToggleStatus, onDelete }: UsersTableProps) {
+  const { user: me, isSuperAdmin } = useAuth();
+  const [pending, setPending] = useState<Pending>(null);
 
-  const startIndex = totalUsers === 0 ? 0 : (currentPage - 1) * itemsPerPage + 1;
-  const endIndex = Math.min(totalUsers, currentPage * itemsPerPage);
+  // Mirrors the server rule: store admins only manage POS users in their store, nobody manages themselves.
+  const canManage = (u: User) => u.id !== me?.id && (isSuperAdmin || u.roleId === UserRole.Employee);
 
-  const rowsPerPageOptions = [10, 25, 50, 100];
+  const actions = (u: User) =>
+    canManage(u) ? (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="ghost" size="icon" aria-label={`Actions for ${fullName(u)}`}>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end">
+          <DropdownMenuItem onClick={() => onEdit(u)}><Pencil className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
+          <DropdownMenuItem onClick={() => setPending({ user: u, kind: "status" })}>
+            {u.isActive ? <><UserX className="mr-2 h-4 w-4" /> Disable</> : <><UserCheck className="mr-2 h-4 w-4" /> Activate</>}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem className="text-destructive focus:text-destructive" onClick={() => setPending({ user: u, kind: "delete" })}>
+            <Trash2 className="mr-2 h-4 w-4" /> Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    ) : null;
+
+  const identity = (u: User) => (
+    <div className="flex min-w-0 items-center gap-3">
+      <Avatar className="h-9 w-9">
+        <AvatarFallback className="text-xs">{initials(fullName(u))}</AvatarFallback>
+      </Avatar>
+      <div className="min-w-0">
+        <p className="truncate font-medium">
+          {fullName(u)} {u.id === me?.id && <span className="text-xs text-muted-foreground">(you)</span>}
+        </p>
+        <p className="truncate text-sm text-muted-foreground">{u.email}</p>
+      </div>
+    </div>
+  );
+
+  const status = (u: User) => <Badge variant={u.isActive ? "secondary" : "outline"}>{u.isActive ? "Active" : "Disabled"}</Badge>;
 
   return (
-    <Card>
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-        <div>
-          <CardTitle>
-            Users{" "}
-            <span className="text-sm font-normal text-muted-foreground">
-              (showing {startIndex}-{endIndex} of {totalUsers})
-            </span>
-          </CardTitle>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <div className="text-sm text-muted-foreground hidden sm:block">Rows per page:</div>
-          <div>
-            <select
-              value={itemsPerPage}
-              onChange={(e) => onItemsPerPageChange?.(Number(e.target.value))}
-              className="border rounded px-2 py-1 text-sm"
-            >
-              {rowsPerPageOptions.map((o) => (
-                <option key={o} value={o}>
-                  {o}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent className="p-0">
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>User</TableHead>
-              <TableHead>Role</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Join Date</TableHead>
-              <TableHead className="w-[60px]">Actions</TableHead>
-            </TableRow>
-          </TableHeader>
-
-          <TableBody>
-            {isLoading ? (
-              // skeleton rows
-              Array.from({ length: 6 }).map((_, i) => (
-                <TableRow key={`skeleton-${i}`}>
-                  <TableCell>
-                    <div className="h-4 bg-gray-100 rounded w-40" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-4 bg-gray-100 rounded w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-4 bg-gray-100 rounded w-12" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-4 bg-gray-100 rounded w-24" />
-                  </TableCell>
-                  <TableCell>
-                    <div className="h-4 bg-gray-100 rounded w-10" />
-                  </TableCell>
+    <Card className="overflow-hidden">
+      {loading ? (
+        <div className="space-y-2 p-4">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-12" />)}</div>
+      ) : users.length === 0 ? (
+        <p className="p-10 text-center text-muted-foreground">No users match your filters.</p>
+      ) : (
+        <>
+          <ul className="divide-y md:hidden">
+            {users.map((u) => (
+              <li key={u.id} className="flex items-center gap-2 p-3">
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  {identity(u)}
+                  <div className="flex flex-wrap gap-1.5 pl-12">
+                    <Badge variant="outline">{u.roleName}</Badge>
+                    {u.storeName && <Badge variant="outline">{u.storeName}</Badge>}
+                    {status(u)}
+                  </div>
+                </div>
+                {actions(u)}
+              </li>
+            ))}
+          </ul>
+          <div className="hidden md:block">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>User</TableHead>
+                  <TableHead>Role</TableHead>
+                  <TableHead>Store</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Joined</TableHead>
+                  <TableHead className="w-12" />
                 </TableRow>
-              ))
-            ) : users.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={5} className="text-center py-8">
-                  No users found.
-                </TableCell>
-              </TableRow>
-            ) : (
-              users.map((user) => {
-                const displayName =
-                  (user.firstName || user.lastName)
-                    ? `${user.firstName ?? ""} ${user.lastName ?? ""}`.trim()
-                    : "No name set";
-
-                const initials =
-                  (user.firstName && user.lastName)
-                    ? `${user.firstName[0]}${user.lastName[0]}`.toUpperCase()
-                    : (user.username?.[0] ?? "U").toUpperCase();
-
-                const avatarClass = nameToColorClass(displayName || user.username);
-
-                return (
-                  <TableRow
-                    key={user.id}
-                    className={!user.isActive ? "bg-gray-50/50 opacity-90" : ""}
-                  >
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <div className={`rounded-full w-9 h-9 flex items-center justify-center ${avatarClass}`}>
-                          <span className="font-semibold text-sm">{initials}</span>
-                        </div>
-                        <div>
-                          <div className="font-medium">{displayName}</div>
-                          <div className="text-sm text-gray-500">{user.email}</div>
-                          {user.phoneNumber && (
-                            <div className="text-sm text-gray-500">{user.phoneNumber}</div>
-                          )}
-                        </div>
-                      </div>
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge variant="outline">{user.roleName}</Badge>
-                    </TableCell>
-
-                    <TableCell>
-                      <Badge variant={user.isActive ? "default" : "secondary"}>
-                        {user.isActive ? "Active" : "Inactive"}
-                      </Badge>
-                    </TableCell>
-
-                    <TableCell className="text-sm text-gray-600">
-                      {user.joinedDate ? new Date(user.joinedDate).toLocaleDateString() : "—"}
-                    </TableCell>
-
-                    <TableCell>
-                      <div className="flex items-center">
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm">
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => onEditUser(user)}>
-                              <Edit className="h-4 w-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-
-                            {/* Toggle Active / Disable */}
-                            <DropdownMenuItem
-                              onClick={() =>
-                                setUserToToggle(user)
-                              }
-                              className={!user.isActive ? "text-green-600" : "text-red-600"}
-                            >
-                              {user.isActive ? (
-                                <>
-                                  <UserX className="h-4 w-4 mr-2" /> Disable
-                                </>
-                              ) : (
-                                <>
-                                  <UserCheck className="h-4 w-4 mr-2" /> Activate
-                                </>
-                              )}
-                            </DropdownMenuItem>
-
-                            {/* Delete */}
-                            <DropdownMenuItem
-                              onClick={() => setUserToDelete(user)}
-                              className="text-red-600"
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
-                      </div>
-                    </TableCell>
+              </TableHeader>
+              <TableBody>
+                {users.map((u) => (
+                  <TableRow key={u.id} className={u.isActive ? undefined : "opacity-60"}>
+                    <TableCell>{identity(u)}</TableCell>
+                    <TableCell><Badge variant="outline">{u.roleName}</Badge></TableCell>
+                    <TableCell className="text-muted-foreground">{u.storeName ?? "All stores"}</TableCell>
+                    <TableCell>{status(u)}</TableCell>
+                    <TableCell className="whitespace-nowrap text-muted-foreground">{formatDate(u.joinedDate)}</TableCell>
+                    <TableCell>{actions(u)}</TableCell>
                   </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-
-        {/* Pagination - right aligned */}
-        {totalPages > 1 && (
-          <div className="flex justify-end items-center gap-2 px-4 py-3 border-t">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(currentPage - 1)}
-              disabled={currentPage === 1}
-            >
-              Prev
-            </Button>
-
-            {Array.from({ length: totalPages }, (_, i) => {
-              const p = i + 1;
-              // keep the UI compact if many pages: show first, last, current +/-1
-              const shouldHide =
-                totalPages > 7 && Math.abs(currentPage - p) > 2 && p !== 1 && p !== totalPages;
-              return shouldHide ? (
-                // show ellipsis only once where appropriate
-                (p === currentPage - 3 || p === currentPage + 3) ? (
-                  <div key={`dots-${p}`} className="px-2">…</div>
-                ) : null
-              ) : (
-                <Button
-                  key={p}
-                  variant={currentPage === p ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => onPageChange(p)}
-                >
-                  {p}
-                </Button>
-              );
-            })}
-
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onPageChange(currentPage + 1)}
-              disabled={currentPage === totalPages}
-            >
-              Next
-            </Button>
+                ))}
+              </TableBody>
+            </Table>
           </div>
-        )}
-      </CardContent>
+        </>
+      )}
+      <Pager page={page} totalPages={totalPages} totalItems={totalItems} onPageChange={onPageChange} />
 
-      {/* Confirm Toggle (Activate / Disable) */}
-      <AlertDialog
-        open={!!userToToggle}
-        onOpenChange={() => setUserToToggle(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>
-              {userToToggle?.isActive ? "Disable user?" : "Activate user?"}
-            </AlertDialogTitle>
-            <AlertDialogDescription>
-              {userToToggle?.isActive
-                ? "Disabling will prevent the user from logging in. You can restore access later."
-                : "Activating will allow the user to log in again."}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setUserToToggle(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (userToToggle) onDisableUser(userToToggle);
-                setUserToToggle(null);
-              }}
-              className={userToToggle?.isActive ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}
-            >
-              {userToToggle?.isActive ? "Disable" : "Activate"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      {/* Confirm Delete */}
-      <AlertDialog
-        open={!!userToDelete}
-        onOpenChange={() => setUserToDelete(null)}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete user?</AlertDialogTitle>
-            <AlertDialogDescription>
-              Deleting is permanent. Are you sure you want to delete{" "}
-              <strong>{userToDelete?.email}</strong>?
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setUserToDelete(null)}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => {
-                if (userToDelete) onDeleteUser(userToDelete);
-                setUserToDelete(null);
-              }}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Delete
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={!!pending}
+        onOpenChange={(o) => !o && setPending(null)}
+        title={pending?.kind === "delete" ? "Delete user?" : pending?.user.isActive ? "Disable user?" : "Activate user?"}
+        description={
+          pending?.kind === "delete"
+            ? `${pending.user.email} will be removed permanently.`
+            : pending?.user.isActive
+              ? "They will be signed out and won't be able to sign in until re-activated."
+              : "They will be able to sign in again."
+        }
+        confirmLabel={pending?.kind === "delete" ? "Delete" : pending?.user.isActive ? "Disable" : "Activate"}
+        destructive={pending?.kind === "delete" || pending?.user.isActive}
+        onConfirm={() => {
+          if (!pending) return;
+          if (pending.kind === "delete") onDelete(pending.user);
+          else onToggleStatus(pending.user);
+        }}
+      />
     </Card>
   );
 }

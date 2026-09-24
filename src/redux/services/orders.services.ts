@@ -77,18 +77,26 @@ export interface Tiles {
   cancelled: number;
   completed: number;
   averageRating: number;
+  revenue?: number;
 } 
 
 // Create Order Request
 export interface CreateOrderRequest {
   storeId: number;
-  customerId: number;
+  customerId?: number | null;
   paymentOption: number;
   orderItems: {
     productId: number;
     quantity: number;
-    unitPrice: number;
+    discountId?: string;
   }[];
+}
+
+export interface ReverseOrderRequest {
+  type: "void" | "return";
+  reason: string;
+  approverEmail: string;
+  approverPassword: string;
 }
 
 // Update Order Status
@@ -247,11 +255,12 @@ export const orderApi = createApi({
       invalidatesTags: (result, error, { id }) => [{ type: 'Order', id }],
     }),
 
-    getStatistics: builder.query<
-      StatisticsResponse,
-      { timeline?: string; storeId?: number; startDate?: string; endDate?: string }
-    >({
-      query: (params) => ({ url: '/Statistics', params }),
+    reverseOrder: builder.mutation<Order, { id: number; body: ReverseOrderRequest }>({
+      query: ({ id, body }) => ({ url: `/Order/${id}/reverse`, method: "POST", body }),
+      invalidatesTags: (result, error, { id }) => [
+        { type: "Order", id },
+        { type: "Orders", id: "LIST" },
+      ],
     }),
 
     // -------------------- Loyalty Activity --------------------
@@ -280,6 +289,6 @@ export const {
   useUpdateOrderStatusMutation,
   useUpdateEstimatedDeliveryDateMutation,
   useRateOrderMutation,
-  useGetStatisticsQuery,
+  useReverseOrderMutation,
   useGetLoyaltyActivityQuery,
 } = orderApi;

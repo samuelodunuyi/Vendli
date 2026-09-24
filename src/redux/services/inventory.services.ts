@@ -102,6 +102,8 @@ export interface Transaction {
     name: string;
     sku: string;
   };
+  fromStore?: string;
+  toStore?: string;
 }
 
 export interface TransactionRequest {
@@ -132,40 +134,6 @@ export const inventoryApi = createApi({
   tagTypes: ["Inventory", "Transaction"],
 
   endpoints: (builder) => ({
-    getInventories: builder.query<
-      GetInventoryResponse,
-      {
-        customSearch?: string;
-        dateFrom?: string;
-        dateTo?: string;
-        sku?: string;
-        categoryId?: number;
-        storeId?: number;
-        createdByUserId?: number;
-        modifiedByUserId?: number;
-        productId?: number;
-        sortBy?: string;
-        page?: number;
-        itemsPerPage?: number;
-      }
-    >({
-      query: (params) => ({
-        url: "/Inventory/inventory-products",
-        method: "GET",
-        params,
-      }),
-      providesTags: (result) =>
-        result
-          ? [
-              ...result.items.map((inv) => ({
-                type: "Inventory" as const,
-                id: inv.product!.productId,
-              })),
-              { type: "Inventory", id: "LIST" },
-            ]
-          : [{ type: "Inventory", id: "LIST" }],
-    }),
-
     createTransactions: builder.mutation<Transaction, TransactionRequest>({
       query: (body) => ({
         url: "/Inventory/transactions/",
@@ -181,12 +149,11 @@ export const inventoryApi = createApi({
     getTransactions: builder.query<
       GetTransactionResponse,
       {
-        storeId: number;
-        productId: number;
-        type: string;
-        startDate: string;
-        endDate: string;
-        createdBy: string;
+        storeId?: number;
+        productId?: number;
+        type?: string;
+        startDate?: string;
+        endDate?: string;
         page?: number;
         itemsPerPage?: number;
       }
@@ -211,7 +178,6 @@ export const inventoryApi = createApi({
 });
 
 export const {
-  useGetInventoriesQuery,
   useCreateTransactionsMutation,
   useGetTransactionsQuery,
 } = inventoryApi;

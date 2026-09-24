@@ -1,111 +1,35 @@
 import { useState } from "react";
+import { AlertCircle, BarChart3, LayoutGrid, Plus, Users } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Plus, Users, TrendingUp, Star, AlertCircle } from "lucide-react";
 import { CustomerOverview } from "./customer/CustomerOverview";
 import { CustomerList } from "./customer/CustomerList";
 import { CustomerAnalytics } from "./customer/CustomerAnalytics";
 import { ComplaintsManagement } from "./customer/ComplaintsManagement";
-import { AddCustomerDialog } from "./customer/AddCustomerDialog";
-import { toast } from "sonner";
-import { useGetCustomersQuery } from "@/redux/services/customer.services";
-import { useGetStoresQuery } from "@/redux/services/stores.services";
+import { CustomerFormDialog } from "./customer/CustomerFormDialog";
 
 export function CustomerManagement() {
-  const [activeTab, setActiveTab] = useState("overview");
-  const [showAddDialog, setShowAddDialog] = useState(false);
-
-  // Pagination & filters
-  const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [classification, setClassification] = useState<number | undefined>(undefined);
-  const [loyaltyTier, setLoyaltyTier] = useState<number | undefined>(undefined);
-  const [status, setStatus] = useState<number | undefined>(undefined);
-  const {data: storeData} = useGetStoresQuery()
-  // Fetch customers
-  const { data: customersData, isLoading, refetch } = useGetCustomersQuery({
-    page,
-    itemsPerPage,
-    search: searchQuery,
-    classification,
-    loyaltyTier,
-    status,
-  });
-
-  const handleCustomerAdded = () => {
-    toast.success("Customer list updated");
-    setShowAddDialog(false);
-    refetch();
-    setActiveTab("customers");
-  };
+  const [tab, setTab] = useState("overview");
+  const [adding, setAdding] = useState(false);
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Customer Management</h2>
-        <Button 
-          className="flex items-center gap-2"
-          onClick={() => setShowAddDialog(true)}
-        >
-          <Plus className="h-4 w-4" />
-          Add New Customer
-        </Button>
+    <Tabs value={tab} onValueChange={setTab} className="space-y-4">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
+          <TabsTrigger value="overview" className="gap-2"><LayoutGrid className="h-4 w-4" />Overview</TabsTrigger>
+          <TabsTrigger value="customers" className="gap-2"><Users className="h-4 w-4" />Customers</TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2"><BarChart3 className="h-4 w-4" />Analytics</TabsTrigger>
+          <TabsTrigger value="complaints" className="gap-2"><AlertCircle className="h-4 w-4" />Complaints</TabsTrigger>
+        </TabsList>
+        <Button onClick={() => setAdding(true)}><Plus className="mr-2 h-4 w-4" />Add customer</Button>
       </div>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="overview" className="flex items-center gap-2">
-            <Users className="h-4 w-4" /> Overview
-          </TabsTrigger>
-          <TabsTrigger value="customers" className="flex items-center gap-2">
-            <TrendingUp className="h-4 w-4" /> Customer List
-          </TabsTrigger>
-          <TabsTrigger value="analytics" className="flex items-center gap-2">
-            <Star className="h-4 w-4" /> Analytics
-          </TabsTrigger>
-          <TabsTrigger value="complaints" className="flex items-center gap-2">
-            <AlertCircle className="h-4 w-4" /> Complaints
-          </TabsTrigger>
-        </TabsList>
+      <TabsContent value="overview"><CustomerOverview /></TabsContent>
+      <TabsContent value="customers"><CustomerList /></TabsContent>
+      <TabsContent value="analytics"><CustomerAnalytics /></TabsContent>
+      <TabsContent value="complaints"><ComplaintsManagement /></TabsContent>
 
-        <TabsContent value="overview">
-          <CustomerOverview />
-        </TabsContent>
-
-        <TabsContent value="customers">
-<CustomerList 
-  customers={customersData?.customers || []} 
-  isLoading={isLoading} 
-  pagination={customersData?.pagination} 
-  searchQuery={searchQuery}
-  setSearchQuery={setSearchQuery}
-  classification={classification}
-  setClassification={setClassification}
-  loyaltyTier={loyaltyTier}
-  setLoyaltyTier={setLoyaltyTier}
-  status={status}
-  setStatus={setStatus}
-  storeData={storeData?.stores || []}
-  refetch={refetch}
-/>
-        </TabsContent>
-
-        <TabsContent value="analytics">
-          <CustomerAnalytics />
-        </TabsContent>
-
-        <TabsContent value="complaints">
-          <ComplaintsManagement />
-        </TabsContent>
-      </Tabs>
-
-      <AddCustomerDialog
-        open={showAddDialog}
-        onOpenChange={setShowAddDialog}
-        onCustomerAdded={handleCustomerAdded}
-        storeData={storeData?.stores || []}
-      />
-    </div>
+      <CustomerFormDialog open={adding} onOpenChange={setAdding} onCustomerAdded={() => setTab("customers")} />
+    </Tabs>
   );
 }

@@ -1,130 +1,41 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { Filter } from "lucide-react";
-import type { StoreFilter } from "@/types/store";
-import { useGetStoresQuery } from "@/redux/services/stores.services";
+import { StoreSelect } from "@/components/common/StoreSelect";
 import { useGetCategoriesQuery } from "@/redux/services/products.services";
+import type { StoreFilter as Filters } from "@/types/store";
+
+const ALL = "all";
+const RANGES = [
+  { value: "last7days", label: "Last 7 days" },
+  { value: "last30days", label: "Last 30 days" },
+  { value: "last90days", label: "Last 90 days" },
+  { value: "thisYear", label: "This year" },
+] as const;
 
 interface StoreFilterProps {
-  filters: StoreFilter;
-  onFiltersChange: (filters: StoreFilter) => void;
+  filters: Filters;
+  onFiltersChange: (filters: Filters) => void;
 }
 
 export function StoreFilter({ filters, onFiltersChange }: StoreFilterProps) {
-  const { data: storeResponse, isLoading: storesLoading } = useGetStoresQuery();
-  const { data: categoriesResponse, isLoading: categoriesLoading } = useGetCategoriesQuery({});
-
-  const storeList = storeResponse?.stores ?? [];
-  const categoryList = categoriesResponse?.categories ?? [];
+  const { data } = useGetCategoriesQuery({});
+  const set = (patch: Partial<Filters>) => onFiltersChange({ ...filters, ...patch });
 
   return (
-    <Card className="mb-6">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Filter className="h-5 w-5" />
-          Filter Analytics
-        </CardTitle>
-      </CardHeader>
-
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-
-          {/* STORE FILTER */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Store</label>
-
-            <Select
-              value={filters.storeId !== undefined ? String(filters.storeId) : "all"}
-              onValueChange={(value) =>
-                onFiltersChange({
-                  ...filters,
-                  storeId: value === "all" ? undefined : Number(value),
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Stores" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="all">All Stores</SelectItem>
-
-                {!storesLoading &&
-                  storeList.map((store) => (
-                    <SelectItem key={store.storeId} value={String(store.storeId)}>
-                      {store.storeName}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* CATEGORY FILTER */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Category</label>
-
-            <Select
-              value={filters.categoryId !== undefined ? String(filters.categoryId) : "all"}
-              onValueChange={(value) =>
-                onFiltersChange({
-                  ...filters,
-                  categoryId: value === "all" ? undefined : Number(value),
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="All Categories" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-
-                {!categoriesLoading &&
-                  categoryList.map((cat) => (
-                    <SelectItem key={cat.categoryId} value={String(cat.categoryId)}>
-                      {cat.categoryName}
-                    </SelectItem>
-                  ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          {/* DATE RANGE FILTER */}
-          <div>
-            <label className="text-sm font-medium mb-2 block">Date Range</label>
-
-            <Select
-              value={filters.timeline || "last30days"}
-              onValueChange={(value) =>
-                onFiltersChange({
-                  ...filters,
-                  timeline: value as 
-                    | "last7days" 
-                    | "last30days" 
-                    | "last90days" 
-                    | "thisYear",
-                })
-              }
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select range" />
-              </SelectTrigger>
-
-              <SelectContent>
-                <SelectItem value="last7days">Last 7 days</SelectItem>
-                <SelectItem value="last30days">Last 30 days</SelectItem>
-                <SelectItem value="last90days">Last 90 days</SelectItem>
-                <SelectItem value="thisYear">This Year</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="flex items-end">
-            <Button className="w-full">Apply Filters</Button>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="grid grid-cols-1 gap-2 sm:grid-cols-3 lg:flex">
+      <StoreSelect value={filters.storeId} onChange={(storeId) => set({ storeId })} />
+      <Select value={filters.categoryId ? String(filters.categoryId) : ALL} onValueChange={(v) => set({ categoryId: v === ALL ? undefined : Number(v) })}>
+        <SelectTrigger className="lg:w-52"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          <SelectItem value={ALL}>All categories</SelectItem>
+          {data?.categories.map((c) => <SelectItem key={c.categoryId} value={String(c.categoryId)}>{c.categoryName}</SelectItem>)}
+        </SelectContent>
+      </Select>
+      <Select value={filters.timeline ?? "last30days"} onValueChange={(v) => set({ timeline: v as Filters["timeline"] })}>
+        <SelectTrigger className="lg:w-44"><SelectValue /></SelectTrigger>
+        <SelectContent>
+          {RANGES.map((r) => <SelectItem key={r.value} value={r.value}>{r.label}</SelectItem>)}
+        </SelectContent>
+      </Select>
+    </div>
   );
 }

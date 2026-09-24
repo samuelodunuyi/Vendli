@@ -1,274 +1,113 @@
-// ProductsManagement.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
+import { AlertTriangle, Boxes, Download, PackageX, Plus, Search, Wallet } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Download, Search, Plus } from "lucide-react";
-
-import { ProductsSummaryCards } from "./products/ProductsSummaryCards";
-import { ProductsAdvancedFilters } from "./products/ProductsAdvancedFilters";
-import { ProductsLowStockAlert } from "./products/ProductsLowStockAlert";
-import { ProductsTable } from "./products/ProductsTable";
-import { AddProductDialog } from "./products/AddProductDialog";
-import { EditProductDialog } from "./products/EditProductDialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { StatCard, StatGrid } from "@/components/common/StatCard";
+import { ConfirmDialog } from "@/components/common/ConfirmDialog";
+import { ProductsTable, type ProductAction } from "./products/ProductsTable";
+import { ProductFormDialog } from "./products/ProductFormDialog";
 import { RestockDialog } from "./products/RestockDialog";
+import { AdjustStockDialog } from "./products/AdjustStockDialog";
+import { ProductActivityDialog, type ProductActivityTab } from "./products/ProductActivityDialog";
+import { useDeleteProductMutation, useGetCategoriesQuery, useGetProductsQuery, type Product } from "@/redux/services/products.services";
+import { useGetSalesStatisticsQuery } from "@/redux/services/stores.services";
+import { useAuth } from "@/hooks/useAuth";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { formatCompactCurrency, formatNumber } from "@/lib/format";
+import { apiErrorMessage } from "@/lib/errors";
+import { downloadCsv } from "@/lib/csv";
 
-import { useProductFilters } from "@/hooks/useProductFilters";
-import { useProductOperations } from "@/hooks/useProductOperations";
-
-import {
-  useGetProductsQuery,
-  useGetCategoriesQuery,
-  useCreateProductMutation,
-  useUpdateProductMutation,
-  useRestockProductMutation,
-  useUnstockProductMutation,
-  Product,
-} from "@/redux/services/products.services";
+const ALL = "all";
+type Open = { action: ProductAction; product: Product } | { action: "create" } | null;
 
 export function ProductsManagement() {
+  const { isSuperAdmin } = useAuth();
+  const [search, setSearch] = useState("");
+  const [categoryId, setCategoryId] = useState(ALL);
   const [page, setPage] = useState(1);
-  const [itemsPerPage, setItemsPerPage] = useState(10);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
-  const [showFilters, setShowFilters] = useState(false);
-  const [stockByStoreProduct, setStockByStoreProduct] = useState<Product | null>(null);
-  const [adjustStockProduct, setAdjustStockProduct] = useState<Product | null>(null);
-  const [transactionHistoryProduct, setTransactionHistoryProduct] = useState<Product | null>(null);
-  const [recentOrdersProduct, setRecentOrdersProduct] = useState<Product | null>(null);
-  const [restockingProduct, setRestockingProduct] = useState<Product | null>(null);
+  const [open, setOpen] = useState<Open>(null);
+  const debounced = useDebouncedValue(search);
 
-  const { data: categoriesData } = useGetCategoriesQuery({});
-
-  const {
-    searchQuery,
-    setSearchQuery,
-    filters,
-    filteredProducts,
-    handleApplyFilters,
-    handleClearFilters,
-  } = useProductFilters([]);
-
-  const { data: productsData, refetch } = useGetProductsQuery({
+  const { data: categories } = useGetCategoriesQuery({});
+  const { data: stats } = useGetSalesStatisticsQuery({});
+  const { data, isFetching } = useGetProductsQuery({
     page,
-    search: searchQuery,
-    itemsPerPage,
-    categoryId: selectedCategoryId ?? undefined,
+    itemsPerPage: 15,
+    search: debounced || undefined,
+    categoryId: categoryId === ALL ? undefined : Number(categoryId),
   });
+  const [deleteProduct] = useDeleteProductMutation();
+  const products = data?.products ?? [];
+  const close = () => setOpen(null);
+  const activeProduct = open && "product" in open ? open.product : null;
+  const activityTab = open && ["stock", "movements", "orders"].includes(open.action) ? (open.action as ProductActivityTab) : null;
 
-  const productList = productsData?.products || [];
-  const productOperations = useProductOperations(productList);
-
-  const [createProduct, { isLoading: isCreating }] = useCreateProductMutation();
-  const [updateProduct, { isLoading: isUpdating }] = useUpdateProductMutation();
-  const [restockProductMutation, { isLoading: isRestocking }] = useRestockProductMutation();
-  const [unstockProductMutation, { isLoading: isUnstocking }] = useUnstockProductMutation();
-
-  const handleOpenRestockDialog = (product: Product) => {
-    productOperations.setRestockingProduct(product);
-  };
-
-  const lowStockProducts = productList.filter(
-    (p) => p.basestock <= (p.minimumStockLevel || 5)
-  );
-
-  const handleRestockSubmit = async (data: {
-    productId: number;
-    quantity: number;
-    reference: string;
-    reason: string;
-    type?: "restock" | "unstock";
-  }) => {
-    try {
-      let result;
-      if (data.type === "unstock") {
-        result = await unstockProductMutation(data).unwrap();
-      } else {
-        result = await restockProductMutation(data).unwrap();
-      }
-      toast.success(`${result.message} — New stock: ${result.basestock}`);
-      productOperations.setRestockingProduct(null);
-      refetch();
-    } catch (error) {
-      console.error(error);
-      toast.error(error?.data?.message || "Failed to update stock");
-    }
-  };
-
-  const handleAddProduct = async () => {
-    try {
-      const p = productOperations.newProduct;
-      const payload = {
-        productName: p.productName,
-        description: p.description,
-        sku: p.barcode,
-        barcode: p.barcode,
-        categoryId: Number(p.categoryId),
-        basePrice: Number(p.basePrice),
-        costPrice: Number(p.costPrice || 0),
-        basestock: Number(p.basestock || 0),
-        minimumStockLevel: Number(p.minimumStockLevel || 5),
-        maximumStockLevel: Number(p.maximumStockLevel || 5),
-        unitOfMeasure: p.unitOfMeasure,
-        imageUrl: "",
-        additionalImages: [],
-        showInWeb: true,
-        showInPOS: true,
-        isActive: Boolean(p.isActive),
-      };
-      await createProduct(payload).unwrap();
-      toast.success("Product added successfully!");
-      productOperations.setIsAddProductOpen(false);
-      refetch();
-    } catch (err) {
-      console.error(err);
-      toast.error("Failed to add product");
-    }
-  };
-
-  const handleUpdateProduct = async () => {
-    if (!productOperations.editingProduct) return;
-    const p = productOperations.editingProduct;
-    const payload = {
-      productName: p.productName,
-      description: p.description,
-      sku: p.sku,
-      barcode: p.barcode,
-      categoryId: Number(p.categoryId),
-      storeId: Number(p.storeId),
-      basePrice: Number(p.basePrice),
-      costPrice: Number(p.costPrice),
-      basestock: Number(p.basestock),
-      minimumStockLevel: Number(p.minimumStockLevel || 0),
-      maximumStockLevel: Number(p.maximumStockLevel || 0),
-      unitOfMeasure: p.unitOfMeasure,
-      imageUrl: p.imageUrl || "",
-      additionalImages: p.additionalImages || [],
-      showInWeb: Boolean(p.showInWeb),
-      showInPOS: Boolean(p.showInPOS),
-      isActive: Boolean(p.isActive),
-    };
-    try {
-      await updateProduct({ id: p.productId, body: payload }).unwrap();
-      toast.success("Product updated successfully!");
-      productOperations.setEditingProduct(null);
-      refetch();
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to update product");
-    }
-  };
-
-  useEffect(() => {
-    refetch();
-  }, [page, itemsPerPage, selectedCategoryId]);
+  const exportCsv = () =>
+    downloadCsv(
+      "products.csv",
+      ["Name", "SKU", "Barcode", "Category", "Price", "Cost", "Stock", "Reorder level", "Active"],
+      products.map((p) => [p.productName, p.sku, p.barcode, p.categoryName, p.basePrice, p.costPrice, p.basestock, p.minimumStockLevel, p.isActive ? "Yes" : "No"])
+    );
 
   return (
     <div className="space-y-6">
-      <ProductsSummaryCards
-        productList={productList}
-        lowStockProducts={lowStockProducts}
-        categories={categoriesData?.categories}
-      />
+      <StatGrid>
+        <StatCard label="Products" value={formatNumber(stats?.totalProducts)} icon={Boxes} loading={!stats} />
+        <StatCard label="Low stock" value={formatNumber(stats?.lowStockProducts)} icon={AlertTriangle} tone="warning" loading={!stats} />
+        <StatCard label="Out of stock" value={formatNumber(stats?.outOfStockProducts)} icon={PackageX} tone="danger" loading={!stats} />
+        <StatCard label="Stock at cost" value={formatCompactCurrency(stats?.inventoryValue)} icon={Wallet} loading={!stats} />
+      </StatGrid>
 
-      {/* Actions Bar */}
-      <div className="flex flex-col gap-4 w-full">
-        <div className="relative w-full max-w-lg">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
-          <Input
-            placeholder="Search products..."
-            className="pl-10 w-full"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
+      <div className="flex flex-col gap-2 lg:flex-row">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Search name, SKU or barcode…" className="pl-9" value={search} onChange={(e) => { setSearch(e.target.value); setPage(1); }} />
         </div>
-
-        {/* Actions */}
-        <div className="flex flex-wrap gap-2 items-center">
-          <ProductsAdvancedFilters
-            categories={categoriesData?.categories ?? []}
-            activeFilters={filters}
-            showFilters={showFilters}
-            setShowFilters={setShowFilters}
-            onApplyFilters={(filters) => {
-              setSelectedCategoryId(filters.categoryId);
-              handleApplyFilters(filters);
-              refetch();
-            }}
-            onClearFilters={() => {
-              setSelectedCategoryId(null);
-              handleClearFilters();
-              refetch();
-            }}
-          />
-
-          <Button
-            variant="outline"
-            onClick={() => productOperations.handleExportData(filteredProducts)}
-            className="flex items-center gap-2"
-          >
-            <Download className="h-4 w-4" />
-            Export
-          </Button>
-
-          <Button
-            onClick={() => productOperations.setIsAddProductOpen(true)}
-            className="flex items-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Plus className="h-4 w-4" />
-            Add Product
-          </Button>
+        <div className="grid grid-cols-2 gap-2 sm:flex">
+          <Select value={categoryId} onValueChange={(v) => { setCategoryId(v); setPage(1); }}>
+            <SelectTrigger className="sm:w-48"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All categories</SelectItem>
+              {categories?.categories.map((c) => <SelectItem key={c.categoryId} value={String(c.categoryId)}>{c.categoryName}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={exportCsv} disabled={!products.length}><Download className="mr-2 h-4 w-4" />Export</Button>
+          {isSuperAdmin && <Button className="col-span-2" onClick={() => setOpen({ action: "create" })}><Plus className="mr-2 h-4 w-4" />Add product</Button>}
         </div>
       </div>
 
-      {/* Dialogs */}
-      <AddProductDialog
-        open={productOperations.isAddProductOpen}
-        onOpenChange={productOperations.setIsAddProductOpen}
-        newProduct={productOperations.newProduct}
-        setNewProduct={productOperations.setNewProduct}
-        categories={categoriesData?.categories}
-        onAddProduct={handleAddProduct}
-        isCreating={isCreating}
-        onCancel={() => productOperations.setIsAddProductOpen(false)}
-      />
-
-      <EditProductDialog
-        editingProduct={productOperations.editingProduct}
-        setEditingProduct={productOperations.setEditingProduct}
-        categories={categoriesData?.categories}
-        onUpdateProduct={handleUpdateProduct}
-        isUpdating={isUpdating}
-      />
-
-      <ProductsLowStockAlert lowStockProducts={lowStockProducts} />
-
       <ProductsTable
-        filteredProducts={productList}
-        productsWithTransactions={productOperations.productsWithTransactions}
-        onEditProduct={productOperations.handleEditProduct}
-        onDeleteProduct={productOperations.handleDeleteProduct}
-        onViewStockByStore={productOperations.handleViewStockByStore}
-        onAdjustStock={productOperations.handleAdjustStock}
-        onOpenRestock={handleOpenRestockDialog}
-        onViewTransactionHistory={productOperations.handleViewTransactionHistory}
-        onViewRecentOrders={productOperations.handleViewRecentOrders}
-        stockByStoreProduct={stockByStoreProduct}
-        setStockByStoreProduct={setStockByStoreProduct}
-        adjustStockProduct={adjustStockProduct}
-        setAdjustStockProduct={setAdjustStockProduct}
-        transactionHistoryProduct={transactionHistoryProduct}
-        setTransactionHistoryProduct={setTransactionHistoryProduct}
-        recentOrdersProduct={recentOrdersProduct}
-        setRecentOrdersProduct={setRecentOrdersProduct}
-        restockingProduct={restockingProduct}
-        setRestockingProduct={setRestockingProduct}
+        products={products}
+        loading={isFetching && !data}
+        page={page}
+        totalPages={data?.pagination.totalPages ?? 1}
+        totalItems={data?.pagination.totalItems}
+        onPageChange={setPage}
+        onAction={(action, product) => setOpen({ action, product })}
       />
 
-      <RestockDialog
-        open={!!productOperations.restockingProduct}
-        onOpenChange={(open) => !open && productOperations.setRestockingProduct(null)}
-        product={productOperations.restockingProduct}
-        onSubmitRestock={handleRestockSubmit}
+      <ProductFormDialog open={open?.action === "create" || open?.action === "edit"} onOpenChange={(o) => !o && close()} product={open?.action === "edit" ? activeProduct : null} />
+      {open?.action === "restock" && <RestockDialog product={activeProduct} onOpenChange={(o) => !o && close()} />}
+      <AdjustStockDialog open={open?.action === "distribute"} onOpenChange={(o) => !o && close()} product={open?.action === "distribute" ? activeProduct : null} />
+      {activityTab && <ProductActivityDialog product={activeProduct} tab={activityTab} onTabChange={(tab) => activeProduct && setOpen({ action: tab, product: activeProduct })} onOpenChange={(o) => !o && close()} />}
+      <ConfirmDialog
+        open={open?.action === "delete"}
+        onOpenChange={(o) => !o && close()}
+        title={`Delete ${activeProduct?.productName}?`}
+        description="Products that have been sold are archived instead, so sales history stays intact."
+        confirmLabel="Delete"
+        destructive
+        onConfirm={async () => {
+          if (!activeProduct) return;
+          try {
+            await deleteProduct(activeProduct.productId).unwrap();
+            toast.success("Product removed");
+          } catch (err) {
+            toast.error(apiErrorMessage(err));
+          }
+        }}
       />
     </div>
   );

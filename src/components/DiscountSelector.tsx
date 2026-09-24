@@ -1,67 +1,37 @@
-
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Percent } from "lucide-react";
-import { Discount } from "@/types";
-import { discounts } from "@/data/pos";
+import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { DISCOUNTS, type Discount } from "@/lib/pricing";
 
 interface DiscountSelectorProps {
-  onDiscountSelect: (discount: Discount) => void;
-  selectedDiscount?: Discount;
+  selected?: Discount;
+  onSelect: (discountId?: string) => void;
 }
 
-export function DiscountSelector({ onDiscountSelect, selectedDiscount }: DiscountSelectorProps) {
-  const [open, setOpen] = useState(false);
-
-  const handleDiscountSelect = (discount: Discount) => {
-    onDiscountSelect(discount);
-    setOpen(false);
-  };
-
+export function DiscountSelector({ selected, onSelect }: DiscountSelectorProps) {
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="outline" size="sm">
-          <Percent className="mr-2 h-4 w-4" />
-          {selectedDiscount ? selectedDiscount.description : "Apply Discount"}
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button variant={selected ? "secondary" : "ghost"} size="sm" className="h-8 px-2 text-xs">
+          <Percent className="mr-1 h-3.5 w-3.5" />
+          {selected ? selected.description : "Discount"}
         </Button>
-      </DialogTrigger>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>Select Discount</DialogTitle>
-        </DialogHeader>
-        <div className="grid gap-3">
-          {discounts.map((discount) => (
-            <div
-              key={discount.id}
-              className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-              onClick={() => handleDiscountSelect(discount)}
-            >
-              <div>
-                <p className="font-medium">{discount.description}</p>
-                <p className="text-sm text-gray-500">
-                  {discount.type === 'percentage' ? `${discount.value}%` : `₦${discount.value.toLocaleString()}`} off
-                </p>
-              </div>
-              <Badge variant="secondary">
-                {discount.type === 'percentage' ? `${discount.value}%` : `₦${discount.value.toLocaleString()}`}
-              </Badge>
-            </div>
-          ))}
-          <Button
-            variant="ghost"
-            onClick={() => {
-              onDiscountSelect({ id: "", type: "percentage", value: 0, description: "" });
-              setOpen(false);
-            }}
-            className="text-red-500"
-          >
-            Remove Discount
-          </Button>
-        </div>
-      </DialogContent>
-    </Dialog>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {DISCOUNTS.map((d) => (
+          <DropdownMenuItem key={d.id} onClick={() => onSelect(d.id)}>
+            {d.description}
+          </DropdownMenuItem>
+        ))}
+        {selected && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="text-destructive" onClick={() => onSelect(undefined)}>
+              Remove discount
+            </DropdownMenuItem>
+          </>
+        )}
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

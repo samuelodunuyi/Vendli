@@ -43,12 +43,10 @@ class WebBarcodeScanner implements BarcodeScanner {
 
   private async startNativeScanning(): Promise<void> {
     // Implementation for native BarcodeDetector
-    console.log('Starting native barcode scanning...');
   }
 
   private async startCameraScanning(): Promise<void> {
     // Implementation for camera-based scanning
-    console.log('Starting camera-based barcode scanning...');
   }
 
   // Simulate barcode scan for demo purposes

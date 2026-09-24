@@ -96,7 +96,7 @@ export function SalesForecastingDashboard({ storeFilter }: SalesForecastingDashb
       </div>
 
       <Tabs defaultValue="forecast" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
           <TabsTrigger value="forecast">Sales Forecast</TabsTrigger>
           <TabsTrigger value="restock">Restock Recommendations</TabsTrigger>
           <TabsTrigger value="heatmap">Performance Heatmap</TabsTrigger>

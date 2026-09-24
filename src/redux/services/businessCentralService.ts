@@ -1,6 +1,6 @@
 
 import { BusinessCentralConfig, BusinessCentralItem, BusinessCentralSalesOrder, BusinessCentralInvoice, SyncStatus } from "@/types/businessCentral";
-import { Product, Transaction } from "@/types";
+import type { Order } from "./orders.services";
 
 export class BusinessCentralService {
   private config: BusinessCentralConfig | null = null;
@@ -17,7 +17,6 @@ export class BusinessCentralService {
 
     try {
       // In a real implementation, this would handle OAuth2 authentication
-      console.log("Authenticating with Business Central...");
       // Mock authentication for demo
       this.accessToken = "mock-access-token";
       return true;
@@ -34,7 +33,6 @@ export class BusinessCentralService {
 
     try {
       // Mock API call to test connection
-      console.log("Testing Business Central connection...");
       return true;
     } catch (error) {
       console.error("Connection test failed:", error);
@@ -48,7 +46,6 @@ export class BusinessCentralService {
     }
 
     try {
-      console.log("Syncing inventory with Business Central...");
       // Mock sync - in real implementation, this would call BC API
       await new Promise(resolve => setTimeout(resolve, 2000));
       
@@ -66,20 +63,19 @@ export class BusinessCentralService {
     }
   }
 
-  async syncSalesOrders(transactions: Transaction[]): Promise<SyncStatus> {
+  async syncSalesOrders(orders: Order[]): Promise<SyncStatus> {
     if (!this.config || !this.accessToken) {
       return { lastSync: new Date().toISOString(), status: 'error', message: 'Not authenticated' };
     }
 
     try {
-      console.log("Syncing sales orders with Business Central...");
       // Mock sync - convert POS transactions to BC sales orders
       await new Promise(resolve => setTimeout(resolve, 1500));
       
       return {
         lastSync: new Date().toISOString(),
         status: 'success',
-        recordsAffected: transactions.length
+        recordsAffected: orders.length
       };
     } catch (error) {
       return {
@@ -96,7 +92,6 @@ export class BusinessCentralService {
     }
 
     try {
-      console.log("Syncing invoices with Business Central...");
       await new Promise(resolve => setTimeout(resolve, 1800));
       
       return {
@@ -119,7 +114,6 @@ export class BusinessCentralService {
     }
 
     try {
-      console.log("Syncing receipts with Business Central...");
       await new Promise(resolve => setTimeout(resolve, 1200));
       
       return {
@@ -142,7 +136,6 @@ export class BusinessCentralService {
     }
 
     try {
-      console.log("Syncing bank deposits with Business Central...");
       await new Promise(resolve => setTimeout(resolve, 1000));
       
       return {

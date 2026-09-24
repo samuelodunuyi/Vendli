@@ -1,78 +1,53 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { useCart } from "@/context/CartContext";
-import { Product } from "@/redux/services/products.services";
-import { ShoppingCart } from "lucide-react";
-import React from "react";
+import { Plus } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { ProductImage } from "@/components/common/ProductImage";
+import type { Product } from "@/redux/services/products.services";
+import { formatCurrency } from "@/lib/format";
+import { cn } from "@/lib/utils";
 
 interface ProductCardProps {
   product: Product;
-  isPOS?: boolean;
+  inCart: number;
+  onAdd: (product: Product) => void;
 }
 
-export function ProductCard({ product, isPOS = false }: ProductCardProps) {
-  const { addToCart } = useCart();
-  const formattedPrice = new Intl.NumberFormat("en-NG", {
-    style: "currency",
-    currency: "NGN",
-    minimumFractionDigits: 0,
-  }).format(product.basePrice);
-
-  const handleAddToCart = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    addToCart(product, 1);
-  };
+export function ProductCard({ product, inCart, onAdd }: ProductCardProps) {
+  const available = product.basestock - inCart;
+  const soldOut = available <= 0;
+  const low = !soldOut && product.basestock <= (product.minimumStockLevel || 5);
 
   return (
     <Card
-      onClick={() => addToCart(product, 1)}
-      className="overflow-hidden transition-shadow duration-200 hover:shadow-md cursor-pointer"
+      role="button"
+      tabIndex={soldOut ? -1 : 0}
+      aria-disabled={soldOut}
+      onClick={() => !soldOut && onAdd(product)}
+      onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && !soldOut && (e.preventDefault(), onAdd(product))}
+      className={cn(
+        "group relative flex flex-col overflow-hidden transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring",
+        soldOut ? "cursor-not-allowed opacity-60" : "cursor-pointer hover:border-primary hover:shadow-md"
+      )}
     >
-      {/* Image Section */}
-      <div className="relative aspect-square overflow-hidden bg-gray-100">
-        <img
-          src={product.imageUrl}
-          alt={product.productName}
-          className="h-full w-full object-cover transition-transform duration-300 hover:scale-105"
-        />
-        {product.basestock < 5 && (
-          <div className="absolute top-2 right-2 bg-red-500 text-white text-xs px-2 py-1 rounded-md">
-            Low Stock: {product.basestock}
-          </div>
-        )}
+      <ProductImage src={product.imageUrl} name={product.productName} className="aspect-[4/3] w-full text-2xl" />
+      {inCart > 0 && <Badge className="absolute left-2 top-2">{inCart} in sale</Badge>}
+      {(soldOut || low) && (
+        <Badge variant={soldOut ? "destructive" : "secondary"} className="absolute right-2 top-2">
+          {soldOut ? "Out of stock" : `${product.basestock} left`}
+        </Badge>
+      )}
+      <div className="flex flex-1 flex-col gap-1 p-3">
+        <p className="line-clamp-2 text-sm font-medium leading-snug">{product.productName}</p>
+        <p className="text-xs text-muted-foreground">{product.categoryName}</p>
+        <div className="mt-auto flex items-center justify-between pt-1">
+          <span className="font-bold text-primary">{formatCurrency(product.basePrice)}</span>
+          {!soldOut && (
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary transition group-hover:bg-primary group-hover:text-primary-foreground">
+              <Plus className="h-4 w-4" />
+            </span>
+          )}
+        </div>
       </div>
-
-      {/* Header */}
-      <CardHeader className="p-4 pb-0">
-        <CardTitle className="text-lg font-medium line-clamp-2">
-          {product.productName}
-        </CardTitle>
-      </CardHeader>
-
-      {/* Content */}
-      <CardContent className="p-4 pt-2">
-        <p className="text-gray-500 text-sm line-clamp-2">{product.description}</p>
-        <p className="mt-2 text-xl font-bold text-primary">{formattedPrice}</p>
-      </CardContent>
-
-      {/* Footer */}
-      <CardFooter className="p-4 pt-0">
-        {isPOS ? (
-          <Button
-            className="w-full font-bold bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={handleAddToCart}
-          >
-            Add to Sale
-          </Button>
-        ) : (
-          <Button
-            className="w-full font-bold bg-blue-600 hover:bg-blue-700 text-white"
-            onClick={handleAddToCart}
-          >
-            <ShoppingCart className="mr-2 h-4 w-4" /> Add to Cart
-          </Button>
-        )}
-      </CardFooter>
     </Card>
   );
 }

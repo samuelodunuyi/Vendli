@@ -1,61 +1,31 @@
-
 import { Separator } from "@/components/ui/separator";
-import { taxes } from "@/data/pos";
-import { useCart } from "@/context/CartContext";
+import { VAT_RATE } from "@/lib/pricing";
+import { formatCurrency } from "@/lib/format";
 
 interface CartTotalsProps {
   subtotal: number;
-  totalDiscount: number;
+  discount: number;
+  tax: number;
   total: number;
 }
 
-export function CartTotals({ subtotal, totalDiscount, total }: CartTotalsProps) {
-  const { deliveryCost, selectedDeliveryProvider } = useCart();
-  
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
-
+export function CartTotals({ subtotal, discount, tax, total }: CartTotalsProps) {
   return (
-    <div className="px-4 py-3 border-t bg-white">
-      <div className="space-y-2 text-sm">
-        <div className="flex justify-between">
-          <span className="text-gray-600">Subtotal:</span>
-          <span className="font-medium">{formatCurrency(subtotal)}</span>
-        </div>
-        
-        {totalDiscount > 0 && (
-          <div className="flex justify-between text-green-600">
-            <span>Discount:</span>
-            <span>-{formatCurrency(totalDiscount)}</span>
-          </div>
-        )}
-        
-        {taxes.map((tax) => (
-          <div key={tax.id} className="flex justify-between text-gray-600">
-            <span>{tax.name} ({tax.rate}%):</span>
-            <span>{formatCurrency((subtotal - totalDiscount) * tax.rate / 100)}</span>
-          </div>
-        ))}
-        
-        {selectedDeliveryProvider && deliveryCost > 0 && (
-          <div className="flex justify-between text-gray-600">
-            <span>Delivery ({selectedDeliveryProvider.name}):</span>
-            <span>{formatCurrency(deliveryCost)}</span>
-          </div>
-        )}
-        
-        <Separator className="my-2" />
-        
-        <div className="flex justify-between text-lg font-bold">
-          <span>Total:</span>
-          <span className="text-primary">{formatCurrency(total)}</span>
-        </div>
-      </div>
+    <dl className="space-y-1.5 text-sm">
+      <Row label="Subtotal" value={formatCurrency(subtotal)} />
+      {discount > 0 && <Row label="Discounts" value={`−${formatCurrency(discount)}`} className="text-emerald-600" />}
+      <Row label={`VAT (${VAT_RATE * 100}%)`} value={formatCurrency(tax)} className="text-muted-foreground" />
+      <Separator className="my-2" />
+      <Row label="Total" value={formatCurrency(total)} className="text-lg font-bold" />
+    </dl>
+  );
+}
+
+function Row({ label, value, className }: { label: string; value: string; className?: string }) {
+  return (
+    <div className={`flex justify-between ${className ?? ""}`}>
+      <dt>{label}</dt>
+      <dd className="tabular-nums">{value}</dd>
     </div>
   );
 }

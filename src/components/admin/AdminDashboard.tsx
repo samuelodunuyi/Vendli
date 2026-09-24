@@ -1,114 +1,57 @@
 import { useState } from "react";
-import { DashboardHeader } from "./dashboard/DashboardHeader";
-import { DashboardMetrics } from "./dashboard/DashboardMetrics";
+import { Banknote, Package, ShoppingCart, Users } from "lucide-react";
+import { DashboardHeader, type Period } from "./dashboard/DashboardHeader";
 import { DashboardCharts } from "./dashboard/DashboardCharts";
 import { DashboardTables } from "./dashboard/DashboardTables";
+import { StatCard, StatGrid } from "@/components/common/StatCard";
+import { PageLoader } from "@/components/common/PageLoader";
 import { useGetStatisticsQuery } from "@/redux/services/stores.services";
-import { useAppSelector } from "@/redux/store";
-
-interface DateRange {
-  from: Date | undefined;
-  to: Date | undefined;
-}
+import { formatCompactCurrency, formatNumber, percentChange } from "@/lib/format";
 
 export function AdminDashboard() {
-  const [selectedPeriod, setSelectedPeriod] = useState("today");
-const [selectedStore, setSelectedStore] = useState<number | null>(null);
-  const [customDateRange, setCustomDateRange] = useState<DateRange>({
-    from: undefined,
-    to: undefined,
+  const [period, setPeriod] = useState<Period>("month");
+  const [storeId, setStoreId] = useState<number>();
+  const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
+
+  const { data, isFetching, isError, refetch } = useGetStatisticsQuery({
+    timeline: period,
+    store: storeId,
+    startDate: period === "custom" ? range.from?.toISOString() : undefined,
+    endDate: period === "custom" ? range.to?.toISOString() : undefined,
   });
-
-  const { data, isLoading, isError } = useGetStatisticsQuery({
-    timeline: selectedPeriod,
-    store: selectedStore,
-    startDate: customDateRange.from?.toISOString(),
-    endDate: customDateRange.to?.toISOString(),
-  });
-
-  const currentUser = useAppSelector((state) => state.auth.user);
-
-  if (isLoading) return <p>Loading statistics...</p>;
-  if (isError || !data) return <p>Failed to load statistics.</p>;
-
-  const mappedSalesData = data.salesChart.labels.map((label, index) => ({
-    labels: label,
-    values: data.salesChart.values[index] ?? 0,
-  }));
-
-  const mappedTopCategories = data.topSellingCategories.map((cat) => ({
-    name: cat.categoryName,
-    sold: cat.totalSales,
-  }));
-
-  const RETENTION_COLORS = [
-    "hsl(142, 70.6%, 45.3%)", 
-    "hsl(271, 76%, 53%)" 
-];
-
-const mappedRetentionData = data.retentionRate.labels.map((label, index) => ({
-    name: label,
-    value: data.retentionRate.values[index] || 0, 
-    color: RETENTION_COLORS[index] || '#ccc', 
-}));
-  const mappedTopProducts = data.topSellingProducts.map((prod) => ({
-    name: prod.productName,
-    sold: prod.totalSales,
-  }));
-
-  const mappedLowProducts = data.lowSellingProducts.map((prod) => ({
-    name: prod.productName,
-    sold: prod.totalSales,
-  }));
-
-const mappedTopStores = data.topPerformingStores.map((store) => ({
-    name: store.storeName,
-    sales: store.totalSales,
-  }));
-
-  const mappedTopCustomers = data.topCustomers.map((cust) => ({
-    name: cust.userName,
-    orders: cust.totalOrders,
-  }));
 
   return (
     <div className="space-y-6">
-      <DashboardHeader
-        currentUser={currentUser}
-        selectedStore={selectedStore}
-        onStoreChange={setSelectedStore}
-        selectedPeriod={selectedPeriod}
-        onPeriodChange={setSelectedPeriod}
-        customDateRange={customDateRange}
-        onCustomDateRangeChange={setCustomDateRange}
-      />
+      <DashboardHeader period={period} onPeriodChange={setPeriod} storeId={storeId} onStoreChange={setStoreId} range={range} onRangeChange={setRange} />
 
-      <DashboardMetrics
-        metrics={{
-          totalCustomers: data.activeCustomers,
-          pendingOrders: data.pendingOrders,
-          delayedOrders: data.delayedOrders,
-          cancelledOrders: data.cancelledOrders,
-          offlineOrders: data.totalOfflineOrders,
-          confirmedOrders: data.confirmedOrders,
-          deliveredOrders: data.deliveredOrders,
-          returnedOrders:data.returnedOrders,
-          totalOrders: data.totalOrders,
-          totalProducts: data.totalProducts,
-          totalSales: data.totalSales,
-          totalStores: data.totalStores
-        }}
-      />
+      {isError ? (
+        <div className="rounded-lg border border-dashed p-10 text-center text-muted-foreground">
+          Couldn't load statistics. <button className="underline" onClick={refetch}>Try again</button>
+        </div>
+      ) : !data ? (
+        <PageLoader className="min-h-[40vh]" />
+      ) : (
+        <div className={isFetching ? "space-y-6 opacity-60 transition-opacity" : "space-y-6"}>
+          <StatGrid>
+            <StatCard label="Revenue" value={formatCompactCurrency(data.totalSales)} icon={Banknote} change={percentChange(data.totalSales, data.totalSalesPrevious)} hint="vs previous period" />
+            <StatCard label="Orders" value={formatNumber(data.totalOrders)} icon={ShoppingCart} hint={`${data.totalOfflineOrders} in-store`} />
+            <StatCard label="Units sold" value={formatNumber(data.productsSold)} icon={Package} change={percentChange(data.totalProducts, data.totalProductsPrevious)} />
+            <StatCard label="Active customers" value={formatNumber(data.activeCustomers)} icon={Users} hint={`${data.activeStores}/${data.totalStores} stores active`} />
+          </StatGrid>
 
-      <DashboardCharts salesData={mappedSalesData} retentionData={mappedRetentionData} />
+          <StatGrid className="lg:grid-cols-6">
+            <StatCard label="Pending" value={data.pendingOrders} tone="warning" />
+            <StatCard label="Confirmed" value={data.confirmedOrders} tone="info" />
+            <StatCard label="Delivered" value={data.deliveredOrders} tone="success" />
+            <StatCard label="Delayed" value={data.delayedOrders} tone="warning" />
+            <StatCard label="Returned" value={data.returnedOrders} tone="danger" />
+            <StatCard label="Cancelled" value={data.cancelledOrders} tone="danger" />
+          </StatGrid>
 
-      <DashboardTables
-        topCategories={mappedTopCategories}
-        topProducts={mappedTopProducts}
-        lowProducts={mappedLowProducts}
-        topStores={mappedTopStores}
-        topCustomers={mappedTopCustomers}
-      />
+          <DashboardCharts sales={data.salesChart} retention={data.retentionRate} />
+          <DashboardTables stats={data} showStores={!storeId} />
+        </div>
+      )}
     </div>
   );
 }

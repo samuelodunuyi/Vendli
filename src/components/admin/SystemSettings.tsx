@@ -13,7 +13,7 @@ export function SystemSettings() {
   return (
     <div className="space-y-6">
       <Tabs defaultValue="general" className="w-full">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="w-full justify-start overflow-x-auto sm:w-auto">
           <TabsTrigger value="general">General Settings</TabsTrigger>
           <TabsTrigger value="delivery">Delivery Services</TabsTrigger>
           <TabsTrigger value="integrations">ERP Integration</TabsTrigger>

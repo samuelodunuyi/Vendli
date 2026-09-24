@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { SalesStatistics } from "@/redux/services/stores.services";
+import { formatCompactCurrency } from "@/lib/format";
 
 interface SalesChartsProps {
   stats: SalesStatistics;
@@ -33,8 +34,8 @@ export function SalesCharts({ stats }: SalesChartsProps) {
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={trendData} margin={{ top: 10, right: 20, bottom: 10, left: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="name" />
-                  <YAxis />
+                  <XAxis dataKey="name" minTickGap={16} fontSize={12} />
+                  <YAxis width={56} fontSize={12} tickFormatter={(v) => formatCompactCurrency(v)} />
                   <ChartTooltip content={<ChartTooltipContent />} />
                   <Bar dataKey="sales" fill={colors[0]} radius={[4, 4, 0, 0]} />
                 </BarChart>
@@ -57,8 +58,7 @@ export function SalesCharts({ stats }: SalesChartsProps) {
                     data={categoryData}
                     cx="50%"
                     cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    innerRadius={50}
                     outerRadius={90}
                     dataKey="value"
                   >
@@ -71,6 +71,14 @@ export function SalesCharts({ stats }: SalesChartsProps) {
               </ResponsiveContainer>
             </ChartContainer>
           </div>
+          <ul className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-1 text-xs">
+            {categoryData.map((c, i) => (
+              <li key={c.name} className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: colors[i % colors.length] }} />
+                {c.name}
+              </li>
+            ))}
+          </ul>
         </CardContent>
       </Card>
     </div>

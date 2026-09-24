@@ -371,7 +371,7 @@ unstockProduct: builder.mutation<
     }),
 
     deleteCategory: builder.mutation<void, number>({
-      query: (id) => ({ url: '/Category', method: 'DELETE' }),
+      query: (id) => ({ url: `/Category/${id}`, method: 'DELETE' }),
       invalidatesTags: (result, error, id) => [
         { type: 'Category', id },
         { type: 'Categories', id: 'LIST' },

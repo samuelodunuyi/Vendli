@@ -1,107 +1,51 @@
-
-import { X } from "lucide-react";
+import { Minus, Plus, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
+import { ProductImage } from "@/components/common/ProductImage";
 import { DiscountSelector } from "@/components/DiscountSelector";
-import { CartItem as CartItemType, Discount } from "@/types";
+import type { CartLine } from "@/redux/slices/cartSlice";
+import { findDiscount, lineDiscount } from "@/lib/pricing";
+import { formatCurrency } from "@/lib/format";
 
 interface CartItemProps {
-  item: CartItemType;
-  isPOS?: boolean;
-  onRemove: (productId: number) => void;
-  onUpdateQuantity: (productId: number, quantity: number) => void;
-  onApplyDiscount?: (productId: number, discount: Discount) => void;
+  line: CartLine;
+  onQuantity: (quantity: number) => void;
+  onRemove: () => void;
+  onDiscount: (discountId?: string) => void;
 }
 
-export function CartItem({ 
-  item, 
-  isPOS = false, 
-  onRemove, 
-  onUpdateQuantity, 
-  onApplyDiscount 
-}: CartItemProps) {
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-NG", {
-      style: "currency",
-      currency: "NGN",
-      minimumFractionDigits: 0
-    }).format(amount);
-  };
+export function CartItem({ line, onQuantity, onRemove, onDiscount }: CartItemProps) {
+  const discount = findDiscount(line.discountId);
+  const gross = line.unitPrice * line.quantity;
+  const net = gross - lineDiscount(line.unitPrice, line.quantity, discount);
 
   return (
-    <div className="bg-gray-50 rounded-lg p-3 border">
-      <div className="flex items-start justify-between mb-3">
-        <div className="flex items-center flex-1">
-          <img
-            src={item.product.imageUrl}
-            alt={item.product.productName}
-            className="w-12 h-12 object-cover rounded-md border"
-          />
-          <div className="ml-3 flex-1">
-            <h4 className="font-medium text-sm text-gray-900 leading-tight">
-              {item.product.productName}
-            </h4>
-            <p className="text-xs text-gray-600 mt-1">
-              {formatCurrency(item.product.basePrice)} each
-            </p>
-          </div>
+    <div className="rounded-lg border bg-card p-3">
+      <div className="flex gap-3">
+        <ProductImage src={line.imageUrl} name={line.productName} className="h-11 w-11 shrink-0 rounded-md text-xs" />
+        <div className="min-w-0 flex-1">
+          <p className="truncate text-sm font-medium">{line.productName}</p>
+          <p className="text-xs text-muted-foreground">{formatCurrency(line.unitPrice)} each</p>
         </div>
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => onRemove(item.product.productId)}
-          className="text-red-500 hover:text-red-700 hover:bg-red-50 h-8 w-8 p-0 ml-2"
-        >
+        <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0 text-muted-foreground hover:text-destructive" onClick={onRemove} aria-label={`Remove ${line.productName}`}>
           <X className="h-4 w-4" />
         </Button>
       </div>
-      
-      {item.discount && (
-        <Badge variant="secondary" className="mb-2 text-xs">
-          {item.discount.description}
-        </Badge>
-      )}
-      
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-1">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 w-7 p-0"
-            onClick={() => onUpdateQuantity(item.product.productId, item.quantity - 1)}
-          >
-            -
+
+      <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center rounded-md border">
+          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => onQuantity(line.quantity - 1)} aria-label="Decrease quantity">
+            <Minus className="h-3.5 w-3.5" />
           </Button>
-          <Input
-            type="number"
-            min="1"
-            value={item.quantity}
-            onChange={(e) =>
-              onUpdateQuantity(
-                item.product.productId,
-                parseInt(e.target.value) || 1
-              )
-            }
-            className="h-7 w-12 text-center p-0 text-sm"
-          />
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 w-7 p-0"
-            onClick={() => onUpdateQuantity(item.product.productId, item.quantity + 1)}
-          >
-            +
+          <span className="w-8 text-center text-sm tabular-nums">{line.quantity}</span>
+          <Button variant="ghost" size="icon" className="h-8 w-8" disabled={line.quantity >= line.stock} onClick={() => onQuantity(line.quantity + 1)} aria-label="Increase quantity">
+            <Plus className="h-3.5 w-3.5" />
           </Button>
         </div>
-
-        {isPOS && onApplyDiscount && (
-          <DiscountSelector
-            onDiscountSelect={(discount) => onApplyDiscount(item.product.productId, discount)}
-            selectedDiscount={item.discount}
-          />
-        )}
+        <DiscountSelector selected={discount} onSelect={onDiscount} />
+        <div className="ml-auto text-right">
+          {discount && <p className="text-xs text-muted-foreground line-through">{formatCurrency(gross)}</p>}
+          <p className="text-sm font-semibold tabular-nums">{formatCurrency(net)}</p>
+        </div>
       </div>
     </div>
   );

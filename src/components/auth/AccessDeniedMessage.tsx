@@ -1,93 +1,34 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Shield, ArrowLeft, Mail, LogOut } from 'lucide-react';
-import { useAuth } from '@/context/AuthContext';
-import { useNavigate } from 'react-router-dom';
-import { useAppSelector } from "@/redux/store";
+import { Link } from "react-router-dom";
+import { ArrowLeft, LogOut, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { useAuth } from "@/hooks/useAuth";
+import { homePathFor, roleLabel } from "@/lib/roles";
 
-interface AccessDeniedMessageProps {
-  requiredRole?: number;
-}
-
-export function AccessDeniedMessage({ requiredRole }: AccessDeniedMessageProps) {
-  const role = useAppSelector((state) => state.auth.user?.role);
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
-
-  const currentRole = role ?? 'Unknown';
-  const handleSwitchAccount = async () => {
-    await signOut();
-    navigate('/auth');
-  };
-
-  const roleLabel = (role: number | string) => {
-    switch (Number(role)) {
-      case 0: return 'Super Admin';
-      case 1: return 'Store Admin';
-      case 2: return 'POS User';
-      default: return 'Customer';
-    }
-  };
+export function AccessDeniedMessage() {
+  const { role, signOut } = useAuth();
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Shield className="h-8 w-8 text-red-600" />
+    <div className="min-h-screen flex items-center justify-center bg-muted/40 p-4">
+      <Card className="w-full max-w-md text-center">
+        <CardHeader>
+          <div className="w-14 h-14 bg-destructive/10 rounded-full flex items-center justify-center mx-auto mb-2">
+            <ShieldAlert className="h-7 w-7 text-destructive" />
           </div>
-          <CardTitle className="text-2xl text-red-900">Access Denied</CardTitle>
+          <CardTitle className="text-2xl">Access denied</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4 text-center">
-          <p className="text-gray-600">
-            You don't have sufficient permissions to access this page.
-          </p>
-
-          <div className="space-y-2">
-            <p className="text-sm text-gray-500">Your current role:</p>
-            <Badge variant="secondary" className="gap-1">
-              <Shield className="h-3 w-3" />
-              {roleLabel(currentRole)}
-            </Badge>
-          </div>
-
-          {requiredRole !== undefined && (
-            <div className="space-y-2">
-              <p className="text-sm text-gray-500">Required role:</p>
-              <Badge variant="destructive" className="gap-1">
-                <Shield className="h-3 w-3" />
-                {roleLabel(requiredRole)}
-              </Badge>
-            </div>
-          )}
-
-          <div className="pt-4 space-y-2">
-            <p className="text-sm text-gray-600">
-              Need access? Contact your administrator:
-            </p>
-            <div className="flex items-center justify-center gap-2 text-sm text-blue-600">
-              <Mail className="h-4 w-4" />
-              <span>info@codeware.com.ng</span>
-            </div>
-          </div>
-
-          <div className="flex gap-2 pt-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/')}
-              className="flex-1 gap-2"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Go Home
+        <CardContent className="space-y-5">
+          <p className="text-muted-foreground">Your account doesn't have permission to open this page.</p>
+          <Badge variant="secondary">Signed in as {roleLabel(role)}</Badge>
+          <div className="flex flex-col sm:flex-row gap-2">
+            <Button asChild variant="outline" className="flex-1">
+              <Link to={homePathFor(role)}>
+                <ArrowLeft className="h-4 w-4 mr-2" /> Back to my workspace
+              </Link>
             </Button>
-            <Button 
-              variant="outline"
-              onClick={handleSwitchAccount}
-              className="flex-1 gap-2"
-            >
-              <LogOut className="h-4 w-4" />
-              Sign Out
+            <Button variant="outline" className="flex-1" onClick={signOut}>
+              <LogOut className="h-4 w-4 mr-2" /> Sign out
             </Button>
           </div>
         </CardContent>

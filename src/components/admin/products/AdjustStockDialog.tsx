@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { apiErrorMessage } from "@/lib/errors";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -104,13 +105,13 @@ export function AdjustStockDialog({ open, onOpenChange, product }: AdjustStockDi
       toast.success(`Stock distributed for ${product.productName}`);
       onOpenChange(false);
     } catch (err) {
-      toast.error(err?.data?.message || "Failed to distribute stock");
+      toast.error(apiErrorMessage(err, "Failed to distribute stock"));
     }
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl">
+      <DialogContent className="max-h-[90vh] max-w-3xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5" />
@@ -123,7 +124,7 @@ export function AdjustStockDialog({ open, onOpenChange, product }: AdjustStockDi
 
         {!isLoading && !isError && (
           <div className="space-y-4">
-            <div className="grid grid-cols-4 gap-4 p-4 bg-gray-50 rounded-lg text-sm">
+            <div className="grid grid-cols-2 gap-4 rounded-lg bg-muted p-4 text-sm sm:grid-cols-4">
               <div>
                 <div className="text-gray-600">Assigned (Current)</div>
                 <div className="font-medium">{assignedCurrent} units</div>
@@ -137,12 +138,13 @@ export function AdjustStockDialog({ open, onOpenChange, product }: AdjustStockDi
                 <div className={`font-medium ${totalAfter > product.basestock ? "text-red-600" : ""}`}>{totalAfter} units</div>
               </div>
               <div>
-                <div className="text-gray-600">Base Stock</div>
+                <div className="text-gray-600">Left in warehouse</div>
                 <div className="font-medium">{remaining} {product.unitOfMeasure}</div>
               </div>
             </div>
 
             {/* Table */}
+            <div className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
@@ -180,13 +182,14 @@ export function AdjustStockDialog({ open, onOpenChange, product }: AdjustStockDi
                 })}
               </TableBody>
             </Table>
+            </div>
 
             {/* Actions */}
-            <div className="flex justify-end gap-2 pt-4 border-t">
+            <div className="flex flex-col-reverse gap-2 border-t pt-4 sm:flex-row sm:justify-end">
               <Button variant="outline" onClick={() => onOpenChange(false)}>Cancel</Button>
               <Button
                 onClick={handleSubmit}
-                className={totalAfter > product.basestock ? "bg-red-600 hover:bg-red-700" : "bg-teal-600 hover:bg-teal-700"}
+                disabled={totalAfter > product.basestock}
               >
                 Confirm Distribution
               </Button>

@@ -1,55 +1,60 @@
-// src/store/authSlice.ts
-import { createSlice, PayloadAction } from '@reduxjs/toolkit';
+import { createSlice, type PayloadAction } from "@reduxjs/toolkit";
+import type { UserRole } from "@/lib/roles";
 
-export interface User {
-  lastName: string;
+export interface SessionUser {
+  id: number;
   firstName: string;
-  username: string;
-  storeId: number;
-  storeName: string;
+  lastName: string;
   email: string;
-  role: number;
+  username: string;
+  phoneNumber?: string;
+  role: UserRole;
+  storeId: number | null;
+  storeName: string | null;
+}
+
+interface Tokens {
+  accessToken: string;
+  refreshToken: string;
 }
 
 interface AuthState {
   accessToken: string | null;
   refreshToken: string | null;
-  user: User | null;
-  loading: boolean;
+  user: SessionUser | null;
 }
 
 const initialState: AuthState = {
   accessToken: null,
   refreshToken: null,
   user: null,
-  loading: false,
 };
 
-interface AuthPayload {
-  accessToken: string;
-  refreshToken: string;
-  user: User;
-}
-
-export const authSlice = createSlice({
-  name: 'auth',
+const authSlice = createSlice({
+  name: "auth",
   initialState,
   reducers: {
-    setTokens: (state, action: PayloadAction<AuthPayload>) => {
-      state.accessToken = action.payload.accessToken;
-      state.refreshToken = action.payload.refreshToken;
-      state.user = action.payload.user;
+    signedIn: (state, { payload }: PayloadAction<Tokens & { user: SessionUser }>) => {
+      state.accessToken = payload.accessToken;
+      state.refreshToken = payload.refreshToken;
+      state.user = payload.user;
     },
-    logout: (state) => {
-      state.accessToken = null;
-      state.refreshToken = null;
-      state.user = null;
+    tokensRefreshed: (state, { payload }: PayloadAction<Tokens>) => {
+      state.accessToken = payload.accessToken;
+      state.refreshToken = payload.refreshToken;
     },
-    setLoading: (state, action: PayloadAction<boolean>) => {
-      state.loading = action.payload;
+    profileUpdated: (state, { payload }: PayloadAction<Partial<Pick<SessionUser, "firstName" | "lastName" | "phoneNumber">>>) => {
+      if (state.user) Object.assign(state.user, payload);
     },
+    signedOut: () => initialState,
+  },
+  selectors: {
+    selectCurrentUser: (state) => state.user,
+    selectRole: (state) => state.user?.role ?? null,
+    selectIsAuthenticated: (state) => Boolean(state.accessToken && state.user),
   },
 });
 
-export const { setTokens, logout, setLoading } = authSlice.actions;
+export const { signedIn, tokensRefreshed, profileUpdated, signedOut } = authSlice.actions;
+export const { selectCurrentUser, selectRole, selectIsAuthenticated } = authSlice.selectors;
 export default authSlice.reducer;

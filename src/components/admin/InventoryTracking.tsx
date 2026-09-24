@@ -1,500 +1,168 @@
-import { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { useMemo, useState } from "react";
+import { ArrowDownToLine, ArrowRightLeft, ArrowUpFromLine, Download, Plus, Search, SlidersHorizontal } from "lucide-react";
+import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import {
-  Download,
-  RefreshCw,
-  Plus,
-  Minus,
-  Package,
-  Truck,
-  BarChart3,
-} from "lucide-react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
+import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { toast } from "@/components/ui/sonner";
-import { InventoryStoreFilter } from "./inventory/InventoryStoreFilter";
-import { TransactionStatsCards } from "./inventory/TransactionStatsCards";
-import { TransactionFilters } from "./inventory/TransactionFilters";
-import {
-  useCreateTransactionsMutation,
-  useGetInventoriesQuery,
-  useGetTransactionsQuery,
-} from "@/redux/services/inventory.services";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { StatCard, StatGrid } from "@/components/common/StatCard";
+import { StoreSelect } from "@/components/common/StoreSelect";
+import { Pager } from "@/components/common/Pager";
+import { CustomDatePicker } from "./CustomDatePicker";
+import { StockMovementDialog } from "./inventory/StockMovementDialog";
+import { useGetTransactionsQuery, type Transaction } from "@/redux/services/inventory.services";
+import { useAuth } from "@/hooks/useAuth";
+import { INVENTORY_TX_TYPE } from "@/lib/enums";
+import { formatDateTime, formatNumber, fullName } from "@/lib/format";
+import { downloadCsv } from "@/lib/csv";
 
-const transactionTypeMap: Record<
-  number,
-  "in" | "out" | "adjustment" | "transfer"
-> = {
-  0: "in",
-  1: "out",
-  2: "adjustment",
-  3: "transfer",
-};
-
-interface InventoryTransaction {
-  id: string;
-  productId: string;
-  productName: string;
-  type: "in" | "out" | "adjustment" | "transfer";
-  quantity: number;
-  reason: string;
-  reference: string;
-  date: string;
-  user: string;
-  storeId: string;
-  storeName: string;
-  fromStore?: string;
-  toStore?: string;
-}
+const ALL = "all";
+const TYPE_STYLE = [
+  { icon: ArrowDownToLine, variant: "secondary" as const },
+  { icon: ArrowUpFromLine, variant: "outline" as const },
+  { icon: SlidersHorizontal, variant: "outline" as const },
+  { icon: ArrowRightLeft, variant: "secondary" as const },
+];
 
 export function InventoryTracking() {
-  const [selectedStoreId, setSelectedStoreId] = useState("all");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [typeFilter, setTypeFilter] = useState<string>("all");
-  const [userFilter, setUserFilter] = useState<string>("all");
-  const [dateRange, setDateRange] = useState<{ from?: Date; to?: Date }>({});
-  const [isAddTransactionOpen, setIsAddTransactionOpen] = useState(false);
+  const { isStoreScoped } = useAuth();
+  const [storeId, setStoreId] = useState<number>();
+  const [type, setType] = useState(ALL);
+  const [range, setRange] = useState<{ from?: Date; to?: Date }>({});
+  const [search, setSearch] = useState("");
+  const [page, setPage] = useState(1);
+  const [adding, setAdding] = useState(false);
 
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<InventoryTransaction | null>(null);
-
-  const [newTransaction, setNewTransaction] = useState({
-    productId: 0,
-    type: 0,
-    quantity: 0,
-    reason: "",
-    reference: "",
-    storeId: selectedStoreId === "all" ? 0 : Number(selectedStoreId),
-    fromStore: 0,
-    toStore: 0,
+  const { data, isFetching } = useGetTransactionsQuery({
+    storeId,
+    type: type === ALL ? undefined : type,
+    startDate: range.from?.toISOString(),
+    endDate: range.to ? new Date(range.to.getTime() + 86_399_999).toISOString() : undefined,
+    page,
+    itemsPerPage: 25,
   });
 
-  const [createTransaction] = useCreateTransactionsMutation();
-  const queryParams: any = {};
+  const summary = (t: number) => data?.summary?.find((s) => s.type === t);
+  const rows = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    const list = data?.transactions ?? [];
+    return q ? list.filter((t) => [t.product.name, t.product.sku, t.reference, t.reason].some((v) => v?.toLowerCase().includes(q))) : list;
+  }, [data, search]);
+  const reset = <T,>(set: (v: T) => void) => (v: T) => { set(v); setPage(1); };
 
-  if (selectedStoreId !== "all") queryParams.storeId = Number(selectedStoreId);
-  if (typeFilter !== "all") queryParams.type = typeFilter;
-  if (userFilter !== "all") queryParams.createdBy = userFilter;
-  if (dateRange.from) queryParams.startDate = dateRange.from.toISOString();
-  if (dateRange.to) queryParams.endDate = dateRange.to.toISOString();
-
-  const { data: txData, isLoading, isError } = useGetTransactionsQuery(queryParams);
-  console.log("Transaction Data:", txData);
-  const transactions: InventoryTransaction[] =
-    txData?.transactions?.map((tx) => ({
-      id: String(tx.id),
-      productId: String(tx.product?.id ?? ""),
-      productName: tx.product?.name ?? "",
-      type: transactionTypeMap[tx.type],
-      quantity: tx.quantity,
-      reason: tx.reason ?? "",
-      reference: tx.reference ?? "",
-      date: tx.createdOn,
-      user: tx.createdBy?.firstName + " " + tx.createdBy?.lastName,
-      storeId: String(tx.store.id),
-      storeName: tx.store.name,
-      fromStore: tx.fromStore ?? undefined,
-      toStore: tx.toStore ?? undefined,
-    })) ?? [];
-
-  const filteredTransactions = transactions.filter((transaction) => {
-    const matchesStore =
-      selectedStoreId === "all" || transaction.storeId === selectedStoreId;
-    const matchesSearch =
-      transaction.productName
-        .toLowerCase()
-        .includes(searchQuery.toLowerCase()) ||
-      transaction.reference.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transaction.reason.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      transaction.storeName.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesType = typeFilter === "all" || transaction.type === typeFilter;
-    const matchesUser =
-      userFilter === "all" ||
-      (userFilter === "admin" && transaction.user.includes("Admin")) ||
-      (userFilter === "manager" &&
-        (transaction.user.includes("Manager") ||
-          transaction.user.includes("Adebayo") ||
-          transaction.user.includes("Fatima"))) ||
-      (userFilter === "staff" &&
-        !transaction.user.includes("Admin") &&
-        !transaction.user.includes("Manager"));
-
-    let matchesDate = true;
-    if (dateRange.from || dateRange.to) {
-      const transactionDate = new Date(transaction.date);
-      if (dateRange.from && dateRange.to) {
-        matchesDate =
-          transactionDate >= dateRange.from && transactionDate <= dateRange.to;
-      } else if (dateRange.from) {
-        matchesDate = transactionDate >= dateRange.from;
-      } else if (dateRange.to) {
-        matchesDate = transactionDate <= dateRange.to;
-      }
-    }
-
-    return (
-      matchesStore && matchesSearch && matchesType && matchesUser && matchesDate
+  const exportRows = () =>
+    downloadCsv(
+      "stock-movements.csv",
+      ["ID", "Date", "Store", "Product", "SKU", "Type", "Quantity", "Reference", "Reason", "By"],
+      rows.map((t) => [t.id, t.createdOn, t.store.name, t.product.name, t.product.sku, INVENTORY_TX_TYPE[t.type], t.quantity, t.reference, t.reason, fullName(t.createdBy)])
     );
-  });
 
-  const inventoryStats = {
-    totalTransactions: filteredTransactions.length,
-    stockIn: filteredTransactions
-      .filter((t) => t.type === "in")
-      .reduce((sum, t) => sum + t.quantity, 0),
-    stockOut: filteredTransactions
-      .filter((t) => t.type === "out")
-      .reduce((sum, t) => sum + t.quantity, 0),
-    adjustments: filteredTransactions.filter((t) => t.type === "adjustment").length,
-    totalValue: filteredTransactions.reduce((sum, t) => sum + t.quantity * 50000, 0),
-    lowStockItems: 8,
+  const typeBadge = (t: Transaction) => {
+    const { icon: Icon, variant } = TYPE_STYLE[t.type] ?? TYPE_STYLE[2];
+    return <Badge variant={variant} className="gap-1 whitespace-nowrap"><Icon className="h-3 w-3" />{INVENTORY_TX_TYPE[t.type]}</Badge>;
   };
-
-  const getTransactionIcon = (type: string) => {
-    switch (type) {
-      case "in":
-        return <Plus className="h-4 w-4 text-green-600" />;
-      case "out":
-        return <Minus className="h-4 w-4 text-red-600" />;
-      case "adjustment":
-        return <Package className="h-4 w-4 text-blue-600" />;
-      case "transfer":
-        return <Truck className="h-4 w-4 text-purple-600" />;
-      default:
-        return null;
-    }
-  };
-
-  const getTransactionColor = (type: string) => {
-    switch (type) {
-      case "in":
-        return "default";
-      case "out":
-        return "secondary";
-      case "adjustment":
-        return "outline";
-      case "transfer":
-        return "default";
-      default:
-        return "secondary";
-    }
-  };
-
-  const formatDate = (dateString: string) => {
-    return (
-      new Date(dateString).toLocaleDateString("en-GB") +
-      " " +
-      new Date(dateString).toLocaleTimeString("en-GB", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })
-    );
-  };
-
-  const handleAddTransaction = async () => {
-    if (
-      !newTransaction.productId ||
-      !newTransaction.quantity ||
-      !newTransaction.reason
-    ) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-
-    if (
-      newTransaction.type === 3 &&
-      (!newTransaction.fromStore || !newTransaction.toStore)
-    ) {
-      toast.error(
-        "Please select both source and destination stores for transfers"
-      );
-      return;
-    }
-
-    try {
-      await createTransaction({
-        transactionType: newTransaction.type,
-        productId: newTransaction.productId,
-        storeId: newTransaction.storeId,
-        quantity: newTransaction.quantity,
-        reference: newTransaction.reference ?? undefined,
-        reason: newTransaction.reason,
-        fromStore: newTransaction.fromStore ?? undefined,
-        toStore: newTransaction.toStore ?? undefined,
-      }).unwrap();
-
-      toast.success("Inventory transaction recorded successfully");
-      setIsAddTransactionOpen(false);
-    } catch (err) {
-      toast.error("Failed to add transaction");
-    }
-  };
-
-  const exportData = () => {
-    const csvContent = [
-      [
-        "Transaction ID",
-        "Store",
-        "Product",
-        "Type",
-        "Quantity",
-        "Reason",
-        "Reference",
-        "Date",
-        "User",
-      ],
-      ...filteredTransactions.map((t) => [
-        t.id,
-        t.storeName,
-        t.productName,
-        t.type,
-        t.quantity.toString(),
-        t.reason,
-        t.reference,
-        formatDate(t.date),
-        t.user,
-      ]),
-    ]
-      .map((row) => row.join(","))
-      .join("\n");
-
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `inventory_transactions_${selectedStoreId}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    toast.success("Transaction data exported successfully");
-  };
-
-  const handleRowClick = (transaction: InventoryTransaction) => {
-    setSelectedTransaction(transaction);
-  };
-
-  const closeTransactionDialog = () => setSelectedTransaction(null);
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold">Multi-Store Inventory Tracking</h2>
+      <StatGrid>
+        <StatCard label="Units received" value={formatNumber(summary(0)?.totalQuantity)} icon={ArrowDownToLine} tone="success" hint={`${summary(0)?.count ?? 0} receipts`} loading={!data} />
+        <StatCard label="Units sold / out" value={formatNumber(summary(1)?.totalQuantity)} icon={ArrowUpFromLine} tone="info" hint={`${summary(1)?.count ?? 0} movements`} loading={!data} />
+        <StatCard label="Adjustments" value={formatNumber(summary(2)?.count)} icon={SlidersHorizontal} tone="warning" loading={!data} />
+        <StatCard label="Transfers" value={formatNumber(summary(3)?.count)} icon={ArrowRightLeft} tone="accent" loading={!data} />
+      </StatGrid>
+
+      <div className="flex flex-col gap-2 lg:flex-row lg:items-center">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input placeholder="Filter this page by product, SKU, reference…" className="pl-9" value={search} onChange={(e) => setSearch(e.target.value)} />
+        </div>
+        <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
+          <StoreSelect value={storeId} onChange={reset(setStoreId)} />
+          <Select value={type} onValueChange={reset(setType)}>
+            <SelectTrigger className="sm:w-40"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value={ALL}>All movements</SelectItem>
+              {INVENTORY_TX_TYPE.map((label, i) => <SelectItem key={label} value={String(i)}>{label}</SelectItem>)}
+            </SelectContent>
+          </Select>
+          <CustomDatePicker dateRange={{ from: range.from, to: range.to }} onDateRangeChange={reset(setRange)} />
+        </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={exportData}>
-            <Download className="mr-2 h-4 w-4" />
-            Export Data
-          </Button>
+          <Button variant="outline" className="flex-1" onClick={exportRows} disabled={!rows.length}><Download className="mr-2 h-4 w-4" />Export</Button>
+          <Button className="flex-1" onClick={() => setAdding(true)}><Plus className="mr-2 h-4 w-4" />Record</Button>
         </div>
       </div>
 
-      <InventoryStoreFilter
-        selectedStoreId={selectedStoreId}
-        onStoreChange={setSelectedStoreId}
-      />
-
-      <TransactionStatsCards
-        inventoryStats={inventoryStats}
-        selectedStoreId={selectedStoreId}
-      />
-
-      <TransactionFilters
-        searchQuery={searchQuery}
-        onSearchChange={setSearchQuery}
-        typeFilter={typeFilter}
-        onTypeFilterChange={setTypeFilter}
-        dateRange={dateRange}
-        onDateRangeChange={setDateRange}
-        userFilter={userFilter}
-        onUserFilterChange={setUserFilter}
-      />
-
-      <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-600">
-          Showing {filteredTransactions.length} of {transactions.length}{" "}
-          transactions
-          {selectedStoreId !== "all" && ` for selected store`}
-        </div>
-
-        <div className="flex gap-2">
-          <Dialog
-            open={isAddTransactionOpen}
-            onOpenChange={setIsAddTransactionOpen}
-          >
-            <DialogTrigger asChild>
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
-                <Plus className="mr-2 h-4 w-4" />
-                Add Transaction
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Add Inventory Transaction</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                {/* ... Add transaction form (unchanged) ... */}
-              </div>
-              <div className="flex gap-2 justify-end">
-                <Button
-                  variant="outline"
-                  onClick={() => setIsAddTransactionOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  onClick={handleAddTransaction}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                >
-                  Add Transaction
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-
-          <Button variant="outline">
-            <RefreshCw className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
-        </div>
-      </div>
-
-      <Card>
-        <CardHeader>
-          <CardTitle>Inventory Transactions</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left p-3">Transaction ID</th>
-                  <th className="text-left p-3">Store</th>
-                  <th className="text-left p-3">Product</th>
-                  <th className="text-left p-3">Type</th>
-                  <th className="text-left p-3">Quantity</th>
-                  <th className="text-left p-3">Date</th>
-                  <th className="text-left p-3">User</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isError && (
-                  <tr>
-                    <td colSpan={7} className="p-4 text-center text-red-500">
-                      Failed to load transactions
-                    </td>
-                  </tr>
-                )}
-                {filteredTransactions.map((transaction) => (
-                  <tr
-                    key={transaction.id}
-                    className="border-b hover:bg-gray-50 cursor-pointer"
-                    onClick={() => handleRowClick(transaction)}
-                  >
-                    <td className="p-3 font-medium">{transaction.id}</td>
-                    <td className="p-3">{transaction.storeName}</td>
-                    <td className="p-3">{transaction.productName}</td>
-                    <td className="p-3">
-                      <div className="flex items-center gap-2">
-                        {getTransactionIcon(transaction.type)}
-                        <Badge variant={getTransactionColor(transaction.type)}>
-                          {transaction.type?.charAt(0).toUpperCase() +
-                            transaction.type.slice(1)}
-                        </Badge>
-                      </div>
-                    </td>
-                    <td className="p-3 font-medium">{transaction.quantity}</td>
-                    <td className="p-3 text-sm">{formatDate(transaction.date)}</td>
-                    <td className="p-3">{transaction.user}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-
-            {filteredTransactions.length === 0 && (
-              <div className="text-center py-8 text-gray-500">
-                No transactions found matching your criteria
-              </div>
-            )}
-          </div>
-        </CardContent>
+      <Card className="overflow-hidden">
+        {isFetching && !data ? (
+          <div className="space-y-2 p-4">{Array.from({ length: 6 }, (_, i) => <Skeleton key={i} className="h-11" />)}</div>
+        ) : !rows.length ? (
+          <p className="p-10 text-center text-muted-foreground">No stock movements match your filters.</p>
+        ) : (
+          <>
+            <ul className="divide-y md:hidden">
+              {rows.map((t) => (
+                <li key={t.id} className="space-y-1 p-4">
+                  <div className="flex items-start justify-between gap-2">
+                    <p className="font-medium">{t.product.name}</p>
+                    <span className="font-semibold tabular-nums">{t.quantity}</span>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                    {typeBadge(t)}
+                    {!isStoreScoped && <span>{t.store.name}</span>}
+                    <span>{formatDateTime(t.createdOn)}</span>
+                  </div>
+                  {t.reason && <p className="text-sm text-muted-foreground">{t.reason}</p>}
+                </li>
+              ))}
+            </ul>
+            <div className="hidden md:block">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Product</TableHead>
+                    {!isStoreScoped && <TableHead>Store</TableHead>}
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-right">Qty</TableHead>
+                    <TableHead>Reference / reason</TableHead>
+                    <TableHead>By</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {rows.map((t) => (
+                    <TableRow key={t.id}>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{formatDateTime(t.createdOn)}</TableCell>
+                      <TableCell>
+                        <p className="font-medium">{t.product.name}</p>
+                        <p className="text-xs text-muted-foreground">{t.product.sku}</p>
+                      </TableCell>
+                      {!isStoreScoped && (
+                        <TableCell className="text-muted-foreground">
+                          {t.store.name || "Warehouse"}
+                          {t.toStore && <span className="block text-xs">→ {t.toStore}</span>}
+                        </TableCell>
+                      )}
+                      <TableCell>{typeBadge(t)}</TableCell>
+                      <TableCell className="text-right font-medium tabular-nums">{t.quantity}</TableCell>
+                      <TableCell className="max-w-xs">
+                        <p className="truncate text-sm">{t.reference}</p>
+                        <p className="truncate text-xs text-muted-foreground">{t.reason}</p>
+                      </TableCell>
+                      <TableCell className="whitespace-nowrap text-muted-foreground">{fullName(t.createdBy)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
+        )}
+        <Pager page={page} totalPages={data?.pagination.totalPages ?? 1} totalItems={data?.pagination.totalItems} onPageChange={setPage} />
       </Card>
 
-      {selectedTransaction && (
-        <Dialog
-          open={!!selectedTransaction}
-          onOpenChange={closeTransactionDialog}
-        >
-          <DialogContent className="max-w-md">
-            <DialogHeader>
-              <DialogTitle>Transaction Details</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-3">
-              <div>
-                <Label>Transaction ID</Label>
-                <p>{selectedTransaction.id}</p>
-              </div>
-              <div>
-                <Label>Product</Label>
-                <p>{selectedTransaction.productName}</p>
-              </div>
-              <div>
-                <Label>Store</Label>
-                <p>{selectedTransaction.storeName}</p>
-              </div>
-              {selectedTransaction.type === "transfer" && (
-                <div>
-                  <Label>Transfer From → To</Label>
-                  <p>
-                    {selectedTransaction.fromStore} → {selectedTransaction.toStore}
-                  </p>
-                </div>
-              )}
-              <div>
-                <Label>Quantity</Label>
-                <p>{selectedTransaction.quantity}</p>
-              </div>
-              <div>
-                <Label>Type</Label>
-                <p>{selectedTransaction.type}</p>
-              </div>
-              <div>
-                <Label>Reason</Label>
-                <p>{selectedTransaction.reason}</p>
-              </div>
-              <div>
-                <Label>Reference</Label>
-                <p>{selectedTransaction.reference}</p>
-              </div>
-              <div>
-                <Label>Date</Label>
-                <p>{formatDate(selectedTransaction.date)}</p>
-              </div>
-              <div>
-                <Label>User</Label>
-                <p>{selectedTransaction.user}</p>
-              </div>
-            </div>
-            <div className="flex justify-end mt-4">
-              <Button onClick={closeTransactionDialog}>Close</Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      )}
+      <StockMovementDialog open={adding} onOpenChange={setAdding} />
     </div>
   );
 }
